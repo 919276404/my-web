@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京市食品安全全链条数字化平台</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .page-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-tabs {
+            display: flex;
+            gap: 5px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e8f8f0;
+            background: #fafdfb;
+        }
+
+        .page-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #e8f8f0;
+            border-radius: 4px 4px 0 0;
+            font-size: 14px;
+            color: #1e9a6c;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .page-tab.active {
+            background: white;
+            font-weight: bold;
+        }
+
+        .page-tab .close-btn {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .page-tab .close-btn:hover {
+            color: #ff4d4f;
+        }
+
+        .page-content {
+            flex: 1;
+            background: white;
+            border-radius: 0 6px 6px 6px;
+        }
+
+        .page-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            min-height: calc(100vh - 160px);
+        }
+    </style>
+    <script src="js/common.js"></script>
+    <script>
+        // 存储已打开的页面标签
+        const openTabs = [];
+        let activeTab = 'market';
+
+        const pageConfig = {
+            market: { title: '市场信息查询', path: 'pages/market.html' },
+            fee: { title: '检验费管理', path: 'pages/fee.html' },
+            sample: { title: '样本费管理', path: 'pages/sample.html' },
+            package: { title: '打包价管理', path: 'pages/package.html' },
+            statistics: { title: '抽检项目统计', path: 'pages/statistics.html' },
+            analysis: { title: '统计分析', path: 'pages/analysis.html' },
+            basic_statistics: { title: '基本统计', path: 'pages/basic_statistics.html' },
+            report_batch: { title: '工作报表-批次', path: 'pages/report_batch.html' }
+        };
+
+        function navigateTo(pageName) {
+            // 如果页面已打开，激活它
+            if (openTabs.includes(pageName)) {
+                activateTab(pageName);
+                return;
+            }
+
+            // 添加新标签
+            openTabs.push(pageName);
+            renderTabs();
+            activateTab(pageName);
+            loadPage(pageName);
+        }
+
+        function renderTabs() {
+            const tabsContainer = document.getElementById('tabsContainer');
+            let html = '';
+            openTabs.forEach(pageName => {
+                const config = pageConfig[pageName];
+                html += `
+                    <div class="page-tab ${pageName === activeTab ? 'active' : ''}" data-page="${pageName}">
+                        <span onclick="activateTab('${pageName}')">${config.title}</span>
+                        <span class="close-btn" onclick="closeTab('${pageName}')">×</span>
+                    </div>
+                `;
+            });
+            tabsContainer.innerHTML = html;
+        }
+
+        function activateTab(pageName) {
+            activeTab = pageName;
+            renderTabs();
+            loadPage(pageName);
+        }
+
+        function closeTab(pageName) {
+            const index = openTabs.indexOf(pageName);
+            if (index > -1) {
+                openTabs.splice(index, 1);
+                if (activeTab === pageName && openTabs.length > 0) {
+                    activeTab = openTabs[Math.max(0, index - 1)];
+                    loadPage(activeTab);
+                }
+                renderTabs();
+            }
+        }
+
+        function loadPage(pageName) {
+            const iframe = document.getElementById('pageFrame');
+            if (iframe && pageConfig[pageName]) {
+                iframe.src = pageConfig[pageName].path;
+            }
+        }
+
+        function closeAllTabs() {
+            openTabs.length = 0;
+            activeTab = null;
+            renderTabs();
+            document.getElementById('pageFrame').src = 'about:blank';
+        }
+
+        function toggleSubmenu(elem) {
+            const parentLi = elem.parentElement;
+            const submenu = parentLi.querySelector('.submenu');
+            
+            // 切换当前菜单的展开状态
+            if (parentLi.classList.contains('active')) {
+                parentLi.classList.remove('active');
+                submenu.style.display = 'none';
+            } else {
+                // 先关闭其他已展开的子菜单
+                document.querySelectorAll('.sidebar-menu li.active').forEach(function(item) {
+                    item.classList.remove('active');
+                    const otherSubmenu = item.querySelector('.submenu');
+                    if (otherSubmenu) {
+                        otherSubmenu.style.display = 'none';
+                    }
+                });
+                
+                // 展开当前子菜单
+                parentLi.classList.add('active');
+                submenu.style.display = 'block';
+            }
+        }
+
+        // 初始化 - 默认打开市场信息查询
+        document.addEventListener('DOMContentLoaded', function() {
+            navigateTo('market');
+        });
+    </script>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🛡️</div>
+            <div class="sidebar-title">抽检应用分析</div>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="#数据统计">
+                    <span class="icon">📈</span>
+                    <span>数据统计</span>
+                </a>
+            </li>
+            <li>
+                <a href="#异常标记">
+                    <span class="icon">⚠️</span>
+                    <span>异常标记</span>
+                </a>
+            </li>
+            <li class="has-submenu">
+                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                    <span class="icon">🔬</span>
+                    <span>抽样检验</span>
+                </a>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="navigateTo('basic_statistics')">基本统计</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('report_batch')">工作报表-批次</a></li>
+                    <li><a href="#工作报表项次">工作报表-项次</a></li>
+                </ul>
+            </li>
+            <li class="has-submenu">
+                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                    <span class="icon">📝</span>
+                    <span>检验项目解读</span>
+                </a>
+                <ul class="submenu">
+                    <li><a href="#检验项目">检验项目</a></li>
+                    <li><a href="#检验项目类别">检验项目类别</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('statistics'); toggleSubmenu(this.parentElement.parentElement.previousElementSibling.querySelector('a'))">抽检项目统计</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="javascript:void(0)" onclick="navigateTo('fee')">
+                    <span class="icon">💰</span>
+                    <span>检验费管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="javascript:void(0)" onclick="navigateTo('sample')">
+                    <span class="icon">🧪</span>
+                    <span>样本费管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="javascript:void(0)" onclick="navigateTo('package')">
+                    <span class="icon">📦</span>
+                    <span>打包价管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="javascript:void(0)" onclick="navigateTo('analysis')">
+                    <span class="icon">📊</span>
+                    <span>统计分析</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="header">
+            <div class="header-title">北京市食品安全全链条数字化平台</div>
+            <div class="header-right">
+                <div class="header-icon" title="首页">🏠</div>
+                <div class="header-icon" title="设置">⚙️</div>
+                <div class="header-icon" title="通知">🔔</div>
+                <div class="header-user">
+                    <span>admin</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="page-container">
+                <div class="page-tabs" id="tabsContainer">
+                    <!-- 动态生成的标签页 -->
+                </div>
+                <div class="page-content">
+                    <iframe id="pageFrame" src="about:blank"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检验项目管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 24px;
+        }
+        
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .search-item label {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .search-item input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-danger {
+            background-color: #ff4d4f;
+            color: white;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #fafafa;
+            font-weight: bold;
+        }
+        
+        .checkbox {
+            width: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            color: #1890ff;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .action-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .action-btn.delete {
+            color: #ff4d4f;
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        /* 富文本编辑器样式 */
+        .rich-text-editor-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .rich-text-toolbar {
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .toolbar-button {
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .toolbar-button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .toolbar-select {
+            padding: 2px 4px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .rich-text-editor {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            outline: none;
+        }
+        
+        /* 别名列表样式 */
+        .alias-list {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .alias-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .alias-item:last-child {
+            border-bottom: none;
+        }
+        
+        .alias-actions {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>检验项目管理系统</h1>
+        
+        <!-- 搜索区域 -->
+        <div class="search-section">
+            <div class="search-item">
+                <label>检验项目类型:</label>
+                <input type="text" placeholder="请输入">
+            </div>
+            <button class="btn btn-secondary">清空</button>
+            <button class="btn btn-primary">查询</button>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="openAddTypeModal()">+ 添加检验项目类型</button>
+        </div>
+        
+        <!-- 检验项目类型表格 -->
+        <div class="table-container">
+            <h2>检验项目类型列表</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" class="checkbox"></th>
+                        <th>序号</th>
+                        <th>检验项目类型</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>1</td>
+                        <td>微生物指标</td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditTypeModal(1, '微生物指标')">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteType(1)">删除</a>
+                            <a href="#" class="action-btn" onclick="openProjectListModal(1, '微生物指标')">管理项目</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>2</td>
+                        <td>食品添加剂</td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditTypeModal(2, '食品添加剂')">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteType(2)">删除</a>
+                            <a href="#" class="action-btn" onclick="openProjectListModal(2, '食品添加剂')">管理项目</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>3</td>
+                        <td>重金属</td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditTypeModal(3, '重金属')">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteType(3)">删除</a>
+                            <a href="#" class="action-btn" onclick="openProjectListModal(3, '重金属')">管理项目</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 添加检验项目类型弹窗 -->
+    <div id="addTypeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">添加检验项目类型</span>
+                <span class="close" onclick="closeModal('addTypeModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>检验项目类型名称:</label>
+                <input type="text" id="typeName" placeholder="请输入检验项目类型名称">
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('addTypeModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveType()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑检验项目类型弹窗 -->
+    <div id="editTypeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">编辑检验项目类型</span>
+                <span class="close" onclick="closeModal('editTypeModal')">&times;</span>
+            </div>
+            <input type="hidden" id="editTypeId">
+            <div class="form-group">
+                <label>检验项目类型名称:</label>
+                <input type="text" id="editTypeName" placeholder="请输入检验项目类型名称">
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('editTypeModal')">取消</button>
+                <button class="btn btn-primary" onclick="updateType()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 项目名称列表弹窗 -->
+    <div id="projectListModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">项目名称管理 - <span id="currentTypeName"></span></span>
+                <span class="close" onclick="closeModal('projectListModal')">&times;</span>
+            </div>
+            <input type="hidden" id="currentTypeId">
+            
+            <!-- 项目名称搜索 -->
+            <div class="search-section">
+                <div class="search-item">
+                    <label>项目名称:</label>
+                    <input type="text" id="projectSearch" placeholder="请输入项目名称">
+                </div>
+                <button class="btn btn-primary" onclick="searchProjects()">搜索</button>
+            </div>
+            
+            <!-- 项目名称操作按钮 -->
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="openAddProjectModal()">+ 添加项目名称</button>
+            </div>
+            
+            <!-- 项目名称表格 -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" class="checkbox"></th>
+                            <th>序号</th>
+                            <th>项目名称</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectTableBody">
+                        <!-- 项目名称数据将通过JS动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加项目名称弹窗 -->
+    <div id="addProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">添加项目名称</span>
+                <span class="close" onclick="closeModal('addProjectModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>项目名称:</label>
+                <input type="text" id="projectName" placeholder="请输入项目名称">
+            </div>
+            <div class="form-group">
+                <label>项目说明及要求:</label>
+                <div class="rich-text-editor-container">
+                    <div class="rich-text-toolbar">
+                        <button class="toolbar-button" onclick="document.execCommand('bold', false, null)"><b>B</b></button>
+                        <button class="toolbar-button" onclick="document.execCommand('italic', false, null)"><i>I</i></button>
+                        <button class="toolbar-button" onclick="document.execCommand('underline', false, null)"><u>U</u></button>
+                        <button class="toolbar-button" onclick="document.execCommand('strikeThrough', false, null)"><s>S</s></button>
+                        <select class="toolbar-select" onchange="document.execCommand('fontSize', false, this.value)">
+                            <option value="1">12</option>
+                            <option value="2">14</option>
+                            <option value="3" selected>16</option>
+                            <option value="4">18</option>
+                            <option value="5">24</option>
+                            <option value="6">32</option>
+                            <option value="7">48</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('fontName', false, this.value)">
+                            <option value="Arial">Arial</option>
+                            <option value="Helvetica" selected>Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('foreColor', false, this.value)">
+                            <option value="#000000" selected>黑色</option>
+                            <option value="#FF0000">红色</option>
+                            <option value="#0000FF">蓝色</option>
+                            <option value="#008000">绿色</option>
+                        </select>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyLeft', false, null)">左对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyCenter', false, null)">居中</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyRight', false, null)">右对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertOrderedList', false, null)">序号</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertUnorderedList', false, null)">项目</button>
+                        <button class="toolbar-button" onclick="document.execCommand('indent', false, null)">增加缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('outdent', false, null)">减少缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertHorizontalRule', false, null)">水平线</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertImage', false, prompt('请输入图片URL:'))">图片</button>
+                        <button class="toolbar-button" onclick="document.execCommand('createLink', false, prompt('请输入链接URL:'))">链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('unlink', false, null)">取消链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('removeFormat', false, null)">清除格式</button>
+                        <button class="toolbar-button" onclick="document.execCommand('code', false, null)">&lt;/&gt;</button>
+                        <button class="toolbar-button" onclick="alert('富文本编辑器使用帮助')">?</button>
+                    </div>
+                    <div class="rich-text-editor" contenteditable="true" id="projectDescription"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>别名管理:</label>
+                <div class="alias-list" id="aliasList">
+                    <div class="alias-item">
+                        <input type="text" placeholder="请输入别名" style="width: 80%;">
+                        <div class="alias-actions">
+                            <button class="btn btn-primary" style="padding: 2px 8px;">添加</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('addProjectModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveProject()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑项目名称弹窗 -->
+    <div id="editProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">编辑项目名称</span>
+                <span class="close" onclick="closeModal('editProjectModal')">&times;</span>
+            </div>
+            <input type="hidden" id="editProjectId">
+            <div class="form-group">
+                <label>项目名称:</label>
+                <input type="text" id="editProjectName" placeholder="请输入项目名称">
+            </div>
+            <div class="form-group">
+                <label>项目说明及要求:</label>
+                <div class="rich-text-editor-container">
+                    <div class="rich-text-toolbar">
+                        <button class="toolbar-button" onclick="document.execCommand('bold', false, null)"><b>B</b></button>
+                        <button class="toolbar-button" onclick="document.execCommand('italic', false, null)"><i>I</i></button>
+                        <button class="toolbar-button" onclick="document.execCommand('underline', false, null)"><u>U</u></button>
+                        <button class="toolbar-button" onclick="document.execCommand('strikeThrough', false, null)"><s>S</s></button>
+                        <select class="toolbar-select" onchange="document.execCommand('fontSize', false, this.value)">
+                            <option value="1">12</option>
+                            <option value="2">14</option>
+                            <option value="3" selected>16</option>
+                            <option value="4">18</option>
+                            <option value="5">24</option>
+                            <option value="6">32</option>
+                            <option value="7">48</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('fontName', false, this.value)">
+                            <option value="Arial">Arial</option>
+                            <option value="Helvetica" selected>Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('foreColor', false, this.value)">
+                            <option value="#000000" selected>黑色</option>
+                            <option value="#FF0000">红色</option>
+                            <option value="#0000FF">蓝色</option>
+                            <option value="#008000">绿色</option>
+                        </select>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyLeft', false, null)">左对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyCenter', false, null)">居中</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyRight', false, null)">右对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertOrderedList', false, null)">序号</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertUnorderedList', false, null)">项目</button>
+                        <button class="toolbar-button" onclick="document.execCommand('indent', false, null)">增加缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('outdent', false, null)">减少缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertHorizontalRule', false, null)">水平线</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertImage', false, prompt('请输入图片URL:'))">图片</button>
+                        <button class="toolbar-button" onclick="document.execCommand('createLink', false, prompt('请输入链接URL:'))">链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('unlink', false, null)">取消链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('removeFormat', false, null)">清除格式</button>
+                        <button class="toolbar-button" onclick="document.execCommand('code', false, null)">&lt;/&gt;</button>
+                        <button class="toolbar-button" onclick="alert('富文本编辑器使用帮助')">?</button>
+                    </div>
+                    <div class="rich-text-editor" contenteditable="true" id="editProjectDescription"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>别名管理:</label>
+                <div class="alias-list" id="editAliasList">
+                    <!-- 别名数据将通过JS动态生成 -->
+                </div>
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('editProjectModal')">取消</button>
+                <button class="btn btn-primary" onclick="updateProject()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 模拟数据
+        const projectData = {
+            1: [ // 微生物指标
+                { id: 1, name: '大肠菌群', description: '大肠菌群是国内外通用的食品污染常用指示菌之一。', aliases: ['大肠菌', '大肠'] },
+                { id: 2, name: '菌落总数', description: '菌落总数是指示性微生物指标，并非致病菌指标。', aliases: ['细菌总数'] }
+            ],
+            2: [ // 食品添加剂
+                { id: 3, name: '山梨酸及其钾盐', description: '山梨酸是一种常见的食品防腐剂。', aliases: ['山梨酸钾'] },
+                { id: 4, name: '苯甲酸及其钠盐', description: '苯甲酸是一种广谱抗微生物试剂。', aliases: ['苯甲酸钠'] }
+            ],
+            3: [ // 重金属
+                { id: 5, name: '铅(以Pb计)', description: '铅是一种对人体有害的重金属元素。', aliases: ['铅含量'] },
+                { id: 6, name: '镉(以Cd计)', description: '镉是一种有毒的重金属元素。', aliases: ['镉含量'] }
+            ]
+        };
+        
+        // 打开添加检验项目类型弹窗
+        function openAddTypeModal() {
+            document.getElementById('addTypeModal').style.display = 'block';
+            document.getElementById('typeName').value = '';
+        }
+        
+        // 打开编辑检验项目类型弹窗
+        function openEditTypeModal(id, name) {
+            document.getElementById('editTypeModal').style.display = 'block';
+            document.getElementById('editTypeId').value = id;
+            document.getElementById('editTypeName').value = name;
+        }
+        
+        // 保存检验项目类型
+        function saveType() {
+            const typeName = document.getElementById('typeName').value;
+            if (typeName) {
+                alert('检验项目类型 "' + typeName + '" 添加成功！');
+                closeModal('addTypeModal');
+            } else {
+                alert('请输入检验项目类型名称');
+            }
+        }
+        
+        // 更新检验项目类型
+        function updateType() {
+            const id = document.getElementById('editTypeId').value;
+            const typeName = document.getElementById('editTypeName').value;
+            if (typeName) {
+                alert('检验项目类型 "' + typeName + '" 更新成功！');
+                closeModal('editTypeModal');
+            } else {
+                alert('请输入检验项目类型名称');
+            }
+        }
+        
+        // 删除检验项目类型
+        function deleteType(id) {
+            if (confirm('确定要删除该检验项目类型吗？')) {
+                alert('检验项目类型删除成功！');
+            }
+        }
+        
+        // 打开项目名称列表弹窗
+        function openProjectListModal(typeId, typeName) {
+            document.getElementById('projectListModal').style.display = 'block';
+            document.getElementById('currentTypeId').value = typeId;
+            document.getElementById('currentTypeName').textContent = typeName;
+            loadProjects(typeId);
+        }
+        
+        // 加载项目名称列表
+        function loadProjects(typeId) {
+            const projects = projectData[typeId] || [];
+            const tableBody = document.getElementById('projectTableBody');
+            tableBody.innerHTML = '';
+            
+            projects.forEach((project, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" class="checkbox"></td>
+                    <td>${index + 1}</td>
+                    <td>${project.name}</td>
+                    <td class="action-buttons">
+                        <a href="#" class="action-btn" onclick="openEditProjectModal(${project.id}, '${project.name}', '${project.description}', ${JSON.stringify(project.aliases)})">修改</a>
+                        <a href="#" class="action-btn delete" onclick="deleteProject(${project.id})">删除</a>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 搜索项目名称
+        function searchProjects() {
+            const searchTerm = document.getElementById('projectSearch').value.toLowerCase();
+            const typeId = document.getElementById('currentTypeId').value;
+            const projects = projectData[typeId] || [];
+            const tableBody = document.getElementById('projectTableBody');
+            tableBody.innerHTML = '';
+            
+            const filteredProjects = projects.filter(project => 
+                project.name.toLowerCase().includes(searchTerm)
+            );
+            
+            filteredProjects.forEach((project, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" class="checkbox"></td>
+                    <td>${index + 1}</td>
+                    <td>${project.name}</td>
+                    <td class="action-buttons">
+                        <a href="#" class="action-btn" onclick="openEditProjectModal(${project.id}, '${project.name}', '${project.description}', ${JSON.stringify(project.aliases)})">修改</a>
+                        <a href="#" class="action-btn delete" onclick="deleteProject(${project.id})">删除</a>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 打开添加项目名称弹窗
+        function openAddProjectModal() {
+            document.getElementById('addProjectModal').style.display = 'block';
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectDescription').innerHTML = '';
+            document.getElementById('aliasList').innerHTML = `
+                <div class="alias-item">
+                    <input type="text" placeholder="请输入别名" style="width: 80%;">
+                    <div class="alias-actions">
+                        <button class="btn btn-primary" style="padding: 2px 8px;" onclick="addAliasInput()">添加</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 添加别名输入框
+        function addAliasInput() {
+            const aliasList = document.getElementById('aliasList');
+            const newAliasItem = document.createElement('div');
+            newAliasItem.className = 'alias-item';
+            newAliasItem.innerHTML = `
+                <input type="text" placeholder="请输入别名" style="width: 80%;">
+                <div class="alias-actions">
+                    <button class="btn btn-primary" style="padding: 2px 8px;" onclick="addAliasInput()">添加</button>
+                    <button class="btn btn-danger" style="padding: 2px 8px;" onclick="removeAliasInput(this)">删除</button>
+                </div>
+            `;
+            aliasList.appendChild(newAliasItem);
+        }
+        
+        // 移除别名输入框
+        function removeAliasInput(button) {
+            const aliasItem = button.closest('.alias-item');
+            if (document.querySelectorAll('.alias-item').length > 1) {
+                aliasItem.remove();
+            }
+        }
+        
+        // 保存项目名称
+        function saveProject() {
+            const projectName = document.getElementById('projectName').value;
+            const projectDescription = document.getElementById('projectDescription').innerHTML;
+            const aliasInputs = document.querySelectorAll('#aliasList input');
+            const aliases = Array.from(aliasInputs).map(input => input.value).filter(value => value);
+            
+            if (projectName) {
+                alert('项目名称 "' + projectName + '" 添加成功！');
+                closeModal('addProjectModal');
+            } else {
+                alert('请输入项目名称');
+            }
+        }
+        
+        // 打开编辑项目名称弹窗
+        function openEditProjectModal(id, name, description, aliases) {
+            document.getElementById('editProjectModal').style.display = 'block';
+            document.getElementById('editProjectId').value = id;
+            document.getElementById('editProjectName').value = name;
+            document.getElementById('editProjectDescription').innerHTML = description;
+            
+            const editAliasList = document.getElementById('editAliasList');
+            editAliasList.innerHTML = '';
+            
+            (aliases || []).forEach((alias, index) => {
+                const aliasItem = document.createElement('div');
+                aliasItem.className = 'alias-item';
+                aliasItem.innerHTML = `
+                    <input type="text" value="${alias}" style="width: 80%;">
+                    <div class="alias-actions">
+                        ${index === 0 ? '<button class="btn btn-primary" style="padding: 2px 8px;" onclick="addEditAliasInput()">添加</button>' : ''}
+                        <button class="btn btn-danger" style="padding: 2px 8px;" onclick="removeEditAliasInput(this)">删除</button>
+                    </div>
+                `;
+                editAliasList.appendChild(aliasItem);
+            });
+            
+            // 如果没有别名，添加一个空的输入框
+            if ((aliases || []).length === 0) {
+                const aliasItem = document.createElement('div');
+                aliasItem.className = 'alias-item';
+                aliasItem.innerHTML = `
+                    <input type="text" placeholder="请输入别名" style="width: 80%;">
+                    <div class="alias-actions">
+                        <button class="btn btn-primary" style="padding: 2px 8px;" onclick="addEditAliasInput()">添加</button>
+                    </div>
+                `;
+                editAliasList.appendChild(aliasItem);
+            }
+        }
+        
+        // 添加编辑模式下的别名输入框
+        function addEditAliasInput() {
+            const editAliasList = document.getElementById('editAliasList');
+            const newAliasItem = document.createElement('div');
+            newAliasItem.className = 'alias-item';
+            newAliasItem.innerHTML = `
+                <input type="text" placeholder="请输入别名" style="width: 80%;">
+                <div class="alias-actions">
+                    <button class="btn btn-primary" style="padding: 2px 8px;" onclick="addEditAliasInput()">添加</button>
+                    <button class="btn btn-danger" style="padding: 2px 8px;" onclick="removeEditAliasInput(this)">删除</button>
+                </div>
+            `;
+            editAliasList.appendChild(newAliasItem);
+        }
+        
+        // 移除编辑模式下的别名输入框
+        function removeEditAliasInput(button) {
+            const aliasItem = button.closest('.alias-item');
+            if (document.querySelectorAll('#editAliasList .alias-item').length > 1) {
+                aliasItem.remove();
+            }
+        }
+        
+        // 更新项目名称
+        function updateProject() {
+            const id = document.getElementById('editProjectId').value;
+            const projectName = document.getElementById('editProjectName').value;
+            const projectDescription = document.getElementById('editProjectDescription').innerHTML;
+            const aliasInputs = document.querySelectorAll('#editAliasList input');
+            const aliases = Array.from(aliasInputs).map(input => input.value).filter(value => value);
+            
+            if (projectName) {
+                alert('项目名称 "' + projectName + '" 更新成功！');
+                closeModal('editProjectModal');
+            } else {
+                alert('请输入项目名称');
+            }
+        }
+        
+        // 删除项目名称
+        function deleteProject(id) {
+            if (confirm('确定要删除该项目名称吗？')) {
+                alert('项目名称删除成功！');
+            }
+        }
+        
+        // 关闭弹窗
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // 点击弹窗外部关闭弹窗
+        window.onclick = function(event) {
+            const modals = document.getElementsByClassName('modal');
+            for (let i = 0; i < modals.length; i++) {
+                if (event.target === modals[i]) {
+                    modals[i].style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

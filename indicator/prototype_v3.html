@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检验项目管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .search-item label {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .search-item input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #fafafa;
+            font-weight: bold;
+        }
+        
+        .checkbox {
+            width: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            color: #1890ff;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .action-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .action-btn.delete {
+            color: #ff4d4f;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .rich-text-editor-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .rich-text-toolbar {
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .toolbar-button {
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .toolbar-button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .toolbar-select {
+            padding: 2px 4px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .rich-text-editor {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="search-section">
+            <div class="search-item">
+                <label>检验项目类型:</label>
+                <input type="text" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <label>项目名称:</label>
+                <input type="text" placeholder="请输入">
+            </div>
+            <button class="btn btn-secondary">清空</button>
+            <button class="btn btn-primary">查询</button>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="openAddTypeModal()">+ 项目类别标记</button>
+            <button class="btn btn-primary" onclick="openAddProjectModal()">+ 添加项目</button>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" class="checkbox"></th>
+                        <th>序号</th>
+                        <th>检验项目类别</th>
+                        <th>项目名称</th>
+                        <th>项目说明及要求</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>1</td>
+                        <td></td>
+                        <td>铅(以Pb计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditModal(1)">详情</a>
+                            <a href="#" class="action-btn" onclick="openEditModal(1)">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteItem(1)">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>2</td>
+                        <td></td>
+                        <td>山梨酸及其钾盐(以山梨酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditModal(2)">详情</a>
+                            <a href="#" class="action-btn" onclick="openEditModal(2)">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteItem(2)">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>3</td>
+                        <td></td>
+                        <td>苯甲酸及其钠盐(以苯甲酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditModal(3)">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteItem(3)">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>4</td>
+                        <td></td>
+                        <td>糖精钠(以糖精计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditModal(4)">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteItem(4)">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>5</td>
+                        <td>微生物指标</td>
+                        <td>大肠菌群</td>
+                        <td>大肠菌群是国内外通用的食品污染常用指示菌之一。餐饮具中检出大肠菌群，提示</td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditModal(5)">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteItem(5)">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>6</td>
+                        <td>食品添加剂</td>
+                        <td>甜蜜素(以环己基氨基磺酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditModal(6)">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteItem(6)">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>7</td>
+                        <td></td>
+                        <td>脱氢乙酸及其钠盐(以脱氢乙酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn" onclick="openEditModal(7)">修改</a>
+                            <a href="#" class="action-btn delete" onclick="deleteItem(7)">删除</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">编辑项目</span>
+                <span class="close" onclick="closeModal('editModal')">&times;</span>
+            </div>
+            <input type="hidden" id="editId">
+            <div class="form-group">
+                <label>检验项目类型:</label>
+                <input type="text" id="editType" placeholder="请输入检验项目类型">
+            </div>
+            <div class="form-group">
+                <label>项目名称:</label>
+                <input type="text" id="editName" placeholder="请输入项目名称">
+            </div>
+            <div class="form-group">
+                <label>别名:</label>
+                <input type="text" id="editAlias" placeholder="请输入别名">
+            </div>
+            <div class="form-group">
+                <label>项目说明及要求:</label>
+                <div class="rich-text-editor-container">
+                    <div class="rich-text-toolbar">
+                        <button class="toolbar-button" onclick="document.execCommand('bold', false, null)"><b>B</b></button>
+                        <button class="toolbar-button" onclick="document.execCommand('italic', false, null)"><i>I</i></button>
+                        <button class="toolbar-button" onclick="document.execCommand('underline', false, null)"><u>U</u></button>
+                        <button class="toolbar-button" onclick="document.execCommand('strikeThrough', false, null)"><s>S</s></button>
+                        <select class="toolbar-select" onchange="document.execCommand('fontSize', false, this.value)">
+                            <option value="1">12</option>
+                            <option value="2">14</option>
+                            <option value="3" selected>16</option>
+                            <option value="4">18</option>
+                            <option value="5">24</option>
+                            <option value="6">32</option>
+                            <option value="7">48</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('fontName', false, this.value)">
+                            <option value="Arial">Arial</option>
+                            <option value="Helvetica" selected>Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('foreColor', false, this.value)">
+                            <option value="#000000" selected>黑色</option>
+                            <option value="#FF0000">红色</option>
+                            <option value="#0000FF">蓝色</option>
+                            <option value="#008000">绿色</option>
+                        </select>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyLeft', false, null)">左对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyCenter', false, null)">居中</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyRight', false, null)">右对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertOrderedList', false, null)">序号</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertUnorderedList', false, null)">项目</button>
+                        <button class="toolbar-button" onclick="document.execCommand('indent', false, null)">增加缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('outdent', false, null)">减少缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertHorizontalRule', false, null)">水平线</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertImage', false, prompt('请输入图片URL:'))">图片</button>
+                        <button class="toolbar-button" onclick="document.execCommand('createLink', false, prompt('请输入链接URL:'))">链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('unlink', false, null)">取消链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('removeFormat', false, null)">清除格式</button>
+                        <button class="toolbar-button" onclick="document.execCommand('code', false, null)">&lt;/&gt;</button>
+                        <button class="toolbar-button" onclick="alert('富文本编辑器使用帮助')">?</button>
+                    </div>
+                    <div class="rich-text-editor" contenteditable="true" id="editDescription"></div>
+                </div>
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="addTypeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">添加项目类别标记</span>
+                <span class="close" onclick="closeModal('addTypeModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>项目类别名称:</label>
+                <input type="text" placeholder="请输入项目类别名称">
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('addTypeModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveType()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="addProjectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">添加项目</span>
+                <span class="close" onclick="closeModal('addProjectModal')">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>检验项目类型:</label>
+                <input type="text" id="addProjectType" placeholder="请输入检验项目类型">
+            </div>
+            <div class="form-group">
+                <label>项目名称:</label>
+                <input type="text" id="addProjectName" placeholder="请输入项目名称">
+            </div>
+            <div class="form-group">
+                <label>别名:</label>
+                <input type="text" id="addProjectAlias" placeholder="请输入别名">
+            </div>
+            <div class="form-group">
+                <label>项目说明及要求:</label>
+                <div class="rich-text-editor-container">
+                    <div class="rich-text-toolbar">
+                        <button class="toolbar-button" onclick="document.execCommand('bold', false, null)"><b>B</b></button>
+                        <button class="toolbar-button" onclick="document.execCommand('italic', false, null)"><i>I</i></button>
+                        <button class="toolbar-button" onclick="document.execCommand('underline', false, null)"><u>U</u></button>
+                        <button class="toolbar-button" onclick="document.execCommand('strikeThrough', false, null)"><s>S</s></button>
+                        <select class="toolbar-select" onchange="document.execCommand('fontSize', false, this.value)">
+                            <option value="1">12</option>
+                            <option value="2">14</option>
+                            <option value="3" selected>16</option>
+                            <option value="4">18</option>
+                            <option value="5">24</option>
+                            <option value="6">32</option>
+                            <option value="7">48</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('fontName', false, this.value)">
+                            <option value="Arial">Arial</option>
+                            <option value="Helvetica" selected>Helvetica</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                        </select>
+                        <select class="toolbar-select" onchange="document.execCommand('foreColor', false, this.value)">
+                            <option value="#000000" selected>黑色</option>
+                            <option value="#FF0000">红色</option>
+                            <option value="#0000FF">蓝色</option>
+                            <option value="#008000">绿色</option>
+                        </select>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyLeft', false, null)">左对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyCenter', false, null)">居中</button>
+                        <button class="toolbar-button" onclick="document.execCommand('justifyRight', false, null)">右对齐</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertOrderedList', false, null)">序号</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertUnorderedList', false, null)">项目</button>
+                        <button class="toolbar-button" onclick="document.execCommand('indent', false, null)">增加缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('outdent', false, null)">减少缩进</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertHorizontalRule', false, null)">水平线</button>
+                        <button class="toolbar-button" onclick="document.execCommand('insertImage', false, prompt('请输入图片URL:'))">图片</button>
+                        <button class="toolbar-button" onclick="document.execCommand('createLink', false, prompt('请输入链接URL:'))">链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('unlink', false, null)">取消链接</button>
+                        <button class="toolbar-button" onclick="document.execCommand('removeFormat', false, null)">清除格式</button>
+                        <button class="toolbar-button" onclick="document.execCommand('code', false, null)">&lt;/&gt;</button>
+                        <button class="toolbar-button" onclick="alert('富文本编辑器使用帮助')">?</button>
+                    </div>
+                    <div class="rich-text-editor" contenteditable="true" id="addProjectDescription"></div>
+                </div>
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeModal('addProjectModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveProject()">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function openEditModal(id) {
+            document.getElementById('editModal').style.display = 'block';
+            document.getElementById('editId').value = id;
+        }
+        
+        function saveEdit() {
+            const id = document.getElementById('editId').value;
+            const type = document.getElementById('editType').value;
+            const name = document.getElementById('editName').value;
+            const alias = document.getElementById('editAlias').value;
+            const description = document.getElementById('editDescription').innerHTML;
+            
+            if (name) {
+                alert('项目更新成功！');
+                closeModal('editModal');
+            } else {
+                alert('请输入项目名称');
+            }
+        }
+        
+        function deleteItem(id) {
+            if (confirm('确定要删除该项目吗？')) {
+                alert('项目删除成功！');
+            }
+        }
+        
+        function openAddTypeModal() {
+            document.getElementById('addTypeModal').style.display = 'block';
+        }
+        
+        function saveType() {
+            alert('项目类别标记添加成功！');
+            closeModal('addTypeModal');
+        }
+        
+        function openAddProjectModal() {
+            document.getElementById('addProjectModal').style.display = 'block';
+        }
+        
+        function saveProject() {
+            const type = document.getElementById('addProjectType').value;
+            const name = document.getElementById('addProjectName').value;
+            const alias = document.getElementById('addProjectAlias').value;
+            const description = document.getElementById('addProjectDescription').innerHTML;
+            
+            if (name) {
+                alert('项目添加成功！');
+                closeModal('addProjectModal');
+            } else {
+                alert('请输入项目名称');
+            }
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            const modals = document.getElementsByClassName('modal');
+            for (let i = 0; i < modals.length; i++) {
+                if (event.target === modals[i]) {
+                    modals[i].style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

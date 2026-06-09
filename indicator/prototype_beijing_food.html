@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北京市食品安全全链条数字化平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: linear-gradient(90deg, #e8f8f0 0%, #f5faf7 100%);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ==================== 侧边栏样式 ==================== */
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(180deg, #1e9a6c 0%, #2daf7f 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            flex: 1;
+            padding: 10px 0;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 2px;
+        }
+
+        .sidebar-menu li a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s;
+            gap: 10px;
+        }
+
+        .sidebar-menu li a:hover,
+        .sidebar-menu li.active a {
+            background: rgba(255,255,255,0.2);
+            border-left: 3px solid white;
+        }
+
+        .sidebar-menu li .submenu {
+            display: none;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .sidebar-menu li .submenu li a {
+            padding-left: 40px;
+            font-size: 13px;
+        }
+
+        .sidebar-menu li.has-submenu > a::after {
+            content: '▶';
+            font-size: 10px;
+            margin-left: auto;
+            transform: rotate(-90deg);
+        }
+
+        .sidebar-menu li.active > a::after {
+            transform: rotate(0deg);
+        }
+
+        /* ==================== 主内容区样式 ==================== */
+        .main-content {
+            flex: 1;
+            margin-left: 220px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e9a6c;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e8f8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .header-icon:hover {
+            background: #d4eedc;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        /* ==================== 标签页容器样式 ==================== */
+        .tabs-container {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 5px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e8f8f0;
+            background: #fafdfb;
+        }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #e8f8f0;
+            border-radius: 4px 4px 0 0;
+            font-size: 14px;
+            color: #1e9a6c;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            font-weight: bold;
+        }
+
+        .tab-close {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .tab-close:hover {
+            color: #ff4d4f;
+        }
+
+        .tabs-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-action {
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            padding: 8px 12px;
+        }
+
+        .tab-action:hover {
+            color: #1e9a6c;
+        }
+
+        /* ==================== 搜索面板样式 ==================== */
+        .search-panel {
+            padding: 15px;
+            border-bottom: 1px solid #e8f8f0;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-item label {
+            font-size: 14px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .search-item input,
+        .search-item select {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 180px;
+        }
+
+        .search-item select {
+            min-width: 150px;
+        }
+
+        .search-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        /* ==================== 按钮样式 ==================== */
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: #1e9a6c;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2daf7f;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #d9d9d9;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .mark-btn {
+            padding: 4px 10px;
+            border: 1px solid #1e9a6c;
+            background: white;
+            color: #1e9a6c;
+            border-radius: 3px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .mark-btn:hover {
+            background: #e8f8f0;
+        }
+
+        /* ==================== 表格样式 ==================== */
+        .table-panel {
+            padding: 15px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #e8f8f0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f5f2;
+            font-size: 13px;
+        }
+
+        th {
+            background: #fafdfb;
+            font-weight: bold;
+            color: #333;
+        }
+
+        td {
+            color: #666;
+        }
+
+        tr:hover {
+            background: #fafdfb;
+        }
+
+        .checkbox-cell input {
+            width: 16px;
+            height: 16px;
+        }
+
+        .action-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-link {
+            color: #1e9a6c;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+
+        /* ==================== 分页样式 ==================== */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #fafdfb;
+            border-top: 1px solid #e8f8f0;
+        }
+
+        .pagination-info {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .pagination-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pagination-nav button {
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            background: white;
+            border-radius: 3px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .pagination-nav button:hover:not(:disabled) {
+            border-color: #1e9a6c;
+            color: #1e9a6c;
+        }
+
+        .pagination-nav button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-nav button.active {
+            background: #1e9a6c;
+            color: white;
+            border-color: #1e9a6c;
+        }
+
+        .pagination-select {
+            padding: 4px 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+
+        .expand-btn {
+            font-size: 13px;
+            color: #1e9a6c;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .expand-btn:hover {
+            text-decoration: underline;
+        }
+
+        .icon {
+            font-size: 14px;
+        }
+
+        /* ==================== 弹窗样式 ==================== */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 50px;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .modal-close {
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 12px 24px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* ==================== 表单样式 ==================== */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: inline-block;
+            width: 120px;
+            text-align: right;
+            margin-right: 12px;
+            color: #333;
+        }
+
+        .form-control {
+            width: calc(100% - 145px);
+            padding: 6px 11px;
+            border: 1px solid #d9d9d9;
+            border-radius: 2px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #1e9a6c;
+        }
+
+        textarea.form-control {
+            height: 70px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">🛡️</div>
+            <div class="sidebar-title">食品安全追溯</div>
+        </div>
+        <ul class="sidebar-menu" id="sidebarMenu">
+            <li>
+                <a href="#数据统计">
+                    <span class="icon">📈</span>
+                    <span>数据统计</span>
+                </a>
+            </li>
+            <li>
+                <a href="#异常标记">
+                    <span class="icon">⚠️</span>
+                    <span>异常标记</span>
+                </a>
+            </li>
+            <li>
+                <a href="#抽样检验">
+                    <span class="icon">🔬</span>
+                    <span>抽样检验</span>
+                </a>
+            </li>
+            <li data-page="fee">
+                <a href="#检验费管理" onclick="showPage('fee')">
+                    <span class="icon">💰</span>
+                    <span>检验费管理</span>
+                </a>
+            </li>
+            <li data-page="sample">
+                <a href="#样本费管理" onclick="showPage('sample')">
+                    <span class="icon">🧪</span>
+                    <span>样本费管理</span>
+                </a>
+            </li>
+            <li data-page="package">
+                <a href="#打包价管理" onclick="showPage('package')">
+                    <span class="icon">📦</span>
+                    <span>打包价管理</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="header">
+            <div class="header-title">北京市食品安全全链条数字化平台</div>
+            <div class="header-right">
+                <div class="header-icon" title="首页">🏠</div>
+                <div class="header-icon" title="设置">⚙️</div>
+                <div class="header-icon" title="通知">🔔</div>
+                <div class="header-user">
+                    <span>admin</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 市场信息查询页面 -->
+        <div id="marketPage" class="content">
+            <div class="tabs-container">
+                <div class="tabs-header">
+                    <div class="tab active">
+                        <span>市场信息查询</span>
+                        <span class="tab-close">×</span>
+                    </div>
+                    <div class="tab">
+                        <span>商户信息查询</span>
+                        <span class="tab-close">×</span>
+                    </div>
+                    <div class="tab">
+                        <span>交易信息查询</span>
+                        <span class="tab-close">×</span>
+                    </div>
+                    <div class="tabs-actions">
+                        <span class="tab-action">关闭全部</span>
+                        <span class="tab-action">关闭其他</span>
+                    </div>
+                </div>
+
+                <div class="search-panel">
+                    <div class="search-row">
+                        <div class="search-item">
+                            <label>市场名称:</label>
+                            <input type="text" placeholder="请输入">
+                        </div>
+                        <div class="search-item">
+                            <label>统一社会信用代码:</label>
+                            <input type="text" placeholder="请输入统一社会信用代码">
+                        </div>
+                        <div class="search-item">
+                            <label>地址:</label>
+                            <input type="text" placeholder="请输入地址">
+                        </div>
+                    </div>
+                    <div class="search-row" style="margin-top:10px">
+                        <div class="search-item">
+                            <label>市场类型:</label>
+                            <select>
+                                <option value="">请输入</option>
+                                <option value="1">零售市场</option>
+                                <option value="2">批发市场</option>
+                                <option value="3">农贸市场</option>
+                            </select>
+                        </div>
+                        <div class="search-item">
+                            <label>生产企业(发货方):</label>
+                            <input type="text" placeholder="请输入生产企业(发货方)">
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary">
+                                <span>🔍</span>
+                                <span>查询</span>
+                            </button>
+                            <button class="btn btn-secondary">
+                                <span>↻</span>
+                                <span>重置</span>
+                            </button>
+                            <span class="expand-btn">
+                                <span>展开</span>
+                                <span>▼</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-panel">
+                    <div class="table-header">
+                        <button class="mark-btn">
+                            <span>📌</span>
+                            <span>标记</span>
+                        </button>
+                        <div class="table-actions">
+                            <button class="btn btn-secondary">查询配置</button>
+                            <button class="btn btn-secondary">表格配置</button>
+                            <button class="btn btn-primary">
+                                <span>📥</span>
+                                <span>导出</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table id="marketTable">
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-cell"><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+                                    <th>序号</th>
+                                    <th>市场名称</th>
+                                    <th>统一社会信用代码</th>
+                                    <th>地址</th>
+                                    <th>市场类型</th>
+                                    <th>商户数量</th>
+                                    <th>已确认/进场报备总数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="marketTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination" id="marketPagination"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 检验费管理页面 -->
+        <div id="feePage" class="content" style="display:none"></div>
+
+        <!-- 样本费管理页面 -->
+        <div id="samplePage" class="content" style="display:none"></div>
+
+        <!-- 打包价管理页面 -->
+        <div id="packagePage" class="content" style="display:none"></div>
+    </div>
+
+    <!-- 检验费管理-新增弹窗 -->
+    <div id="feeAddModal" class="modal" style="display:none">
+        <div class="modal-content" style="width:750px;">
+            <div class="modal-header">
+                <div class="modal-title">新增</div>
+                <div class="modal-close" onclick="closeModal('feeAddModal')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>报送分类2:</label>
+                    <input type="text" class="form-control" placeholder="请输入">
+                </div>
+                <div class="form-group">
+                    <label><span style="color:#ff4d4f;margin-right:4px;">*</span>检验项目名称:</label>
+                    <select class="form-control">
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>检验依据:</label>
+                    <input type="text" class="form-control" placeholder="请输入">
+                </div>
+                <div class="form-group">
+                    <label><span style="color:#ff4d4f;margin-right:4px;">*</span>单价(元)::</label>
+                    <input type="number" class="form-control" placeholder="请输入">
+                </div>
+                <div class="form-group">
+                    <label><span style="color:#ff4d4f;margin-right:4px;">*</span>年份:</label>
+                    <input type="number" class="form-control" placeholder="请选择年份" min="2000" max="2099">
+                </div>
+                <div class="form-group">
+                    <label>备注:</label>
+                    <textarea class="form-control" placeholder="请输入"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('feeAddModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAdd('fee')">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 数据配置 ====================
+        const DataConfig = {
+            // 市场信息数据
+            market: {
+                columns: ['checkbox', 'index', 'marketName', 'creditCode', 'address', 'marketType', 'merchantCount', 'reportCount', 'actions'],
+                headers: ['序号', '市场名称', '统一社会信用代码', '地址', '市场类型', '商户数量', '已确认/进场报备总数', '操作'],
+                data: []
+            },
+            // 检验费管理数据
+            fee: {
+                columns: ['checkbox', 'index', 'category2', 'itemName', 'testStandard', 'price', 'year', 'remark', 'actions'],
+                headers: ['序号', '报送分类2', '检验项目名称', '检验依据', '单价(元)', '年份', '备注', '操作'],
+                data: [],
+                searchFields: ['category2', 'itemName', 'year'],
+                toolbarBtns: ['exportCurrent', 'export', 'import', 'downloadTemplate', 'add'],
+                addFields: ['category2', 'itemName', 'testStandard', 'price', 'year', 'remark']
+            },
+            // 样本费管理数据
+            sample: {
+                columns: ['checkbox', 'index', 'category2', 'foodLevel1', 'foodLevel2', 'foodLevel3', 'foodLevel4', 'price', 'year', 'actions'],
+                headers: ['序号', '报送分类2', '食品大类(一级)', '食品亚类(二级)', '食品次亚类(三级)', '食品细类(四级)', '单价(元)', '年份', '操作'],
+                data: [],
+                searchFields: ['category2', 'foodLevel1', 'foodLevel2', 'foodLevel3', 'foodLevel4', 'year'],
+                toolbarBtns: ['exportCurrent', 'export', 'import', 'downloadTemplate', 'add'],
+                addFields: ['category2', 'foodLevel1', 'foodLevel2', 'foodLevel3', 'foodLevel4', 'price', 'year', 'remark']
+            },
+            // 打包价管理数据
+            package: {
+                columns: ['checkbox', 'index', 'packageName', 'includedItems', 'originalPrice', 'packagePrice', 'applicableType', 'status', 'actions'],
+                headers: ['序号', '套餐名称', '包含项目', '原价(元)', '打包价(元)', '适用类型', '状态', '操作'],
+                data: [],
+                searchFields: ['packageName', 'applicableType', 'status'],
+                toolbarBtns: ['exportCurrent', 'export', 'import', 'downloadTemplate', 'add'],
+                addFields: ['packageName', 'includedItems', 'originalPrice', 'packagePrice', 'applicableType', 'status', 'remark']
+            }
+        };
+
+        // ==================== 页面模板配置 ====================
+        const PageTemplates = {
+            // 检验费管理页面模板
+            fee: `
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <div class="tab active">
+                            <span>检验费管理</span>
+                            <span class="tab-close">×</span>
+                        </div>
+                        <div class="tabs-actions">
+                            <span class="tab-action">关闭全部</span>
+                        </div>
+                    </div>
+
+                    <div class="search-panel">
+                        <div class="search-row">
+                            <div class="search-item">
+                                <label>报送分类2:</label>
+                                <input type="text" placeholder="请输入">
+                            </div>
+                            <div class="search-item">
+                                <label>检验项目名称:</label>
+                                <input type="text" placeholder="请输入">
+                            </div>
+                            <div class="search-item">
+                                <label>年份:</label>
+                                <select style="min-width:120px">
+                                    <option value="">请选择</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                </select>
+                            </div>
+                            <div class="search-actions">
+                                <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
+                                <button class="btn btn-primary" onclick="handleSearch('fee')">查询</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-panel">
+                        <div class="table-header">
+                            <div style="display:flex;gap:10px">
+                                <button class="btn btn-secondary">导出本页</button>
+                                <button class="btn btn-secondary">导出</button>
+                                <button class="btn btn-secondary">导入</button>
+                                <button class="btn btn-secondary">下载模板</button>
+                                <button class="btn btn-primary" onclick="openModal('feeAddModal')">+ 新增</button>
+                            </div>
+                            <div class="table-actions">
+                                <button class="btn btn-secondary">查询配置</button>
+                                <button class="btn btn-secondary">表格配置</button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="feeTable">
+                                <thead>
+                                    <tr>
+                                        <th class="checkbox-cell"><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+                                        <th>序号</th>
+                                        <th>报送分类2</th>
+                                        <th>检验项目名称</th>
+                                        <th>检验依据</th>
+                                        <th>单价(元)</th>
+                                        <th>年份</th>
+                                        <th>备注</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="feeTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination" id="feePagination"></div>
+                    </div>
+                </div>
+            `,
+
+            // 样本费管理页面模板
+            sample: `
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <div class="tab active">
+                            <span>样本费管理</span>
+                            <span class="tab-close">×</span>
+                        </div>
+                        <div class="tabs-actions">
+                            <span class="tab-action">关闭全部</span>
+                        </div>
+                    </div>
+
+                    <div class="search-panel">
+                        <div class="search-row" style="display:flex;flex-wrap:wrap;gap:15px;">
+                            <div class="search-item">
+                                <label>报送分类2:</label>
+                                <input type="text" placeholder="请输入">
+                            </div>
+                            <div class="search-item">
+                                <label>食品大类(一级):</label>
+                                <select>
+                                    <option value="">请选择</option>
+                                </select>
+                            </div>
+                            <div class="search-item">
+                                <label>食品亚类(二级):</label>
+                                <select>
+                                    <option value="">请选择</option>
+                                </select>
+                            </div>
+                            <div class="search-actions" style="margin-left:auto;">
+                                <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
+                                <button class="btn btn-primary" onclick="handleSearch('sample')">查询</button>
+                            </div>
+                        </div>
+                        <div class="search-row" style="display:flex;flex-wrap:wrap;gap:15px;margin-top:15px;">
+                            <div class="search-item">
+                                <label>食品次亚类(三级):</label>
+                                <select>
+                                    <option value="">请选择</option>
+                                </select>
+                            </div>
+                            <div class="search-item">
+                                <label>食品细类(四级):</label>
+                                <select>
+                                    <option value="">请选择</option>
+                                </select>
+                            </div>
+                            <div class="search-item">
+                                <label>年份:</label>
+                                <input type="number" placeholder="请选择" min="2000" max="2099">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-panel">
+                        <div class="table-header">
+                            <div style="display:flex;gap:10px">
+                                <button class="btn btn-primary" style="background:#1e9a6c;">导出本页</button>
+                                <button class="btn btn-primary" style="background:#1e9a6c;">导出</button>
+                                <button class="btn btn-secondary">导入</button>
+                                <button class="btn btn-secondary">下载模板</button>
+                                <button class="btn btn-primary">+ 新增</button>
+                            </div>
+                            <div class="table-actions">
+                                <button class="btn btn-secondary">查询配置</button>
+                                <button class="btn btn-secondary">表格配置</button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="sampleTable">
+                                <thead>
+                                    <tr>
+                                        <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
+                                        <th>序号</th>
+                                        <th>报送分类2</th>
+                                        <th>食品大类(一级)</th>
+                                        <th>食品亚类(二级)</th>
+                                        <th>食品次亚类(三级)</th>
+                                        <th>食品细类(四级)</th>
+                                        <th>单价(元)</th>
+                                        <th>年份</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sampleTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination" id="samplePagination"></div>
+                    </div>
+                </div>
+            `,
+
+            // 打包价管理页面模板
+            package: `
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <div class="tab active">
+                            <span>打包价管理</span>
+                            <span class="tab-close">×</span>
+                        </div>
+                        <div class="tabs-actions">
+                            <span class="tab-action">关闭全部</span>
+                        </div>
+                    </div>
+
+                    <div class="search-panel">
+                        <div class="search-row">
+                            <div class="search-item">
+                                <label>套餐名称:</label>
+                                <input type="text" placeholder="请输入套餐名称">
+                            </div>
+                            <div class="search-item">
+                                <label>适用类型:</label>
+                                <select>
+                                    <option value="">全部</option>
+                                    <option value="1">企业送检</option>
+                                    <option value="2">政府抽检</option>
+                                    <option value="3">个人送检</option>
+                                </select>
+                            </div>
+                            <div class="search-item">
+                                <label>状态:</label>
+                                <select>
+                                    <option value="">全部</option>
+                                    <option value="1">启用</option>
+                                    <option value="2">停用</option>
+                                </select>
+                            </div>
+                            <div class="search-actions">
+                                <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
+                                <button class="btn btn-primary" onclick="handleSearch('package')">查询</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-panel">
+                        <div class="table-header">
+                            <button class="btn btn-primary">
+                                <span>+</span>
+                                <span>新增打包价</span>
+                            </button>
+                            <div class="table-actions">
+                                <button class="btn btn-secondary">查询配置</button>
+                                <button class="btn btn-secondary">表格配置</button>
+                                <button class="btn btn-primary">
+                                    <span>📥</span>
+                                    <span>导出</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="packageTable">
+                                <thead>
+                                    <tr>
+                                        <th class="checkbox-cell"><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
+                                        <th>序号</th>
+                                        <th>套餐名称</th>
+                                        <th>包含项目</th>
+                                        <th>原价(元)</th>
+                                        <th>打包价(元)</th>
+                                        <th>适用类型</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="packageTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination" id="packagePagination"></div>
+                    </div>
+                </div>
+            `
+        };
+
+        // ==================== 分页模板 ====================
+        const PaginationTemplate = {
+            render: function(pageType, currentPage, totalPages, totalCount, selectedCount = 0) {
+                let pageButtons = '';
+                const maxVisiblePages = 7;
+
+                if (totalPages <= maxVisiblePages) {
+                    for (let i = 1; i <= totalPages; i++) {
+                        pageButtons += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage('${pageType}', ${i})">${i}</button>`;
+                    }
+                } else {
+                    pageButtons += `<button class="${1 === currentPage ? 'active' : ''}" onclick="goToPage('${pageType}', 1)">1</button>`;
+                    if (currentPage > 3) {
+                        pageButtons += '<span>...</span>';
+                    }
+                    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+                        pageButtons += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage('${pageType}', ${i})">${i}</button>`;
+                    }
+                    if (currentPage < totalPages - 2) {
+                        pageButtons += '<span>...</span>';
+                    }
+                    pageButtons += `<button onclick="goToPage('${pageType}', ${totalPages})">${totalPages}</button>`;
+                }
+
+                return `
+                    <div class="pagination-info">已选择 ${selectedCount} 项 本页 ${10} 条 共有 ${totalCount} 条</div>
+                    <div class="pagination-nav">
+                        <select class="pagination-select" onchange="changePageSize('${pageType}', this.value)">
+                            <option>10条/页</option>
+                            <option>20条/页</option>
+                            <option>50条/页</option>
+                        </select>
+                        <button ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage('${pageType}', ${currentPage - 1})">◀</button>
+                        ${pageButtons}
+                        <button ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage('${pageType}', ${currentPage + 1})">▶</button>
+                        <span style="margin-left:10px">跳转至</span>
+                        <input type="text" style="width:50px;padding:4px;border:1px solid #d9d9d9;border-radius:3px;" onkeypress="handlePageInput(event, '${pageType}')">
+                    </div>
+                `;
+            }
+        };
+
+        // ==================== 工具函数 ====================
+        const Utils = {
+            // 生成唯一ID
+            generateId: function() {
+                return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            },
+
+            // 防抖函数
+            debounce: function(func, wait) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            },
+
+            // 深拷贝
+            deepClone: function(obj) {
+                return JSON.parse(JSON.stringify(obj));
+            }
+        };
+
+        // ==================== 模拟数据生成 ====================
+        const MockDataGenerator = {
+            // 生成检验费管理数据
+            generateFeeData: function(count = 10) {
+                const items = ['盐酸二甲双胍', '育亨宾', '吗啡', '依他尼酸', '依诺沙星', '斯利司他', '西替利嗪', '胰乙酰化可的松', '托吡酯', '帕罗西汀'];
+                const data = [];
+                for (let i = 0; i < count; i++) {
+                    data.push({
+                        id: Utils.generateId(),
+                        category2: '',
+                        itemName: items[i % items.length],
+                        testStandard: '',
+                        price: 400,
+                        year: 2025,
+                        remark: ''
+                    });
+                }
+                return data;
+            },
+
+            // 生成样本费管理数据
+            generateSampleData: function(count = 10) {
+                const foodTypes = [
+                    { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '幼儿配方食品', level4: '幼儿配方食品' },
+                    { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '婴儿配方食品', level4: '乳基婴儿配方食品、豆基婴儿配方食品' },
+                    { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '较大婴儿配方食品', level4: '乳基较大婴儿配方食品、豆基较大婴儿配方食品' },
+                    { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '特定全营养配方食品' },
+                    { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '全营养配方食品' },
+                    { level1: '特殊膳食食品', level2: '营养补充品', level3: '营养补充品', level4: '运动营养食品' }
+                ];
+                const data = [];
+                for (let i = 0; i < count; i++) {
+                    const food = foodTypes[i % foodTypes.length];
+                    data.push({
+                        id: Utils.generateId(),
+                        category2: '',
+                        foodLevel1: food.level1,
+                        foodLevel2: food.level2,
+                        foodLevel3: food.level3,
+                        foodLevel4: food.level4,
+                        price: i % 3 === 0 ? 2000 : 1800,
+                        year: 2025
+                    });
+                }
+                return data;
+            },
+
+            // 生成打包价管理数据
+            generatePackageData: function(count = 10) {
+                const packages = [
+                    { name: '食品常规检测套餐', items: '蛋白质、脂肪、酸度...', original: 200, package: 160, type: '企业送检' },
+                    { name: '食品安全专项套餐', items: '重金属、微生物、添加剂...', original: 500, package: 400, type: '政府抽检' },
+                    { name: '快速检测套餐', items: '农药残留、兽药残留...', original: 300, package: 240, type: '个人送检' }
+                ];
+                const data = [];
+                for (let i = 0; i < count; i++) {
+                    const pkg = packages[i % packages.length];
+                    data.push({
+                        id: Utils.generateId(),
+                        packageName: pkg.name,
+                        includedItems: pkg.items,
+                        originalPrice: pkg.original,
+                        packagePrice: pkg.package,
+                        applicableType: pkg.type,
+                        status: i % 3 === 0 ? '停用' : '启用'
+                    });
+                }
+                return data;
+            },
+
+            // 生成市场信息数据
+            generateMarketData: function(count = 10) {
+                const markets = ['北京丰富农贸市场有限', '北京民源福农贸市场', '北京万发恒顺农贸市场', '北京市鑫绿都农副产品', '北京市测试'];
+                const types = ['零售市场', '批发市场', '农贸市场'];
+                const data = [];
+                for (let i = 0; i < count; i++) {
+                    data.push({
+                        id: Utils.generateId(),
+                        marketName: markets[i % markets.length] + '...',
+                        creditCode: '9111022845223...',
+                        address: '北京市密云区溪翁庄镇...',
+                        marketType: types[i % types.length],
+                        merchantCount: Math.floor(Math.random() * 10) + 1,
+                        reportCount: '260/270'
+                    });
+                }
+                return data;
+            }
+        };
+
+        // ==================== 表格渲染器 ====================
+        const TableRenderer = {
+            renderTable: function(pageType, data, containerId) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                let html = '';
+                data.forEach((item, index) => {
+                    html += '<tr>';
+                    html += `<td class="checkbox-cell"><input type="checkbox" data-id="${item.id}"></td>`;
+                    html += `<td>${index + 1}</td>`;
+
+                    if (pageType === 'fee') {
+                        html += `<td>${item.category2 || ''}</td>`;
+                        html += `<td>${item.itemName}</td>`;
+                        html += `<td>${item.testStandard || ''}</td>`;
+                        html += `<td>${item.price}</td>`;
+                        html += `<td>${item.year}</td>`;
+                        html += `<td>${item.remark || ''}</td>`;
+                    } else if (pageType === 'sample') {
+                        html += `<td>${item.category2 || ''}</td>`;
+                        html += `<td>${item.foodLevel1}</td>`;
+                        html += `<td>${item.foodLevel2}</td>`;
+                        html += `<td>${item.foodLevel3}</td>`;
+                        html += `<td>${item.foodLevel4}</td>`;
+                        html += `<td>${item.price}</td>`;
+                        html += `<td>${item.year}</td>`;
+                    } else if (pageType === 'package') {
+                        html += `<td>${item.packageName}</td>`;
+                        html += `<td>${item.includedItems}</td>`;
+                        html += `<td>${item.originalPrice}.00</td>`;
+                        html += `<td>${item.packagePrice}.00</td>`;
+                        html += `<td>${item.applicableType}</td>`;
+                        html += `<td><span class="status ${item.status === '启用' ? 'pass' : 'fail'}">${item.status}</span></td>`;
+                    } else if (pageType === 'market') {
+                        html += `<td>${item.marketName}</td>`;
+                        html += `<td>${item.creditCode}</td>`;
+                        html += `<td>${item.address}</td>`;
+                        html += `<td>${item.marketType}</td>`;
+                        html += `<td>${item.merchantCount}</td>`;
+                        html += `<td>${item.reportCount}</td>`;
+                    }
+
+                    html += '<td><div class="action-links">';
+                    html += `<a href="#" class="action-link" onclick="handleEdit('${pageType}', '${item.id}')">编辑</a>`;
+                    html += `<a href="#" class="action-link" onclick="handleDelete('${pageType}', '${item.id}')">删除</a>`;
+                    if (pageType === 'market') {
+                        html += '<a href="#" class="action-link">标记</a>';
+                        html += '<a href="#" class="action-link">标记历史</a>';
+                    }
+                    html += '</div></td></tr>';
+                });
+
+                container.innerHTML = html;
+            }
+        };
+
+        // ==================== 页面管理 ====================
+        const PageManager = {
+            currentPage: {
+                fee: 1,
+                sample: 1,
+                package: 1,
+                market: 1
+            },
+            pageSize: {
+                fee: 10,
+                sample: 10,
+                package: 10,
+                market: 10
+            },
+
+            init: function() {
+                // 初始化各页面的模拟数据
+                DataConfig.fee.data = MockDataGenerator.generateFeeData(994);
+                DataConfig.sample.data = MockDataGenerator.generateSampleData(463);
+                DataConfig.package.data = MockDataGenerator.generatePackageData(30);
+                DataConfig.market.data = MockDataGenerator.generateMarketData(50);
+
+                // 渲染各页面
+                document.getElementById('feePage').innerHTML = PageTemplates.fee;
+                document.getElementById('samplePage').innerHTML = PageTemplates.sample;
+                document.getElementById('packagePage').innerHTML = PageTemplates.package;
+
+                // 渲染初始表格
+                this.renderTable('fee');
+                this.renderTable('sample');
+                this.renderTable('package');
+                this.renderTable('market');
+
+                // 渲染分页
+                this.renderPagination('fee');
+                this.renderPagination('sample');
+                this.renderPagination('package');
+                this.renderPagination('market');
+            },
+
+            showPage: function(pageType) {
+                // 隐藏所有内容页面
+                document.querySelectorAll('.content').forEach(el => el.style.display = 'none');
+
+                // 显示指定页面
+                const pageEl = document.getElementById(pageType + 'Page');
+                if (pageEl) {
+                    pageEl.style.display = 'block';
+                }
+
+                // 更新侧边栏菜单状态
+                document.querySelectorAll('.sidebar-menu li').forEach(li => {
+                    li.classList.remove('active');
+                    if (li.dataset.page === pageType) {
+                        li.classList.add('active');
+                    }
+                });
+
+                // 如果页面未初始化，先初始化
+                const pageContent = pageEl.innerHTML.trim();
+                if (!pageContent && PageTemplates[pageType]) {
+                    pageEl.innerHTML = PageTemplates[pageType];
+                    this.renderTable(pageType);
+                    this.renderPagination(pageType);
+                }
+            },
+
+            renderTable: function(pageType) {
+                const data = DataConfig[pageType].data;
+                const start = (this.currentPage[pageType] - 1) * this.pageSize[pageType];
+                const end = start + this.pageSize[pageType];
+                const pageData = data.slice(start, end);
+
+                const tbodyId = pageType + 'TableBody';
+                TableRenderer.renderTable(pageType, pageData, tbodyId);
+            },
+
+            renderPagination: function(pageType) {
+                const data = DataConfig[pageType].data;
+                const totalCount = data.length;
+                const totalPages = Math.ceil(totalCount / this.pageSize[pageType]);
+                const paginationEl = document.getElementById(pageType + 'Pagination');
+
+                if (paginationEl) {
+                    paginationEl.outerHTML = PaginationTemplate.render(
+                        pageType,
+                        this.currentPage[pageType],
+                        totalPages,
+                        totalCount
+                    );
+                }
+            },
+
+            goToPage: function(pageType, page) {
+                const data = DataConfig[pageType].data;
+                const totalPages = Math.ceil(data.length / this.pageSize[pageType]);
+
+                if (page < 1 || page > totalPages) return;
+
+                this.currentPage[pageType] = page;
+                this.renderTable(pageType);
+                this.renderPagination(pageType);
+            },
+
+            changePageSize: function(pageType, size) {
+                this.pageSize[pageType] = parseInt(size);
+                this.currentPage[pageType] = 1;
+                this.renderTable(pageType);
+                this.renderPagination(pageType);
+            }
+        };
+
+        // ==================== 全局事件处理函数 ====================
+        function showPage(pageType) {
+            PageManager.showPage(pageType);
+        }
+
+        function goToPage(pageType, page) {
+            PageManager.goToPage(pageType, page);
+        }
+
+        function changePageSize(pageType, size) {
+            PageManager.changePageSize(pageType, size);
+        }
+
+        function handlePageInput(event, pageType) {
+            if (event.key === 'Enter') {
+                const page = parseInt(event.target.value);
+                if (!isNaN(page)) {
+                    PageManager.goToPage(pageType, page);
+                }
+            }
+        }
+
+        function toggleAllCheckboxes(checkbox) {
+            const table = checkbox.closest('table');
+            const checkboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        }
+
+        function handleSearch(pageType) {
+            console.log('搜索:', pageType);
+            PageManager.currentPage[pageType] = 1;
+            PageManager.renderTable(pageType);
+            PageManager.renderPagination(pageType);
+        }
+
+        function resetSearch(btn) {
+            const searchPanel = btn.closest('.search-panel');
+            const inputs = searchPanel.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                if (input.tagName === 'INPUT') {
+                    input.value = '';
+                } else if (input.tagName === 'SELECT') {
+                    input.selectedIndex = 0;
+                }
+            });
+        }
+
+        function handleEdit(pageType, id) {
+            console.log('编辑:', pageType, id);
+        }
+
+        function handleDelete(pageType, id) {
+            if (confirm('确定要删除这条记录吗？')) {
+                const data = DataConfig[pageType].data;
+                const index = data.findIndex(item => item.id === id);
+                if (index > -1) {
+                    data.splice(index, 1);
+                    PageManager.renderTable(pageType);
+                    PageManager.renderPagination(pageType);
+                }
+            }
+        }
+
+        // ==================== 弹窗管理 ====================
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function confirmAdd(pageType) {
+            alert('新增成功！');
+            closeModal(pageType + 'AddModal');
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            PageManager.init();
+        });
+    </script>
+</body>
+</html>

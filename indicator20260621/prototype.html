@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检测项目管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .search-item label {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .search-item input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .config-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: flex-end;
+        }
+        
+        .config-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background-color: #fafafa;
+            font-weight: bold;
+        }
+        
+        .checkbox {
+            width: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            color: #1890ff;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .action-btn:hover {
+            text-decoration: underline;
+        }
+        
+        .action-btn.delete {
+            color: #ff4d4f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 搜索区域 -->
+        <div class="search-section">
+            <div class="search-item">
+                <label>检测项目类别:</label>
+                <input type="text" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <label>检测项目:</label>
+                <input type="text" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <label>相关小知识:</label>
+                <input type="text" placeholder="请输入">
+            </div>
+            <button class="btn btn-secondary">清空</button>
+            <button class="btn btn-primary">查询</button>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="button-group">
+            <button class="btn btn-primary">+ 项目类别标记</button>
+            <button class="btn btn-primary">+ 添加小知识</button>
+        </div>
+        
+        <!-- 配置按钮 -->
+        <div class="config-buttons">
+            <button class="config-btn">查询配置</button>
+            <button class="config-btn">表格配置</button>
+        </div>
+        
+        <!-- 数据表格 -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" class="checkbox"></th>
+                        <th>序号</th>
+                        <th>检测项目类别</th>
+                        <th>检测项目</th>
+                        <th>相关小知识</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>1</td>
+                        <td></td>
+                        <td>铅(以Pb计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn">修改</a>
+                            <a href="#" class="action-btn delete">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>2</td>
+                        <td></td>
+                        <td>山梨酸及其钾盐(以山梨酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn">修改</a>
+                            <a href="#" class="action-btn delete">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>3</td>
+                        <td></td>
+                        <td>苯甲酸及其钠盐(以苯甲酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn">修改</a>
+                            <a href="#" class="action-btn delete">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>4</td>
+                        <td></td>
+                        <td>糖精钠(以糖精计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn">修改</a>
+                            <a href="#" class="action-btn delete">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>5</td>
+                        <td>微生物指标</td>
+                        <td>大肠菌群</td>
+                        <td>大肠菌群是国内外通用的食品污染常用指示菌之一。餐饮具中检出大肠菌群，提示</td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn">修改</a>
+                            <a href="#" class="action-btn delete">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>6</td>
+                        <td>食品添加剂</td>
+                        <td>甜蜜素(以环己基氨基磺酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn">修改</a>
+                            <a href="#" class="action-btn delete">删除</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox" class="checkbox"></td>
+                        <td>7</td>
+                        <td></td>
+                        <td>脱氢乙酸及其钠盐(以脱氢乙酸计)</td>
+                        <td></td>
+                        <td class="action-buttons">
+                            <a href="#" class="action-btn">修改</a>
+                            <a href="#" class="action-btn delete">删除</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -73,8 +73,6 @@
             package: { title: '打包价管理', path: 'pages/package.html' },
             statistics: { title: '抽检项目统计', path: 'pages/statistics.html' },
             analysis: { title: '统计分析', path: 'pages/analysis.html' },
-            analysis_report: { title: '分析报表', path: 'pages/analysis_report.html' },
-            analysis_report_detail: { title: '分析报告', path: 'pages/analysis_report_detail.html' },
             basic_statistics: { title: '基本统计', path: 'pages/basic_statistics.html' },
             report_batch: { title: '工作报表-批次', path: 'pages/report_batch.html' }
         };
@@ -230,15 +228,11 @@
                     <span>打包价管理</span>
                 </a>
             </li>
-            <li class="has-submenu">
-                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+            <li>
+                <a href="javascript:void(0)" onclick="navigateTo('analysis')">
                     <span class="icon">📊</span>
                     <span>统计分析</span>
                 </a>
-                <ul class="submenu">
-                    <li><a href="javascript:void(0)" onclick="navigateTo('analysis_report')">分析报表</a></li>
-                    <li><a href="javascript:void(0)" onclick="navigateTo('analysis_report_detail')">分析报告</a></li>
-                </ul>
             </li>
         </ul>
     </div>

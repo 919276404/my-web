@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>样本费管理</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        body {
+            background: white;
+            margin: 0;
+            padding: 0;
+        }
+
+        .tabs-container {
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 5px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e8f8f0;
+            background: #fafdfb;
+        }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #e8f8f0;
+            border-radius: 4px 4px 0 0;
+            font-size: 14px;
+            color: #1e9a6c;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            font-weight: bold;
+        }
+
+        .tab-close {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .tab-close:hover {
+            color: #ff4d4f;
+        }
+
+        .tabs-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-action {
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            padding: 8px 12px;
+        }
+
+        .tab-action:hover {
+            color: #1e9a6c;
+        }
+
+        .search-panel {
+            padding: 15px;
+            border-bottom: 1px solid #e8f8f0;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-item label {
+            font-size: 14px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .search-item input,
+        .search-item select {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .search-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .table-panel {
+            padding: 15px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #e8f8f0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f5f2;
+            font-size: 13px;
+        }
+
+        th {
+            background: #fafdfb;
+            font-weight: bold;
+            color: #333;
+        }
+
+        td {
+            color: #666;
+        }
+
+        tr:hover {
+            background: #fafdfb;
+        }
+
+        .checkbox-cell input {
+            width: 16px;
+            height: 16px;
+        }
+
+        .action-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .action-link {
+            color: #1e9a6c;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .action-link:hover {
+            text-decoration: underline;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: #fafdfb;
+            border-top: 1px solid #e8f8f0;
+        }
+
+        .pagination-info {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .pagination-nav {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pagination-nav button {
+            padding: 4px 10px;
+            border: 1px solid #d9d9d9;
+            background: white;
+            border-radius: 3px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .pagination-nav button:hover:not(:disabled) {
+            border-color: #1e9a6c;
+            color: #1e9a6c;
+        }
+
+        .pagination-nav button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-nav button.active {
+            background: #1e9a6c;
+            color: white;
+            border-color: #1e9a6c;
+        }
+
+        .pagination-select {
+            padding: 4px 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <div class="tab active">
+                <span>样本费管理</span>
+                <span class="tab-close">×</span>
+            </div>
+            <div class="tabs-actions">
+                <span class="tab-action">关闭全部</span>
+            </div>
+        </div>
+
+        <div class="search-panel">
+            <div class="search-row">
+                <div class="search-item">
+                    <label>报送分类2:</label>
+                    <input type="text" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <label>食品大类(一级):</label>
+                    <select>
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <div class="search-item">
+                    <label>食品亚类(二级):</label>
+                    <select>
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <div class="search-actions">
+                    <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
+                    <button class="btn btn-primary" onclick="handleSearch('sample')">查询</button>
+                </div>
+            </div>
+            <div class="search-row" style="margin-top:15px">
+                <div class="search-item">
+                    <label>食品次亚类(三级):</label>
+                    <select>
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <div class="search-item">
+                    <label>食品细类(四级):</label>
+                    <select>
+                        <option value="">请选择</option>
+                    </select>
+                </div>
+                <div class="search-item">
+                    <label>年份:</label>
+                    <input type="number" placeholder="请选择" min="2000" max="2099">
+                </div>
+            </div>
+        </div>
+
+        <div class="table-panel">
+            <div class="table-header">
+                <div style="display:flex;gap:10px">
+                    <button class="btn btn-primary" style="background:#1e9a6c;">导出本页</button>
+                    <button class="btn btn-primary" style="background:#1e9a6c;">导出</button>
+                    <button class="btn btn-secondary">导入</button>
+                    <button class="btn btn-secondary">下载模板</button>
+                    <button class="btn btn-primary" onclick="openModal('sampleAddModal')">+ 新增</button>
+                </div>
+                <div class="table-actions">
+                    <button class="btn btn-secondary">查询配置</button>
+                    <button class="btn btn-secondary">表格配置</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="sampleTable">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
+                            <th>序号</th>
+                            <th>报送分类2</th>
+                            <th>食品大类(一级)</th>
+                            <th>食品亚类(二级)</th>
+                            <th>食品次亚类(三级)</th>
+                            <th>食品细类(四级)</th>
+                            <th>单价(元)</th>
+                            <th>年份</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="pagination" id="pagination"></div>
+        </div>
+    </div>
+
+    <!-- 新增弹窗 -->
+    <div id="sampleAddModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">新增</div>
+                <div class="modal-close" onclick="closeModal('sampleAddModal')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>报送分类2:</label>
+                    <input type="text" id="category2" placeholder="请输入">
+                </div>
+                <div class="form-group">
+                    <label class="required">食品大类(一级):</label>
+                    <select id="foodLevel1">
+                        <option value="">请选择</option>
+                        <option value="婴幼儿配方食品">婴幼儿配方食品</option>
+                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
+                        <option value="特殊膳食食品">特殊膳食食品</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="required">食品亚类(二级):</label>
+                    <select id="foodLevel2">
+                        <option value="">请选择</option>
+                        <option value="婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)">婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)</option>
+                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
+                        <option value="营养补充品">营养补充品</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="required">食品次亚类(三级):</label>
+                    <select id="foodLevel3">
+                        <option value="">请选择</option>
+                        <option value="幼儿配方食品">幼儿配方食品</option>
+                        <option value="婴儿配方食品">婴儿配方食品</option>
+                        <option value="较大婴儿配方食品">较大婴儿配方食品</option>
+                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
+                        <option value="营养补充品">营养补充品</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="required">食品细类(四级):</label>
+                    <select id="foodLevel4">
+                        <option value="">请选择</option>
+                        <option value="幼儿配方食品">幼儿配方食品</option>
+                        <option value="乳基婴儿配方食品、豆基婴儿配方食品">乳基婴儿配方食品、豆基婴儿配方食品</option>
+                        <option value="乳基较大婴儿配方食品、豆基较大婴儿配方食品">乳基较大婴儿配方食品、豆基较大婴儿配方食品</option>
+                        <option value="特定全营养配方食品">特定全营养配方食品</option>
+                        <option value="全营养配方食品">全营养配方食品</option>
+                        <option value="运动营养食品">运动营养食品</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="required">单价(元):</label>
+                    <select id="price">
+                        <option value="">请选择</option>
+                        <option value="1800">1800</option>
+                        <option value="2000">2000</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="required">年份:</label>
+                    <input type="number" id="year" placeholder="请选择" min="2000" max="2099">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('sampleAddModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAdd('sample')">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script>
+        const pageType = 'sample';
+
+        const foodTypes = [
+            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '幼儿配方食品', level4: '幼儿配方食品' },
+            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '婴儿配方食品', level4: '乳基婴儿配方食品、豆基婴儿配方食品' },
+            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '较大婴儿配方食品', level4: '乳基较大婴儿配方食品、豆基较大婴儿配方食品' },
+            { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '特定全营养配方食品' },
+            { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '全营养配方食品' },
+            { level1: '特殊膳食食品', level2: '营养补充品', level3: '营养补充品', level4: '运动营养食品' }
+        ];
+
+        // 生成463条数据
+        function generateSampleData() {
+            const data = [];
+            for (let i = 0; i < 463; i++) {
+                const food = foodTypes[i % foodTypes.length];
+                data.push({
+                    id: Utils.generateId(),
+                    category2: '',
+                    foodLevel1: food.level1,
+                    foodLevel2: food.level2,
+                    foodLevel3: food.level3,
+                    foodLevel4: food.level4,
+                    price: i % 3 === 0 ? 2000 : 1800,
+                    year: 2025
+                });
+            }
+            return data;
+        }
+
+        const sampleData = generateSampleData();
+
+        // 初始化页面管理
+        PageManager.init(pageType, sampleData);
+
+        function renderTable(pageType) {
+            const tbody = document.getElementById('tableBody');
+            const data = PageManager.getPageData(pageType);
+
+            let html = '';
+            data.forEach((item, index) => {
+                html += '<tr>';
+                html += `<td class="checkbox-cell"><input type="checkbox" data-id="${item.id}"></td>`;
+                html += `<td>${(PageManager.currentPage[pageType] - 1) * PageManager.pageSize[pageType] + index + 1}</td>`;
+                html += `<td>${item.category2 || ''}</td>`;
+                html += `<td>${item.foodLevel1}</td>`;
+                html += `<td>${item.foodLevel2}</td>`;
+                html += `<td>${item.foodLevel3}</td>`;
+                html += `<td>${item.foodLevel4}</td>`;
+                html += `<td>${item.price}</td>`;
+                html += `<td>${item.year}</td>`;
+                html += '<td><div class="action-links">';
+                html += `<a href="#" class="action-link" onclick="openModal('sampleAddModal')">编辑</a>`;
+                html += `<a href="#" class="action-link" onclick="handleDelete('${pageType}', '${item.id}')">删除</a>`;
+                html += '</div></td></tr>';
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function renderPagination(pageType) {
+            const pagination = document.getElementById('pagination');
+            const currentPage = PageManager.currentPage[pageType];
+            const totalPages = PageManager.getTotalPages(pageType);
+            const totalCount = PageManager.data[pageType].length;
+            const pageSize = PageManager.pageSize[pageType];
+
+            pagination.innerHTML = PaginationTemplate.render(pageType, currentPage, totalPages, totalCount, pageSize);
+        }
+
+        // 页面加载完成后渲染
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTable(pageType);
+            renderPagination(pageType);
+        });
+    </script>
+</body>
+</html>

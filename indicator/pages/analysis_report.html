@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析报表</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* 筛选区域 */
+        .filter-section {
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 160px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 100px;
+            background: #fff;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #1e9a6c;
+        }
+
+        .filter-unit {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #1e9a6c;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1a855a;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-blue {
+            background: #1e73be;
+            color: #fff;
+        }
+
+        .btn-blue:hover {
+            background: #1a64a5;
+        }
+
+        /* 统计卡片 */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.blue { background: #e8f4fc; }
+        .stat-icon.green { background: #e8f5ec; }
+        .stat-icon.orange { background: #fff7e6; }
+        .stat-icon.red { background: #fdeaea; }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* Tab标签 */
+        .tabs-container {
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .tabs-header {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+
+        .tab-item {
+            padding: 12px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-item:hover {
+            color: #1e9a6c;
+            background: #f0f8f4;
+        }
+
+        .tab-item.active {
+            color: #1e9a6c;
+            border-bottom-color: #1e9a6c;
+            background: #fff;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 表格区域 */
+        .table-container {
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead th {
+            background: #f5f7fa;
+            padding: 12px 15px;
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .data-table tbody td {
+            padding: 12px 15px;
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .data-table tbody td:first-child {
+            text-align: left;
+        }
+
+        .data-table tfoot td {
+            padding: 12px 15px;
+            text-align: center;
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+            background: #f5f7fa;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        /* 分页区域 */
+        .pagination-container {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 15px 20px;
+            gap: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .pagination-info {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pagination-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #f5f7fa;
+            border-color: #1e9a6c;
+            color: #1e9a6c;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-current {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 4px;
+            background: #1e9a6c;
+            color: #fff;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        /* 图表占位 */
+        .chart-placeholder {
+            height: 300px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #999;
+            border: 1px dashed #ddd;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .progress-fill.green { background: #1e9a6c; }
+        .progress-fill.orange { background: #f59e0b; }
+        .progress-fill.red { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div class="page-title">分析报表</div>
+        <button class="btn btn-blue">
+            <span>↓</span>导出
+        </button>
+    </div>
+
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <!-- <div class="filter-item">
+                <span class="filter-label">年份</span>
+                <select class="filter-select">
+                    <option>2026</option>
+                    <option>2025</option>
+                    <option>2024</option>
+                </select>
+            </div> -->
+            
+            <div class="filter-item" id="foodCategoryFilter" style="display: none;">
+                <span class="filter-label">食品类别</span>
+                <select class="filter-select">
+                    <option>食品大类</option>
+                    <option>食品亚类</option>
+                    <option>食品次亚类</option>
+                    <option>食品系类</option>
+                </select>
+            </div>
+            
+            <div class="filter-item">
+                <span class="filter-label">发现问题率阈值</span>
+                <input type="text" class="filter-input" id="problemRateThreshold" placeholder="请输入整数" oninput="this.value=this.value.replace(/[^\d]/g,'')">
+                <span class="filter-unit">%</span>
+            </div>
+            
+            <button class="btn btn-primary">
+                <span>🔍</span>查询
+            </button>
+            <button class="btn btn-secondary">
+                <span>🔄</span>重置
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab标签页 -->
+    <div class="tabs-container">
+        <div class="tabs-header">
+            <div class="tab-item active" onclick="switchTab('tab1')">食品抽检整体情况</div>
+            <div class="tab-item" onclick="switchTab('tab2')">各地区食品抽检情况</div>
+            <div class="tab-item" onclick="switchTab('tab3')">各生产经营环节抽检情况</div>
+            <div class="tab-item" onclick="switchTab('tab4')">各食品类别抽检情况</div>
+            <div class="tab-item" onclick="switchTab('tab5')">各检验项目抽检情况</div>
+            <div class="tab-item" onclick="switchTab('tab6')">问题食品产地来源情况</div>
+            <div class="tab-item" onclick="switchTab('tab7')">网络平台抽检情况</div>
+        </div>
+
+        <!-- Tab 1: 食品抽检整体情况 -->
+        <div id="tab1" class="tab-content active">
+            <div id="chart1" style="height: 350px; width: 100%;"></div>
+            <div style="text-align: center; padding: 10px 0; font-size: 12px; color: #666;">注：市级抽检监测批次含国转移和市级专项</div>
+        </div>
+
+        <!-- Tab 2: 各地区食品抽检情况 -->
+        <div id="tab2" class="tab-content">
+            <div id="chart2" style="height: 350px; width: 100%;"></div>
+            <div style="text-align: center; padding: 10px 0; font-size: 12px; color: #666;">注：市级抽检监测批次含国转移、市级专项和评价性抽检</div>
+        </div>
+
+        <!-- Tab 3: 各生产经营环节抽检情况 -->
+        <div id="tab3" class="tab-content">
+            <div id="chart3" style="height: 350px; width: 100%;"></div>               
+        </div>
+
+        <!-- Tab 4: 各食品类别抽检情况 -->
+        <div id="tab4" class="tab-content">
+            <div id="chart4" style="height: 350px; width: 100%;"></div>
+        </div>
+
+        <!-- Tab 5: 各检验项目抽检情况 -->
+        <div id="tab5" class="tab-content">
+            <div id="chart5" style="height: 400px; width: 100%;"></div>
+            <div style="height: 113px;"></div>
+            <div id="chart5b" style="height: 350px; width: 100%;"></div>
+        </div>
+
+        <!-- Tab 6: 问题食品产地来源情况 -->
+        <div id="tab6" class="tab-content">
+            <div id="chart6" style="height: 350px; width: 100%;"></div>
+        </div>
+
+        <!-- Tab 7: 网络平台抽检情况 -->
+        <div id="tab7" class="tab-content">
+            <div id="chart7a" style="height: 350px; width: 100%;"></div>
+            <div style="height: 38px;"></div>
+            <div id="chart7" style="height: 350px; width: 100%;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        var chart1 = null;
+        
+        function initChart1() {
+            chart1 = echarts.init(document.getElementById('chart1'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    },
+                    formatter: function(params) {
+                        var result = params[0].name + '<br/>';
+                        params.forEach(function(item) {
+                            result += item.marker + item.seriesName + ': ' + item.value + '<br/>';
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['区级抽检批次数', '市级抽检监测批次数', '评价性抽检批次数', '区级抽检合格率', '市级抽检监测合格率', '评价性抽检合格率'],
+                    bottom: 10,
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: ['2024年', '2025年', '2026年'],
+                        axisPointer: {
+                            type: 'shadow'
+                        },
+                        axisLabel: {
+                            fontSize: 12,
+                            fontWeight: 'bold'
+                        }
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '批次数',
+                        min: 0,
+                        max: 160000,
+                        interval: 20000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 12
+                        },
+                        axisTick: {
+                            show: false
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '合格率(%)',
+                        min: 95,
+                        max: 100,
+                        interval: 1,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 12
+                        },
+                        axisTick: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '区级抽检批次数',
+                        type: 'bar',
+                        data: [69573, 68553, 70180],
+                        itemStyle: {
+                            color: '#26a69a'
+                        },
+                        barMaxWidth: 40
+                    },
+                    {
+                        name: '市级抽检监测批次数',
+                        type: 'bar',
+                        data: [59650, 60809, 44995],
+                        itemStyle: {
+                            color: '#43a047'
+                        },
+                        barMaxWidth: 40
+                    },
+                    {
+                        name: '评价性抽检批次数',
+                        type: 'bar',
+                        data: [11298, 11091, 19428],
+                        itemStyle: {
+                            color: '#ffb300'
+                        },
+                        barMaxWidth: 40
+                    },
+                    {
+                        name: '区级抽检合格率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [98.5, 98.4, 98.4],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#1565c0',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 12,
+                            fontWeight: 'bold'
+                        },
+                        itemStyle: {
+                            color: '#1565c0'
+                        }
+                    },
+                    {
+                        name: '市级抽检监测合格率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [97.3, 97.2, 96.8],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#2e7d32',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 12,
+                            fontWeight: 'bold'
+                        },
+                        itemStyle: {
+                            color: '#2e7d32'
+                        }
+                    },
+                    {
+                        name: '评价性抽检合格率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [99.1, 99.4, 98.7],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#f57c00',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 12,
+                            fontWeight: 'bold'
+                        },
+                        itemStyle: {
+                            color: '#f57c00'
+                        }
+                    }
+                ]
+            };
+            
+            chart1.setOption(option);
+        }
+        
+        var chart2 = null;
+        
+        function initChart2() {
+            chart2 = echarts.init(document.getElementById('chart2'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    },
+                    formatter: function(params) {
+                        var result = params[0].name + '<br/>';
+                        params.forEach(function(item) {
+                            result += item.marker + item.seriesName + ': ' + item.value + '<br/>';
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['区级抽检批次数', '市级抽检监测批次数', '区级抽检不合格率', '市级专项问题发现率'],
+                    bottom: 10,
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '15%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: ['东城', '西城', '朝阳', '海淀', '丰台', '石景山', '门头沟', '房山', '通州', '顺义', '大兴', '昌平', '平谷', '怀柔', '密云', '延庆', '开发区'],
+                        axisPointer: {
+                            type: 'shadow'
+                        },
+                        axisLabel: {
+                            fontSize: 11,
+                            interval: 0,
+                            rotate: 0
+                        }
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '批次数',
+                        min: 0,
+                        max: 120000,
+                        interval: 20000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 12
+                        },
+                        axisTick: {
+                            show: false
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '率(%)',
+                        min: 0,
+                        max: 4,
+                        interval: 0.5,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 12
+                        },
+                        axisTick: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '区级抽检批次数',
+                        type: 'bar',
+                        data: [2601, 4770, 10672, 9877, 6567, 2294, 1259, 2691, 4045, 2632, 6845, 1426, 1442, 2054, 1400, 647, 8401],
+                        itemStyle: {
+                            color: '#42a5f5'
+                        },
+                        barMaxWidth: 25
+                    },
+                    {
+                        name: '市级抽检监测批次数',
+                        type: 'bar',
+                        data: [2320, 2447, 4359, 3397, 2961, 2254, 2055, 2632, 3860, 4401, 2519, 1792, 2214, 2241, 2185, 992, 4401],
+                        itemStyle: {
+                            color: '#8bc34a'
+                        },
+                        barMaxWidth: 25
+                    },
+                    {
+                        name: '区级抽检不合格率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [1.3, 1.1, 2.0, 1.9, 1.4, 1.6, 1.8, 1.8, 1.5, 1.5, 1.4, 1.4, 1.4, 1.6, 1.4, 2.8, 3.8],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#0288d1',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 11
+                        },
+                        itemStyle: {
+                            color: '#0288d1'
+                        }
+                    },
+                    {
+                        name: '市级专项问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [3.4, 3.3, 3.5, 3.1, 3.5, 2.4, 3.0, 3.8, 3.0, 1.8, 3.3, 3.5, 3.4, 2.9, 3.2, 2.4, 3.8],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#558b2f',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 11
+                        },
+                        itemStyle: {
+                            color: '#558b2f'
+                        }
+                    }
+                ]
+            };
+            
+            chart2.setOption(option);
+        }
+        
+        var chart3 = null;
+        
+        function initChart3() {
+            chart3 = echarts.init(document.getElementById('chart3'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: {
+                    data: ['抽检批次数', '2026年问题发现率', '2025年问题发现率', '2024年问题发现率'],
+                    bottom: 35,
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                grid: {
+                    left: '5%',
+                    right: '5%',
+                    bottom: '25%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        position: 'bottom',
+                        data: ['生产企业','超市','便利店','小食杂店','网购','生鲜超市','生鲜配送中心','其他','农贸市场','批发市场','特大畜禽','特大蔬菜','大型','中型','小型','餐饮服务','学校托幼食堂','学校食堂','职工食堂','餐饮外卖','集体用餐配送单位','糕点店','甜品店','中央厨房','其他','生产企业','母婴用品店','超市','药店','小食杂店','网购','便利店','网售店','批发市场','农贸市场','其他'],
+                        axisPointer: {
+                            type: 'shadow'
+                        },
+                        axisLabel: {
+                            fontSize: 7,
+                            interval: 0,
+                            rotate: 60,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: false
+                        }
+                    },
+                    {
+                        type: 'category',
+                        position: 'bottom',
+                        offset: 60,
+                        data: (function() {
+                            var arr = new Array(36).fill('');
+                            arr[0] = '生产';
+                            arr[1] = '流通（非集中交易市场）';
+                            arr[8] = '流通（集中交易市场）';
+                            arr[15] = '餐饮';
+                            arr[25] = '特食';
+                            return arr;
+                        })(),
+                        axisTick: {
+                            show: true,
+                            inside: true,
+                            interval: function(index, value) {
+                                return value !== '';
+                            },
+                            length: 60,
+                            lineStyle: {
+                                color: '#1e73be',
+                                width: 1
+                            }
+                        },
+                        axisLabel: {
+                            interval: function(index, value) {
+                                return value !== '';
+                            },
+                            fontSize: 10,
+                            color: '#333',
+                            fontWeight: 'bold'
+                        },
+                        splitLine: {
+                            show: true,
+                            interval: function(index, value) {
+                                return [1, 8, 15, 25].indexOf(index) !== -1;
+                            },
+                            lineStyle: {
+                                color: '#1e73be',
+                                type: 'solid',
+                                width: 1
+                            }
+                        }
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '批次数',
+                        min: 0,
+                        max: 100000,
+                        interval: 20000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed',
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '问题发现率(%)',
+                        min: 0,
+                        max: 20,
+                        interval: 5,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '抽检批次数',
+                        type: 'bar',
+                        data: [35829, 10423, 14805, 2688, 6925, 779, 149, 3017, 15163, 6640, 175, 4257, 9752, 9076, 2576, 10639, 1213, 579, 1101, 7861, 293, 411, 81, 105, 202, 240, 349, 105, 95, 81, 16, 49, 240, 349, 105, 95],
+                        itemStyle: {
+                            color: '#43a047',
+                            borderRadius: [2, 2, 0, 0]
+                        },
+                        barMaxWidth: 10
+                    },
+                    {
+                        name: '2026年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.8, 1.0, 4.8, 3.6, 2.0, 1.5, 1.2, 2.2, 1.9, 0.6, 2.3, 2.2, 2.8, 2.2, 1.3, 3.4, 2.8, 1.5, 2.3, 5.1, 0.6, 0.7, 0.6, 0.7, 0.6, 0.5, 0.6, 0.6, 0.6, 0.7, 2.8, 2.0, 0.5, 0.6, 0.7, 0.6],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#dc3545',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 7,
+                            position: 'top',
+                            color: '#dc3545'
+                        },
+                        itemStyle: {
+                            color: '#dc3545'
+                        }
+                    },
+                    {
+                        name: '2025年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.6, 0.8, 4.2, 3.2, 1.8, 1.3, 1.1, 2.0, 1.7, 0.5, 2.1, 2.0, 2.5, 2.0, 1.2, 3.1, 2.5, 1.4, 2.1, 4.8, 0.5, 0.6, 0.5, 0.6, 0.5, 0.4, 0.5, 0.5, 0.5, 0.6, 2.5, 1.8, 0.4, 0.5, 0.6, 0.5],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#f57c00',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 7,
+                            position: 'top',
+                            color: '#f57c00'
+                        },
+                        itemStyle: {
+                            color: '#f57c00'
+                        }
+                    },
+                    {
+                        name: '2024年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.5, 0.6, 3.8, 2.8, 1.5, 1.1, 0.9, 1.8, 1.5, 0.4, 1.9, 1.8, 2.2, 1.8, 1.0, 2.8, 2.2, 1.2, 1.9, 4.5, 0.4, 0.5, 0.4, 0.5, 0.4, 0.3, 0.4, 0.4, 0.4, 0.5, 2.2, 1.5, 0.3, 0.4, 0.5, 0.4],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#1565c0',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 7,
+                            position: 'top',
+                            color: '#1565c0'
+                        },
+                        itemStyle: {
+                            color: '#1565c0'
+                        }
+                    }
+                ]
+            };
+            
+            chart3.setOption(option);
+        }
+        
+        var chart4 = null;
+        
+        function initChart4() {
+            chart4 = echarts.init(document.getElementById('chart4'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: {
+                    data: ['抽检批次数', '2026年问题发现率', '2025年问题发现率', '2024年问题发现率'],
+                    bottom: 35,
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                grid: {
+                    left: '5%',
+                    right: '5%',
+                    bottom: '25%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: ['餐饮食品','水产制品','淀粉及淀粉制品','食用农产品','食用油/油脂及其制品','速冻食品','蛋制品','特殊膳食食品','蜂产品','蔬菜制品','方便食品','炒货食品及坚果制品','糖果制品','肉制品','其他食品','调味品','茶叶及相关制品','酒类','水果制品','饼干','豆制品','糕点','乳制品','保健食品','薯类和膨化食品','饮料','冷冻饮品','食糖','粮食加工品','罐头'],
+                        axisPointer: {
+                            type: 'shadow'
+                        },
+                        axisLabel: {
+                            fontSize: 7,
+                            interval: 0,
+                            rotate: 60,
+                            color: '#333'
+                        }
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'log',
+                        name: '批次数',
+                        min: 1,
+                        max: 100000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed',
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '问题发现率(%)',
+                        min: 0,
+                        max: 10,
+                        interval: 5,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '抽检批次数',
+                        type: 'bar',
+                        data: [9197, 680, 2154, 62150, 3465, 2065, 493, 298, 428, 2204, 1220, 1035, 953, 4973, 1531, 7920, 661, 2936, 1393, 962, 1991, 4558, 3124, 950, 654, 4902, 754, 935, 7986, 1128],
+                        itemStyle: {
+                            color: '#43a047',
+                            borderRadius: [2, 2, 0, 0]
+                        },
+                        barMaxWidth: 14
+                    },
+                    {
+                        name: '2026年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [4.3, 3.8, 3.8, 3.2, 2.5, 1.7, 1.4, 1.3, 1.2, 1.0, 0.8, 0.9, 0.7, 0.7, 0.7, 0.6, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.1],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#dc3545',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 7,
+                            position: 'top',
+                            color: '#dc3545'
+                        },
+                        itemStyle: {
+                            color: '#dc3545'
+                        }
+                    },
+                    {
+                        name: '2025年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [3.8, 2.0, 2.2, 2.8, 1.8, 1.2, 1.0, 0.9, 0.8, 0.7, 0.6, 0.6, 0.5, 0.5, 0.5, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 3.6, 0.2, 0.2, 0.1],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#f57c00',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 7,
+                            position: 'top',
+                            color: '#f57c00'
+                        },
+                        itemStyle: {
+                            color: '#f57c00'
+                        }
+                    },
+                    {
+                        name: '2024年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [4.3, 3.8, 3.8, 3.2, 2.0, 1.5, 1.2, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.5, 0.5, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.1],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#1565c0',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 7,
+                            position: 'top',
+                            color: '#1565c0'
+                        },
+                        itemStyle: {
+                            color: '#1565c0'
+                        }
+                    }
+                ]
+            };
+            
+            chart4.setOption(option);
+        }
+        
+        var chart5 = null;
+        
+        function initChart5() {
+            chart5 = echarts.init(document.getElementById('chart5'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return params.name + '<br/>' + params.value + '项 (' + params.percent.toFixed(1) + '%)';
+                    }
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: '5%',
+                    top: 'center',
+                    textStyle: {
+                        fontSize: 13,
+                        color: '#333'
+                    },
+                    itemWidth: 16,
+                    itemHeight: 16,
+                    itemGap: 12
+                },
+                series: [
+                    {
+                        name: '检验项目',
+                        type: 'pie',
+                        radius: '65%',
+                        center: ['35%', '50%'],
+                        data: [
+                            { value: 1521, name: '农药(1521)' },
+                            { value: 445, name: '食品添加剂(445)' },
+                            { value: 373, name: '质量指标(373)' },
+                            { value: 279, name: '有机污染物(279)' },
+                            { value: 278, name: '兽药(278)' },
+                            { value: 235, name: '微生物(235)' },
+                            { value: 38, name: '重金属等元素污染物(38)' },
+                            { value: 15, name: '生物毒素(15)' },
+                            { value: 11, name: '非食用物质(11)' },
+                            { value: 9, name: '其他(9)' }
+                        ],
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{d}%',
+                            fontSize: 13,
+                            color: '#333',
+                            fontWeight: 500
+                        },
+                        labelLine: {
+                            show: true,
+                            length: 15,
+                            length2: 10,
+                            lineStyle: {
+                                color: '#999'
+                            }
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }
+                ],
+                color: [
+                    '#4a86d9',
+                    '#ed7d31',
+                    '#ffc000',
+                    '#70ad47',
+                    '#2ec4b6',
+                    '#ed5565',
+                    '#2f5597',
+                    '#a0522d',
+                    '#808000',
+                    '#999999'
+                ]
+            };
+            
+            chart5.setOption(option);
+        }
+        
+        var chart5b = null;
+        
+        function initChart5b() {
+            chart5b = echarts.init(document.getElementById('chart5b'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: {
+                    data: ['检测项次数', '问题发现率'],
+                    bottom: 40,
+                    textStyle: {
+                        fontSize: 12
+                    }
+                },
+                grid: {
+                    left: '5%',
+                    right: '5%',
+                    bottom: '22%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: [
+                    {
+                        type: 'category',
+                        position: 'bottom',
+                        data: ['酸酯','甲拌磷','甲胺磷','涕灭威','三唑磷','毒死蜱','低聚果糖','低聚半乳糖','双歧杆菌','乳酸菌','水分','灰分','蛋白质','脂肪','碳水化合物','磺胺类','喹诺酮类','四环素类'],
+                        axisPointer: {
+                            type: 'shadow'
+                        },
+                        axisLabel: {
+                            fontSize: 10,
+                            interval: 0,
+                            rotate: 45,
+                            color: '#333'
+                        },
+                        axisTick: {
+                            show: false
+                        }
+                    },
+                    {
+                        type: 'category',
+                        position: 'bottom',
+                        offset: 40,
+                        data: (function() {
+                            var arr = new Array(18).fill('');
+                            arr[0] = '农药';
+                            arr[6] = '食品添加剂';
+                            arr[10] = '质量指标';
+                            arr[15] = '兽药';
+                            return arr;
+                        })(),
+                        axisTick: {
+                            show: true,
+                            inside: true,
+                            interval: function(index, value) {
+                                return value !== '';
+                            },
+                            length: 40,
+                            lineStyle: {
+                                color: '#1e73be',
+                                width: 1
+                            }
+                        },
+                        axisLabel: {
+                            interval: function(index, value) {
+                                return value !== '';
+                            },
+                            fontSize: 11,
+                            color: '#333',
+                            fontWeight: 'bold'
+                        }
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'log',
+                        name: '批次数',
+                        min: 1,
+                        max: 100000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed',
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '问题发现率(%)',
+                        min: 0,
+                        max: 14,
+                        interval: 4,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '检测项次数',
+                        type: 'bar',
+                        data: [13427,15244,26904,20486,18744,20486,230,555,780,996,9268,8658,7647,7647,7647,7340,6040,5550],
+                        itemStyle: {
+                            color: '#2ec4b6',
+                            borderRadius: [2, 2, 0, 0]
+                        },
+                        barMaxWidth: 20
+                    },
+                    {
+                        name: '问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [3.8,4.5,0.9,0.4,0.4,0.4,12.9,1.3,1.3,1.3,0.9,0.6,0.6,0.6,0.6,0.6,0.6,0.6],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#ed7d31',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 9,
+                            position: 'top',
+                            color: '#ed7d31'
+                        },
+                        itemStyle: {
+                            color: '#ed7d31'
+                        }
+                    }
+                ]
+            };
+            
+            chart5b.setOption(option);
+        }
+        
+        var chart6 = null;
+        
+        function initChart6() {
+            chart6 = echarts.init(document.getElementById('chart6'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: {
+                    data: ['抽检批次数', '2026年问题发现率', '2025年问题发现率', '2024年问题发现率'],
+                    bottom: 5,
+                    textStyle: {
+                        fontSize: 11
+                    }
+                },
+                grid: {
+                    left: '5%',
+                    right: '5%',
+                    bottom: '18%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['北京','河北','山东','天津','黑龙江','河南','湖南','辽宁','广东','江苏','四川','安徽','江西','浙江','湖北','湖南','福建','上海','海南','重庆','广西','江西','山西','陕西','云南','贵州','甘肃','青海','兵团','境外'],
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    axisLabel: {
+                        fontSize: 8,
+                        interval: 0,
+                        rotate: 45,
+                        color: '#333'
+                    },
+                    axisTick: {
+                        show: false
+                    }
+                },
+                yAxis: [
+                    {
+                        type: 'log',
+                        name: '批次数',
+                        min: 1,
+                        max: 1000000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed',
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '问题发现率(%)',
+                        min: 0,
+                        max: 5,
+                        interval: 1,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '抽检批次数',
+                        type: 'bar',
+                        data: [17189,13854,6602,3150,3012,3169,3066,2521,2024,1936,1799,1407,1201,950,955,974,856,866,905,868,415,369,269,271,242,218,142,120,108,993],
+                        itemStyle: {
+                            color: '#1e9a6c',
+                            borderRadius: [2, 2, 0, 0]
+                        },
+                        barMaxWidth: 15
+                    },
+                    {
+                        name: '2026年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.9,1.3,1.2,0.6,0.6,0.6,0.6,0.5,0.5,0.5,0.5,1.0,1.6,0.5,0.7,0.7,0.6,0.6,0.6,0.5,2.2,2.2,0.5,0.5,0.7,0.6,0.6,0.6,2.5,4.3],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#e74c3c',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: {
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '2025年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.4,0.9,0.8,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.7,0.9,0.3,0.5,0.5,0.4,0.4,0.4,0.3,1.5,1.5,0.3,0.3,0.5,0.4,0.4,0.4,1.8,3.5],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#f39c12',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: {
+                            color: '#f39c12'
+                        }
+                    },
+                    {
+                        name: '2024年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.2,0.6,0.5,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.5,0.7,0.2,0.3,0.3,0.3,0.3,0.3,0.2,1.0,1.0,0.2,0.2,0.3,0.3,0.3,0.3,1.2,2.8],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#3498db',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: {
+                            color: '#3498db'
+                        }
+                    }
+                ]
+            };
+            
+            chart6.setOption(option);
+        }
+        
+        var chart7a = null;
+        
+        function initChart7a() {
+            chart7a = echarts.init(document.getElementById('chart7a'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: {
+                    data: ['抽检批次数', '问题发现率'],
+                    bottom: 5,
+                    textStyle: {
+                        fontSize: 11
+                    }
+                },
+                grid: {
+                    left: '5%',
+                    right: '5%',
+                    bottom: '22%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['其他食品','焙烤食品及焙烤制品','乳制品','肉制品','糖果制品','酒类','食用油油脂及其制品','调味品','粮食加工品','速冻食品','茶叶','茶叶及相关制品','薯类和膨化食品','方便食品','肉制品','乳制品','饮料','蔬菜制品','水果制品','水产品','蛋制品','糕点','罐头','可可及焙烤咖啡产品','冷冻饮品','食品添加剂','食糖','特殊膳食食品','特殊医学用途配方食品'],
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    axisLabel: {
+                        fontSize: 7,
+                        interval: 0,
+                        rotate: 60,
+                        color: '#333'
+                    },
+                    axisTick: {
+                        show: false
+                    }
+                },
+                yAxis: [
+                    {
+                        type: 'log',
+                        name: '批次数',
+                        min: 1,
+                        max: 10000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed',
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '问题发现率(%)',
+                        min: 0,
+                        max: 50,
+                        interval: 10,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '抽检批次数',
+                        type: 'bar',
+                        data: [3,132,23,71,183,3883,58,119,326,144,57,73,320,83,246,172,90,106,69,31,12,5,69,108,108,57,197,2,31],
+                        itemStyle: {
+                            color: '#2ec4b6',
+                            borderRadius: [2, 2, 0, 0]
+                        },
+                        barMaxWidth: 15
+                    },
+                    {
+                        name: '问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [33.3,17.4,11.8,5.4,4.8,4.8,3.4,2.9,2.5,2.1,1.9,1.8,1.8,1.4,1.2,0.8,0.5,0,0,0,0,0,0,0,0,0,0,0,0],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#e74c3c',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        label: {
+                            show: true,
+                            formatter: '{c}%',
+                            fontSize: 7,
+                            position: 'top',
+                            color: '#e74c3c'
+                        },
+                        itemStyle: {
+                            color: '#e74c3c'
+                        }
+                    }
+                ]
+            };
+            
+            chart7a.setOption(option);
+        }
+        
+        var chart7 = null;
+        
+        function initChart7() {
+            chart7 = echarts.init(document.getElementById('chart7'));
+            
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        crossStyle: {
+                            color: '#999'
+                        }
+                    }
+                },
+                legend: {
+                    data: ['抽检批次数', '2026年问题发现率', '2025年问题发现率', '2024年问题发现率'],
+                    bottom: 5,
+                    textStyle: {
+                        fontSize: 11
+                    }
+                },
+                grid: {
+                    left: '5%',
+                    right: '5%',
+                    bottom: '18%',
+                    top: '5%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['淘宝','天猫','京东','拼多多','抖音','快手','小红书','苏宁易购','唯品会','盒马','美团','饿了么','叮咚买菜','每日优鲜','山姆','Costco','一号店','亚马逊','网易考拉','洋码头'],
+                    axisPointer: {
+                        type: 'shadow'
+                    },
+                    axisLabel: {
+                        fontSize: 9,
+                        interval: 0,
+                        rotate: 30,
+                        color: '#333'
+                    },
+                    axisTick: {
+                        show: false
+                    }
+                },
+                yAxis: [
+                    {
+                        type: 'log',
+                        name: '批次数',
+                        min: 1,
+                        max: 100000,
+                        axisLabel: {
+                            formatter: '{value}',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            lineStyle: {
+                                type: 'dashed',
+                                color: '#e0e0e0'
+                            }
+                        }
+                    },
+                    {
+                        type: 'value',
+                        name: '问题发现率(%)',
+                        min: 0,
+                        max: 5,
+                        interval: 1,
+                        axisLabel: {
+                            formatter: '{value}%',
+                            fontSize: 11
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        splitLine: {
+                            show: false
+                        }
+                    }
+                ],
+                series: [
+                    {
+                        name: '抽检批次数',
+                        type: 'bar',
+                        data: [15234,12876,9876,8765,7654,6543,5432,4321,3210,2890,2560,2230,1890,1560,1340,1120,980,850,720,650],
+                        itemStyle: {
+                            color: '#1e9a6c',
+                            borderRadius: [2, 2, 0, 0]
+                        },
+                        barMaxWidth: 20
+                    },
+                    {
+                        name: '2026年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [1.2,0.8,0.6,1.5,0.9,1.1,0.7,0.5,0.8,0.6,0.9,1.0,1.3,0.8,0.5,0.4,0.6,0.9,1.2,1.5],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#e74c3c',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: {
+                            color: '#e74c3c'
+                        }
+                    },
+                    {
+                        name: '2025年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.8,0.5,0.4,1.0,0.6,0.8,0.5,0.3,0.5,0.4,0.6,0.7,0.9,0.5,0.3,0.3,0.4,0.6,0.8,1.0],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#f39c12',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: {
+                            color: '#f39c12'
+                        }
+                    },
+                    {
+                        name: '2024年问题发现率',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [0.5,0.3,0.2,0.6,0.4,0.5,0.3,0.2,0.3,0.2,0.4,0.4,0.5,0.3,0.2,0.2,0.3,0.4,0.5,0.7],
+                        smooth: true,
+                        lineStyle: {
+                            color: '#3498db',
+                            width: 2
+                        },
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        itemStyle: {
+                            color: '#3498db'
+                        }
+                    }
+                ]
+            };
+            
+            chart7.setOption(option);
+        }
+        
+        function switchTab(tabId) {
+            var tabs = document.querySelectorAll('.tab-item');
+            var contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+            
+            contents.forEach(function(content) {
+                content.classList.remove('active');
+            });
+            
+            document.querySelector('[onclick="switchTab(\'' + tabId + '\')"]').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // 控制食品类别筛选条件显示/隐藏
+            var foodCategoryFilter = document.getElementById('foodCategoryFilter');
+            if (tabId === 'tab4') {
+                foodCategoryFilter.style.display = 'block';
+            } else {
+                foodCategoryFilter.style.display = 'none';
+            }
+            
+            if (tabId === 'tab1' && !chart1) {
+                setTimeout(initChart1, 100);
+            }
+            if (tabId === 'tab2' && !chart2) {
+                setTimeout(initChart2, 100);
+            }
+            if (tabId === 'tab3' && !chart3) {
+                setTimeout(initChart3, 100);
+            }
+            if (tabId === 'tab4' && !chart4) {
+                setTimeout(initChart4, 100);
+            }
+            if (tabId === 'tab5' && !chart5) {
+                setTimeout(initChart5, 100);
+            }
+            if (tabId === 'tab5' && !chart5b) {
+                setTimeout(initChart5b, 100);
+            }
+            if (tabId === 'tab6' && !chart6) {
+                setTimeout(initChart6, 100);
+            }
+            if (tabId === 'tab7' && !chart7a) {
+                setTimeout(initChart7a, 100);
+            }
+            if (tabId === 'tab7' && !chart7) {
+                setTimeout(initChart7, 100);
+            }
+        }
+        
+        window.onload = function() {
+            initChart1();
+        };
+        
+        window.onresize = function() {
+            if (chart1) {
+                chart1.resize();
+            }
+            if (chart2) {
+                chart2.resize();
+            }
+            if (chart3) {
+                chart3.resize();
+            }
+            if (chart4) {
+                chart4.resize();
+            }
+            if (chart5) {
+                chart5.resize();
+            }
+            if (chart5b) {
+                chart5b.resize();
+            }
+            if (chart6) {
+                chart6.resize();
+            }
+            if (chart7a) {
+                chart7a.resize();
+            }
+            if (chart7) {
+                chart7.resize();
+            }
+        };
+    </script>
+</body>
+</html>

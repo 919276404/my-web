@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>样本费管理</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../../css/styles.css">
     <style>
         body {
             background: white;
@@ -309,7 +309,6 @@
         </div>
     </div>
 
-    <!-- 新增弹窗 -->
     <div id="sampleAddModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -374,7 +373,7 @@
         </div>
     </div>
 
-    <script src="../js/common.js"></script>
+    <script src="../../js/common.js"></script>
     <script>
         const pageType = 'sample';
 
@@ -387,7 +386,6 @@
             { level1: '特殊膳食食品', level2: '营养补充品', level3: '营养补充品', level4: '运动营养食品' }
         ];
 
-        // 生成463条数据
         function generateSampleData() {
             const data = [];
             for (let i = 0; i < 463; i++) {
@@ -406,7 +404,6 @@
 
         const sampleData = generateSampleData();
 
-        // 初始化页面管理
         PageManager.init(pageType, sampleData);
 
         function renderTable(pageType) {
@@ -442,7 +439,6 @@
             pagination.innerHTML = PaginationTemplate.render(pageType, currentPage, totalPages, totalCount, pageSize);
         }
 
-        // 页面加载完成后渲染
         document.addEventListener('DOMContentLoaded', function() {
             renderTable(pageType);
             renderPagination(pageType);

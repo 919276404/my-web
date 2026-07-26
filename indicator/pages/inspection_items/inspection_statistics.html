@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽检项目统计</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f7fa; padding: 15px; height: calc(100vh - 30px); }
+        
+        .container { display: flex; flex-direction: column; height: 100%; gap: 12px; }
+        
+        .content { flex: 1; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; }
+        
+        .content-header { padding: 14px 16px; border-bottom: 1px solid #e8e8e8; background: #fafafa; display: flex; justify-content: space-between; align-items: center; }
+        .content-title { font-size: 15px; font-weight: 600; color: #333; }
+        
+        .content-body { flex: 1; overflow-y: auto; padding: 16px; }
+        
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 16px; padding: 14px 16px; background: #fff; border-radius: 6px; margin-bottom: 16px; align-items: center; border: 1px solid #e8e8e8; }
+        .filter-item { display: flex; align-items: center; gap: 8px; }
+        .filter-item label { font-size: 13px; color: #666; min-width: 80px; }
+        .filter-item select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 140px; }
+        .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+        
+        .btn { padding: 8px 20px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-outline { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .btn-outline:hover { background: #f0f5ff; }
+        
+        .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+        .stat-card { background: linear-gradient(135deg, #1e73be 0%, #2ec4b6 100%); border-radius: 6px; padding: 16px 24px; color: #fff; min-width: 140px; }
+        .stat-label { font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
+        .stat-value { font-size: 24px; font-weight: 700; }
+        
+        .table-container { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid #e0e0e0; border: 1px solid #e8e8e8; }
+        .data-table th { background: #f5f5f5; font-weight: 600; color: #666; }
+        .data-table tr:hover { background: #fafafa; }
+        
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px; background: #fafafa; border-radius: 6px; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination { display: flex; align-items: center; gap: 4px; }
+        .pagination-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; cursor: pointer; background: #fff; color: #666; }
+        .pagination-btn:hover { background: #f0f5ff; color: #1e73be; border-color: #1e73be; }
+        .pagination-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .pagination-numbers { display: flex; gap: 2px; }
+        .pagination-number { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; cursor: pointer; background: #fff; color: #666; margin: 0 2px; }
+        .pagination-number:hover { background: #f0f5ff; color: #1e73be; border-color: #1e73be; }
+        .pagination-number.active { background: #1e73be; color: #fff; border-color: #1e73be; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="content-header">
+                <div class="content-title">抽检项目统计</div>
+            </div>
+            
+            <div class="content-body">
+                <div class="filter-bar">
+                    <div class="filter-item">
+                        <label>年份</label>
+                        <select>
+                            <option>全部</option>
+                            <option>2026</option>
+                            <option>2025</option>
+                            <option>2024</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label>项目类别</label>
+                        <select>
+                            <option>全部</option>
+                            <option>农药残留</option>
+                            <option>兽药残留</option>
+                            <option>食品添加剂</option>
+                            <option>微生物</option>
+                        </select>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-outline" onclick="resetFilter()">重置</button>
+                        <button class="btn btn-primary" onclick="doFilter()">查询</button>
+                    </div>
+                </div>
+
+                <div class="stat-cards">
+                    <div class="stat-card"><div class="stat-label">项目总数</div><div class="stat-value">56</div></div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #1e9a6c 0%, #66bb6a 100%);"><div class="stat-label">抽检批次</div><div class="stat-value">50,000</div></div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f57c00 0%, #ffb74d 100%);"><div class="stat-label">问题发现率</div><div class="stat-value">3.2%</div></div>
+                    <div class="stat-card"><div class="stat-label">不合格项目</div><div class="stat-value">1,600</div></div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>项目名称</th>
+                                <th>项目类别</th>
+                                <th>抽检批次</th>
+                                <th>不合格批次</th>
+                                <th>不合格率</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>苯甲酸及其钠盐(以苯甲酸计)</td><td>食品添加剂</td><td>8,500</td><td>340</td><td>4.0%</td><td></td></tr>
+                            <tr><td>山梨酸及其钾盐(以山梨酸计)</td><td>食品添加剂</td><td>7,200</td><td>252</td><td>3.5%</td><td></td></tr>
+                            <tr><td>糖精钠(以糖精计)</td><td>食品添加剂</td><td>6,800</td><td>204</td><td>3.0%</td><td></td></tr>
+                            <tr><td>铅(以Pb计)</td><td>重金属</td><td>5,500</td><td>165</td><td>3.0%</td><td></td></tr>
+                            <tr><td>镉(以Cd计)</td><td>重金属</td><td>4,800</td><td>144</td><td>3.0%</td><td></td></tr>
+                            <tr><td>大肠菌群</td><td>微生物</td><td>9,000</td><td>270</td><td>3.0%</td><td></td></tr>
+                            <tr><td>菌落总数</td><td>微生物</td><td>8,000</td><td>160</td><td>2.0%</td><td></td></tr>
+                            <tr><td>沙门氏菌</td><td>微生物</td><td>5,000</td><td>50</td><td>1.0%</td><td></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-container">
+                    <div class="pagination-info">共 8 条记录，第 1/1 页</div>
+                    <div class="pagination">
+                        <button class="pagination-btn" disabled>首页</button>
+                        <button class="pagination-btn" disabled>上一页</button>
+                        <span class="pagination-numbers">
+                            <span class="pagination-number active">1</span>
+                        </span>
+                        <button class="pagination-btn" disabled>下一页</button>
+                        <button class="pagination-btn" disabled>末页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function doFilter() {}
+        function resetFilter() {}
+    </script>
+</body>
+</html>

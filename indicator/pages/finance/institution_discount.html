@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机构折扣管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #c62828; border: 1px solid #c62828; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 500px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #c62828; margin-left: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: #fff; cursor: pointer; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-item { flex: 1; }
+        .discount-rate { color: #1e73be; font-weight: 600; }
+        .badge-active { background: #e8f5e9; color: #2e7d32; }
+        .badge-inactive { background: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">机构名称</span>
+                <input type="text" class="search-input" id="searchName" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">折扣适用年限</span>
+                <input type="number" class="search-input" id="searchYear" placeholder="请输入年份" style="min-width: 100px;">
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <div>
+                <button class="btn btn-primary" onclick="openAddModal()">+ 新增折扣</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary">📤 数据导出</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>机构名称</th>
+                    <th>机构编码</th>
+                    <th>折扣率</th>
+                    <th>适用起始日期</th>
+                    <th>适用结束日期</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 5 条 共有 32 条</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="discountModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增机构折扣</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalId" value="">
+                <div class="form-item">
+                    <label class="form-label required">机构名称</label>
+                    <input type="text" class="form-input" id="institutionName" placeholder="请输入机构名称">
+                </div>
+                <div class="form-item">
+                    <label class="form-label">机构编码</label>
+                    <input type="text" class="form-input" id="institutionCode" placeholder="请输入机构编码">
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">折扣率（%）</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" class="form-input" id="discountRate" placeholder="0.00" min="0" max="100">
+                        <span style="font-size: 14px; color: #666;">%</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">适用起始日期</label>
+                        <input type="date" class="form-input" id="startDate">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">适用结束日期</label>
+                        <input type="date" class="form-input" id="endDate">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveDiscount()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var discountData = [
+            { id: 1, name: '北京市食品检验研究院', code: 'BJFI-001', rate: 85, startDate: '2026-01-01', endDate: '2026-12-31' },
+            { id: 2, name: '北京市疾病预防控制中心', code: 'BJCDC-001', rate: 80, startDate: '2026-01-01', endDate: '2026-12-31' },
+            { id: 3, name: '中国食品药品检定研究院', code: 'CFDA-001', rate: 75, startDate: '2026-01-01', endDate: '2026-12-31' },
+            { id: 4, name: '北京市朝阳区食品药品检验所', code: 'CYFI-001', rate: 90, startDate: '2026-04-01', endDate: '2026-12-31' },
+            { id: 5, name: '北京市海淀区食品药品检验所', code: 'HDCI-001', rate: 92, startDate: '2026-01-01', endDate: '2026-06-30' }
+        ];
+
+        function renderTable(data) {
+            var tbody = document.getElementById('tableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var today = new Date();
+                var start = new Date(item.startDate);
+                var end = new Date(item.endDate);
+                var isActive = today >= start && today <= end;
+                var statusBadge = isActive ? 'badge-active' : 'badge-inactive';
+                var statusText = isActive ? '生效中' : '已过期';
+                
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td>' + (item.code || '-') + '</td>' +
+                    '<td><span class="discount-rate">' + item.rate + '%</span></td>' +
+                    '<td>' + item.startDate + '</td>' +
+                    '<td>' + item.endDate + '</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + statusText + '</span></td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-edit" onclick="openEditModal(' + item.id + ')">编辑</button>' +
+                        '<button class="action-btn action-btn-delete" onclick="deleteDiscount(' + item.id + ')">删除</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '新增机构折扣';
+            document.getElementById('modalMode').value = 'add';
+            document.getElementById('modalId').value = '';
+            document.getElementById('institutionName').value = '';
+            document.getElementById('institutionCode').value = '';
+            document.getElementById('discountRate').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('discountModal').classList.add('active');
+        }
+
+        function openEditModal(id) {
+            var item = discountData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            document.getElementById('modalTitle').textContent = '编辑机构折扣';
+            document.getElementById('modalMode').value = 'edit';
+            document.getElementById('modalId').value = id;
+            document.getElementById('institutionName').value = item.name;
+            document.getElementById('institutionCode').value = item.code;
+            document.getElementById('discountRate').value = item.rate;
+            document.getElementById('startDate').value = item.startDate;
+            document.getElementById('endDate').value = item.endDate;
+            document.getElementById('discountModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('discountModal').classList.remove('active');
+        }
+
+        function saveDiscount() {
+            var mode = document.getElementById('modalMode').value;
+            var id = parseInt(document.getElementById('modalId').value);
+            var name = document.getElementById('institutionName').value.trim();
+            var code = document.getElementById('institutionCode').value.trim();
+            var rate = document.getElementById('discountRate').value;
+            var startDate = document.getElementById('startDate').value;
+            var endDate = document.getElementById('endDate').value;
+            
+            if (!name) { alert('请输入机构名称'); return; }
+            if (!rate) { alert('请输入折扣率'); return; }
+            if (!startDate) { alert('请选择适用起始日期'); return; }
+            if (!endDate) { alert('请选择适用结束日期'); return; }
+            if (startDate > endDate) { alert('结束日期不能早于起始日期'); return; }
+            
+            if (mode === 'add') {
+                discountData.unshift({
+                    id: discountData.length + 1,
+                    name: name,
+                    code: code,
+                    rate: parseFloat(rate),
+                    startDate: startDate,
+                    endDate: endDate
+                });
+            } else {
+                var item = discountData.find(function(d) { return d.id === id; });
+                if (item) {
+                    item.name = name;
+                    item.code = code;
+                    item.rate = parseFloat(rate);
+                    item.startDate = startDate;
+                    item.endDate = endDate;
+                }
+            }
+            
+            renderTable(discountData);
+            closeModal();
+            alert('保存成功');
+        }
+
+        function deleteDiscount(id) {
+            if (confirm('确定要删除该机构折扣吗？')) {
+                discountData = discountData.filter(function(d) { return d.id !== id; });
+                renderTable(discountData);
+                alert('删除成功');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchYear').value = '';
+            renderTable(discountData);
+        }
+
+        function doSearch() {
+            var name = document.getElementById('searchName').value.trim().toLowerCase();
+            var year = document.getElementById('searchYear').value;
+            
+            var filtered = discountData.filter(function(d) {
+                var matchName = !name || d.name.toLowerCase().includes(name);
+                var matchYear = !year || (d.startDate.startsWith(year) || d.endDate.startsWith(year));
+                return matchName && matchYear;
+            });
+            
+            renderTable(filtered);
+        }
+
+        renderTable(discountData);
+    </script>
+</body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年度任务自动生成</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .filter-section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-item label {
+            font-weight: 500;
+            min-width: 100px;
+        }
+        .filter-item input, .filter-item select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #1890ff;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-left: 10px;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .btn-success {
+            background: #52c41a;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #73d13d;
+        }
+        .btn-warning {
+            background: #faad14;
+            color: #fff;
+        }
+        .btn-warning:hover {
+            background: #ffc53d;
+        }
+        .table-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .table-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        th {
+            background: #fafafa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-pending {
+            background: #fff7e6;
+            color: #fa8c16;
+            border: 1px solid #ffd591;
+        }
+        .status-processing {
+            background: #e6f7ff;
+            color: #1890ff;
+            border: 1px solid #91d5ff;
+        }
+        .status-completed {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover {
+            color: #666;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex: 0 0 auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        .dept-select {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .dept-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .dept-item:hover {
+            background: #f5f5f5;
+        }
+        .dept-item.selected {
+            background: #e6f7ff;
+        }
+        .rule-section {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .rule-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1890ff;
+        }
+        .rule-item {
+            padding: 8px 0;
+            border-bottom: 1px dashed #ddd;
+        }
+        .rule-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="rule-section">
+        <div class="rule-title">任务生成规则说明</div>
+        <div class="rule-item">• 每年12月1日自动创建本年度工作总结填报任务</div>
+        <div class="rule-item">• 每年12月1日自动创建下一年度工作计划填报任务</div>
+        <div class="rule-item">• 任务自动下发至所有区县市场监管局及市局相关处室</div>
+        <div class="rule-item">• 任务截止日期为每年1月31日</div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="filter-item">
+                <label>任务年度：</label>
+                <select id="taskYear">
+                    <option value="">全部</option>
+                    <option value="2026">2026年</option>
+                    <option value="2025">2025年</option>
+                    <option value="2024">2024年</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>任务状态：</label>
+                <select id="taskStatus">
+                    <option value="">全部</option>
+                    <option value="待下发">待下发</option>
+                    <option value="已下发">已下发</option>
+                    <option value="已完成">已完成</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="searchData()">查询</button>
+            <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+            <button class="btn btn-success" onclick="createTask()">手动创建任务</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <h3>任务列表</h3>
+            <div>
+                <button class="btn btn-secondary" onclick="exportData()">导出数据</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>任务编号</th>
+                        <th>任务名称</th>
+                        <th>任务年度</th>
+                        <th>下发部门</th>
+                        <th>任务状态</th>
+                        <th>创建时间</th>
+                        <th>截止日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="taskTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="createModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">创建年度任务</div>
+                <div class="modal-close" onclick="closeCreateModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>任务年度</label>
+                        <select id="createYear">
+                            <option value="2026">2026年</option>
+                            <option value="2025">2025年</option>
+                            <option value="2024">2024年</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>任务类型</label>
+                        <select id="taskType">
+                            <option value="summary">年度工作总结</option>
+                            <option value="plan">年度工作计划</option>
+                            <option value="both">工作总结+工作计划</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>截止日期</label>
+                    <input type="date" id="deadline">
+                </div>
+                <div class="form-group">
+                    <label>选择下发部门</label>
+                    <div class="dept-select" id="deptList">
+                    </div>
+                    <button class="btn btn-secondary" onclick="selectAllDept()" style="margin-top: 10px;">全选</button>
+                    <button class="btn btn-secondary" onclick="clearAllDept()" style="margin-top: 10px; margin-left: 10px;">清空</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCreateModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveTask()">创建任务</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var taskData = [
+            { id: 1, taskNo: 'RW2026001', taskName: '2026年度食品安全抽检监测工作总结', taskYear: '2026', depts: ['东城区市场监管局', '西城区市场监管局', '朝阳区市场监管局'], status: '已下发', createTime: '2026-01-01 00:00', deadline: '2026-01-31' },
+            { id: 2, taskNo: 'RW2026002', taskName: '2027年度食品安全抽检监测工作计划', taskYear: '2026', depts: ['东城区市场监管局', '西城区市场监管局', '朝阳区市场监管局'], status: '已下发', createTime: '2026-01-01 00:00', deadline: '2026-01-31' },
+            { id: 3, taskNo: 'RW2025001', taskName: '2025年度食品安全抽检监测工作总结', taskYear: '2025', depts: ['东城区市场监管局', '西城区市场监管局', '朝阳区市场监管局', '海淀区市场监管局'], status: '已完成', createTime: '2025-01-01 00:00', deadline: '2025-01-31' },
+            { id: 4, taskNo: 'RW2025002', taskName: '2026年度食品安全抽检监测工作计划', taskYear: '2025', depts: ['东城区市场监管局', '西城区市场监管局', '朝阳区市场监管局', '海淀区市场监管局'], status: '已完成', createTime: '2025-01-01 00:00', deadline: '2025-01-31' },
+            { id: 5, taskNo: 'RW2026003', taskName: '2026年上半年工作总结', taskYear: '2026', depts: ['东城区市场监管局', '西城区市场监管局'], status: '待下发', createTime: '2026-07-01 09:00', deadline: '2026-07-31' }
+        ];
+
+        var departments = [
+            '东城区市场监管局', '西城区市场监管局', '朝阳区市场监管局', '海淀区市场监管局',
+            '丰台区市场监管局', '石景山区市场监管局', '通州区市场监管局', '顺义区市场监管局',
+            '昌平区市场监管局', '大兴区市场监管局', '房山区市场监管局', '门头沟区市场监管局',
+            '食品生产处', '食品流通处', '餐饮服务处', '综合处'
+        ];
+
+        var selectedDepts = [];
+
+        function init() {
+            renderTable(taskData);
+        }
+
+        function renderTable(data) {
+            var tbody = document.getElementById('taskTable');
+            tbody.innerHTML = '';
+            data.forEach(function(item, index) {
+                var statusClass = '';
+                if (item.status === '待下发') statusClass = 'status-pending';
+                else if (item.status === '已下发') statusClass = 'status-processing';
+                else if (item.status === '已完成') statusClass = 'status-completed';
+
+                var row = '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.taskNo + '</td>' +
+                    '<td>' + item.taskName + '</td>' +
+                    '<td>' + item.taskYear + '年</td>' +
+                    '<td>' + item.depts.length + '个部门</td>' +
+                    '<td><span class="status-tag ' + statusClass + '">' + item.status + '</span></td>' +
+                    '<td>' + item.createTime + '</td>' +
+                    '<td>' + item.deadline + '</td>' +
+                    '<td>' +
+                    '<button class="btn btn-primary" onclick="viewTask(' + item.id + ')" style="padding: 4px 10px; font-size: 12px;">查看详情</button>' +
+                    (item.status === '待下发' ? '<button class="btn btn-success" onclick="sendTask(' + item.id + ')" style="padding: 4px 10px; font-size: 12px; margin-left: 5px;">下发任务</button>' : '') +
+                    '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        function searchData() {
+            var year = document.getElementById('taskYear').value;
+            var status = document.getElementById('taskStatus').value;
+
+            var filtered = taskData.filter(function(item) {
+                var match = true;
+                if (year && item.taskYear !== year) match = false;
+                if (status && item.status !== status) match = false;
+                return match;
+            });
+            renderTable(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('taskYear').value = '';
+            document.getElementById('taskStatus').value = '';
+            renderTable(taskData);
+        }
+
+        function createTask() {
+            selectedDepts = [];
+            document.getElementById('deadline').value = '';
+            renderDeptList();
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+        }
+
+        function renderDeptList() {
+            var container = document.getElementById('deptList');
+            container.innerHTML = '';
+            departments.forEach(function(dept) {
+                var checked = selectedDepts.includes(dept) ? 'checked' : '';
+                var selected = selectedDepts.includes(dept) ? 'selected' : '';
+                var html = '<div class="dept-item ' + selected + '" onclick="toggleDept(\'' + dept + '\')">' +
+                    '<input type="checkbox" ' + checked + '>' +
+                    '<span>' + dept + '</span>' +
+                    '</div>';
+                container.innerHTML += html;
+            });
+        }
+
+        function toggleDept(dept) {
+            var index = selectedDepts.indexOf(dept);
+            if (index > -1) {
+                selectedDepts.splice(index, 1);
+            } else {
+                selectedDepts.push(dept);
+            }
+            renderDeptList();
+        }
+
+        function selectAllDept() {
+            selectedDepts = departments.slice();
+            renderDeptList();
+        }
+
+        function clearAllDept() {
+            selectedDepts = [];
+            renderDeptList();
+        }
+
+        function saveTask() {
+            var year = document.getElementById('createYear').value;
+            var type = document.getElementById('taskType').value;
+            var deadline = document.getElementById('deadline').value;
+
+            if (!deadline) {
+                alert('请选择截止日期');
+                return;
+            }
+            if (selectedDepts.length === 0) {
+                alert('请选择下发部门');
+                return;
+            }
+
+            var tasks = [];
+            if (type === 'summary' || type === 'both') {
+                tasks.push({
+                    id: Date.now(),
+                    taskNo: 'RW' + year + String(taskData.length + 1).padStart(3, '0'),
+                    taskName: year + '年度食品安全抽检监测工作总结',
+                    taskYear: year,
+                    depts: selectedDepts.slice(),
+                    status: '待下发',
+                    createTime: new Date().toLocaleString(),
+                    deadline: deadline
+                });
+            }
+            if (type === 'plan' || type === 'both') {
+                var nextYear = parseInt(year) + 1;
+                tasks.push({
+                    id: Date.now() + 1,
+                    taskNo: 'RW' + year + String(taskData.length + 2).padStart(3, '0'),
+                    taskName: nextYear + '年度食品安全抽检监测工作计划',
+                    taskYear: year,
+                    depts: selectedDepts.slice(),
+                    status: '待下发',
+                    createTime: new Date().toLocaleString(),
+                    deadline: deadline
+                });
+            }
+
+            taskData = tasks.concat(taskData);
+            alert('任务创建成功');
+            closeCreateModal();
+            renderTable(taskData);
+        }
+
+        function viewTask(id) {
+            var item = taskData.find(function(i) { return i.id === id; });
+            if (item) {
+                alert('任务详情:\n任务编号: ' + item.taskNo + '\n任务名称: ' + item.taskName + '\n任务年度: ' + item.taskYear + '年\n下发部门: ' + item.depts.join(', ') + '\n状态: ' + item.status + '\n创建时间: ' + item.createTime + '\n截止日期: ' + item.deadline);
+            }
+        }
+
+        function sendTask(id) {
+            var item = taskData.find(function(i) { return i.id === id; });
+            if (item) {
+                if (confirm('确定下发任务"' + item.taskName + '"吗？')) {
+                    item.status = '已下发';
+                    alert('任务下发成功');
+                    renderTable(taskData);
+                }
+            }
+        }
+
+        function exportData() {
+            alert('导出功能开发中');
+        }
+
+        init();
+    </script>
+</body>
+</html>

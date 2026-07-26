@@ -247,6 +247,10 @@
         <div class="search-panel">
             <div class="search-row">
                 <div class="search-item">
+                    <label>报送分类2:</label>
+                    <input type="text" placeholder="请输入">
+                </div>
+                <div class="search-item">
                     <label>食品大类(一级):</label>
                     <select>
                         <option value="">请选择</option>
@@ -258,6 +262,12 @@
                         <option value="">请选择</option>
                     </select>
                 </div>
+                <div class="search-actions">
+                    <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
+                    <button class="btn btn-primary" onclick="handleSearch('sample')">查询</button>
+                </div>
+            </div>
+            <div class="search-row" style="margin-top:15px">
                 <div class="search-item">
                     <label>食品次亚类(三级):</label>
                     <select>
@@ -270,9 +280,9 @@
                         <option value="">请选择</option>
                     </select>
                 </div>
-                <div class="search-actions">
-                    <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
-                    <button class="btn btn-primary" onclick="handleSearch('sample')">查询</button>
+                <div class="search-item">
+                    <label>年份:</label>
+                    <input type="number" placeholder="请选择" min="2000" max="2099">
                 </div>
             </div>
         </div>
@@ -280,10 +290,15 @@
         <div class="table-panel">
             <div class="table-header">
                 <div style="display:flex;gap:10px">
+                    <button class="btn btn-primary" style="background:#1e9a6c;">导出本页</button>
                     <button class="btn btn-primary" style="background:#1e9a6c;">导出</button>
                     <button class="btn btn-secondary">导入</button>
                     <button class="btn btn-secondary">下载模板</button>
                     <button class="btn btn-primary" onclick="openModal('sampleAddModal')">+ 新增</button>
+                </div>
+                <div class="table-actions">
+                    <button class="btn btn-secondary">查询配置</button>
+                    <button class="btn btn-secondary">表格配置</button>
                 </div>
             </div>
 
@@ -293,11 +308,13 @@
                         <tr>
                             <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
                             <th>序号</th>
+                            <th>报送分类2</th>
                             <th>食品大类(一级)</th>
                             <th>食品亚类(二级)</th>
                             <th>食品次亚类(三级)</th>
                             <th>食品细类(四级)</th>
                             <th>单价(元)</th>
+                            <th>年份</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -317,6 +334,10 @@
                 <div class="modal-close" onclick="closeModal('sampleAddModal')">&times;</div>
             </div>
             <div class="modal-body">
+                <div class="form-group">
+                    <label>报送分类2:</label>
+                    <input type="text" id="category2" placeholder="请输入">
+                </div>
                 <div class="form-group">
                     <label class="required">食品大类(一级):</label>
                     <select id="foodLevel1">
@@ -366,6 +387,10 @@
                         <option value="2000">2000</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label class="required">年份:</label>
+                    <input type="number" id="year" placeholder="请选择" min="2000" max="2099">
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('sampleAddModal')">取消</button>
@@ -394,11 +419,13 @@
                 const food = foodTypes[i % foodTypes.length];
                 data.push({
                     id: Utils.generateId(),
+                    category2: '',
                     foodLevel1: food.level1,
                     foodLevel2: food.level2,
                     foodLevel3: food.level3,
                     foodLevel4: food.level4,
-                    price: i % 3 === 0 ? 2000 : 1800
+                    price: i % 3 === 0 ? 2000 : 1800,
+                    year: 2025
                 });
             }
             return data;
@@ -418,11 +445,13 @@
                 html += '<tr>';
                 html += `<td class="checkbox-cell"><input type="checkbox" data-id="${item.id}"></td>`;
                 html += `<td>${(PageManager.currentPage[pageType] - 1) * PageManager.pageSize[pageType] + index + 1}</td>`;
+                html += `<td>${item.category2 || ''}</td>`;
                 html += `<td>${item.foodLevel1}</td>`;
                 html += `<td>${item.foodLevel2}</td>`;
                 html += `<td>${item.foodLevel3}</td>`;
                 html += `<td>${item.foodLevel4}</td>`;
                 html += `<td>${item.price}</td>`;
+                html += `<td>${item.year}</td>`;
                 html += '<td><div class="action-links">';
                 html += `<a href="#" class="action-link" onclick="openModal('sampleAddModal')">编辑</a>`;
                 html += `<a href="#" class="action-link" onclick="handleDelete('${pageType}', '${item.id}')">删除</a>`;

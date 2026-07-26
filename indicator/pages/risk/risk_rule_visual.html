@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>风险警示规则可视化自定义</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .page-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        .layout-container { display: flex; gap: 15px; height: calc(100vh - 80px); }
+        .panel { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .panel-header { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; background: #fafafa; font-size: 14px; font-weight: 600; color: #333; }
+        .panel-body { flex: 1; padding: 15px; overflow-y: auto; }
+        .table-list { list-style: none; }
+        .table-item { padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: all 0.3s; }
+        .table-item:hover { border-color: #1e73be; background: #f0f5ff; }
+        .table-item.selected { border-color: #1e9a6c; background: #e8f8f0; }
+        .table-name { font-size: 14px; font-weight: 500; color: #333; }
+        .table-desc { font-size: 12px; color: #999; margin-top: 4px; }
+        .field-list { margin-top: 10px; padding-left: 10px; border-left: 2px solid #e0e0e0; }
+        .field-item { padding: 6px 8px; background: #f8fafc; border-radius: 3px; margin-bottom: 4px; font-size: 12px; display: flex; justify-content: space-between; }
+        .field-item .field-name { color: #333; }
+        .field-item .field-type { color: #999; font-size: 11px; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; }
+        .btn-danger:hover { background: #fff2f0; }
+        .source-area { min-height: 200px; border: 2px dashed #d9d9d9; border-radius: 6px; padding: 15px; text-align: center; }
+        .source-area.has-data { border-style: solid; border-color: #1e9a6c; background: #fafdfb; }
+        .source-area.empty-tip { color: #999; font-size: 13px; }
+        .selected-table { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .selected-table .info { flex: 1; }
+        .selected-table .name { font-weight: 500; color: #333; }
+        .selected-table .fields { font-size: 12px; color: #999; margin-top: 4px; }
+        .relation-area { min-height: 150px; border: 2px dashed #d9d9d9; border-radius: 6px; padding: 15px; }
+        .relation-area.has-data { border-style: solid; border-color: #1e73be; }
+        .relation-item { background: #f0f5ff; border: 1px solid #d9ecff; border-radius: 4px; padding: 8px 12px; margin-bottom: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .relation-text { color: #1e73be; }
+        .preview-section { margin-top: 15px; }
+        .preview-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .preview-table th, .preview-table td { padding: 8px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .preview-table th { background: #f8fafc; font-weight: 600; color: #666; }
+        .filter-section { margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-label { font-size: 13px; color: #666; }
+        .filter-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .filter-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff; cursor: pointer; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { font-size: 13px; color: #666; margin-bottom: 5px; display: block; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; background: #fff; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="page-title">风险警示规则可视化自定义</div>
+    
+    <div class="layout-container">
+        <div class="panel" style="width: 30%;">
+            <div class="panel-header">数据资源库表</div>
+            <div class="panel-body">
+                <div class="filter-section">
+                    <div>
+                        <span class="filter-label">表类型：</span>
+                        <select class="filter-select" id="tableTypeFilter">
+                            <option>全部</option>
+                            <option>历史数据类</option>
+                            <option>实时数据类</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="filter-label">搜索：</span>
+                        <input type="text" class="filter-input" id="tableSearch" placeholder="输入表名" style="width: 150px;">
+                    </div>
+                </div>
+                <ul class="table-list" id="tableList">
+                </ul>
+            </div>
+        </div>
+
+        <div class="panel" style="width: 40%;">
+            <div class="panel-header">规则数据来源区</div>
+            <div class="panel-body">
+                <div class="source-area" id="sourceArea">
+                    <div class="empty-tip">将左侧库表拖拽或点击添加到此处</div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <div class="panel-header" style="margin-bottom: 10px;">跨表关联关系</div>
+                    <div class="relation-area" id="relationArea">
+                        <div class="empty-tip">点击已选表中的字段建立关联关系</div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 10px; width: 100%;" onclick="addRelation()">+ 添加关联关系</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="width: 30%;">
+            <div class="panel-header">数据预览</div>
+            <div class="panel-body">
+                <div class="filter-section">
+                    <div>
+                        <span class="filter-label">选择表：</span>
+                        <select class="filter-select" id="previewTable" style="width: 180px;">
+                            <option>请选择</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="refreshPreview()">刷新预览</button>
+                </div>
+                <div class="preview-section" id="previewSection">
+                    <div class="empty-tip">请先选择数据表</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="relationModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">建立关联关系</div>
+                <div class="modal-close" onclick="closeRelationModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">源表</label>
+                    <select class="form-select" id="relationSource">
+                        <option>请选择</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">源字段</label>
+                    <select class="form-select" id="relationSourceField">
+                        <option>请选择</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">目标表</label>
+                    <select class="form-select" id="relationTarget">
+                        <option>请选择</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">目标字段</label>
+                    <select class="form-select" id="relationTargetField">
+                        <option>请选择</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRelationModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveRelation()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var tables = [
+            { id: 1, name: '历史抽检结果表', type: '历史数据类', desc: '存储历年抽检结果数据', fields: ['食品名称', '检测指标', '检测结果', '限值', '判定结论', '抽样时间', '生产地址', '企业名称'] },
+            { id: 2, name: '风险趋势分析表', type: '历史数据类', desc: '风险指标趋势分析数据', fields: ['指标名称', '历史超标次数', '超标率', '趋势系数', '预警等级'] },
+            { id: 3, name: '区域品类风险统计表', type: '历史数据类', desc: '区域与品类风险统计', fields: ['区域名称', '品类名称', '超标率', '风险排名', '同比变化'] },
+            { id: 4, name: '企业历史超标台账', type: '历史数据类', desc: '企业超标记录台账', fields: ['企业名称', '统一社会信用代码', '超标指标', '超标次数', '最近超标时间'] },
+            { id: 5, name: '当前在产企业清单', type: '实时数据类', desc: '当前生产状态企业列表', fields: ['企业名称', '统一社会信用代码', '生产地址', '生产状态', '所属区域'] },
+            { id: 6, name: '在售食品品类清单', type: '实时数据类', desc: '当前在售食品品类', fields: ['品类名称', '细类名称', '上市时间', '销售区域', '风险等级'] },
+            { id: 7, name: '区域监管重点名单', type: '实时数据类', desc: '监管重点企业名单', fields: ['企业名称', '区域代码', '重点等级', '纳入时间', '监管频次'] }
+        ];
+
+        var selectedTables = [];
+        var relations = [];
+
+        function renderTableList() {
+            var type = document.getElementById('tableTypeFilter').value;
+            var search = document.getElementById('tableSearch').value.toLowerCase();
+            
+            var filtered = tables.filter(function(t) {
+                var matchType = type === '全部' || t.type === type;
+                var matchSearch = !search || t.name.toLowerCase().includes(search);
+                return matchType && matchSearch;
+            });
+
+            var html = filtered.map(function(t) {
+                var isSelected = selectedTables.some(function(st) { return st.id === t.id; });
+                return '<li class="table-item' + (isSelected ? ' selected' : '') + '" onclick="toggleTable(' + t.id + ')">' +
+                    '<div class="table-name">' + t.name + '</div>' +
+                    '<div class="table-desc">' + t.type + ' · ' + t.desc + '</div>' +
+                    '<div class="field-list">' +
+                        t.fields.map(function(f) { return '<div class="field-item"><span class="field-name">' + f + '</span><span class="field-type">string</span></div>'; }).join('') +
+                    '</div>' +
+                '</li>';
+            }).join('');
+
+            document.getElementById('tableList').innerHTML = html;
+        }
+
+        function toggleTable(tableId) {
+            var table = tables.find(function(t) { return t.id === tableId; });
+            var index = selectedTables.findIndex(function(st) { return st.id === tableId; });
+            
+            if (index > -1) {
+                selectedTables.splice(index, 1);
+            } else {
+                selectedTables.push(table);
+            }
+            
+            renderTableList();
+            renderSourceArea();
+            updatePreviewSelect();
+        }
+
+        function renderSourceArea() {
+            var area = document.getElementById('sourceArea');
+            if (selectedTables.length === 0) {
+                area.className = 'source-area';
+                area.innerHTML = '<div class="empty-tip">将左侧库表拖拽或点击添加到此处</div>';
+                return;
+            }
+            
+            area.className = 'source-area has-data';
+            var html = selectedTables.map(function(t, index) {
+                return '<div class="selected-table">' +
+                    '<div class="info">' +
+                        '<div class="name">' + t.name + '</div>' +
+                        '<div class="fields">' + t.fields.join(', ') + '</div>' +
+                    '</div>' +
+                    '<button class="btn btn-danger" onclick="removeTable(' + t.id + ')">删除</button>' +
+                '</div>';
+            }).join('');
+            
+            area.innerHTML = html;
+        }
+
+        function removeTable(tableId) {
+            selectedTables = selectedTables.filter(function(t) { return t.id !== tableId; });
+            renderTableList();
+            renderSourceArea();
+            updatePreviewSelect();
+        }
+
+        function updatePreviewSelect() {
+            var select = document.getElementById('previewTable');
+            var html = '<option>请选择</option>';
+            selectedTables.forEach(function(t) {
+                html += '<option value="' + t.id + '">' + t.name + '</option>';
+            });
+            select.innerHTML = html;
+        }
+
+        function refreshPreview() {
+            var tableId = parseInt(document.getElementById('previewTable').value);
+            if (!tableId) {
+                document.getElementById('previewSection').innerHTML = '<div class="empty-tip">请先选择数据表</div>';
+                return;
+            }
+            
+            var table = tables.find(function(t) { return t.id === tableId; });
+            var sampleData = generateSampleData(table);
+            
+            var html = '<table class="preview-table">' +
+                '<thead><tr>' + table.fields.slice(0, 6).map(function(f) { return '<th>' + f + '</th>'; }).join('') + '</tr></thead>' +
+                '<tbody>' + sampleData.map(function(row) {
+                    return '<tr>' + row.map(function(cell) { return '<td>' + cell + '</td>'; }).join('') + '</tr>';
+                }).join('') + '</tbody>' +
+            '</table>';
+            
+            document.getElementById('previewSection').innerHTML = html;
+        }
+
+        function generateSampleData(table) {
+            var data = [];
+            var fieldCount = Math.min(table.fields.length, 6);
+            
+            for (var i = 0; i < 5; i++) {
+                var row = [];
+                for (var j = 0; j < fieldCount; j++) {
+                    var field = table.fields[j];
+                    if (field.includes('时间')) {
+                        row.push('2026-' + (Math.floor(Math.random() * 6) + 1) + '-' + (Math.floor(Math.random() * 28) + 1));
+                    } else if (field.includes('次数') || field.includes('数量')) {
+                        row.push(Math.floor(Math.random() * 100));
+                    } else if (field.includes('率')) {
+                        row.push((Math.random() * 10).toFixed(1) + '%');
+                    } else {
+                        row.push('示例数据' + (i + 1));
+                    }
+                }
+                data.push(row);
+            }
+            return data;
+        }
+
+        function addRelation() {
+            var sourceSelect = document.getElementById('relationSource');
+            var targetSelect = document.getElementById('relationTarget');
+            
+            var html = '<option>请选择</option>';
+            selectedTables.forEach(function(t) {
+                html += '<option value="' + t.id + '">' + t.name + '</option>';
+            });
+            sourceSelect.innerHTML = html;
+            targetSelect.innerHTML = html;
+            
+            document.getElementById('relationModal').classList.add('active');
+        }
+
+        function closeRelationModal() {
+            document.getElementById('relationModal').classList.remove('active');
+        }
+
+        function updateRelationFields(selectId, tableId) {
+            var table = tables.find(function(t) { return t.id === parseInt(tableId); });
+            if (!table) return;
+            
+            var select = document.getElementById(selectId);
+            var html = '<option>请选择</option>';
+            table.fields.forEach(function(f) {
+                html += '<option value="' + f + '">' + f + '</option>';
+            });
+            select.innerHTML = html;
+        }
+
+        document.getElementById('relationSource').addEventListener('change', function() {
+            updateRelationFields('relationSourceField', this.value);
+        });
+
+        document.getElementById('relationTarget').addEventListener('change', function() {
+            updateRelationFields('relationTargetField', this.value);
+        });
+
+        function saveRelation() {
+            var sourceId = parseInt(document.getElementById('relationSource').value);
+            var sourceField = document.getElementById('relationSourceField').value;
+            var targetId = parseInt(document.getElementById('relationTarget').value);
+            var targetField = document.getElementById('relationTargetField').value;
+            
+            if (!sourceId || !sourceField || !targetId || !targetField) {
+                alert('请填写完整关联信息');
+                return;
+            }
+            
+            var sourceTable = tables.find(function(t) { return t.id === sourceId; });
+            var targetTable = tables.find(function(t) { return t.id === targetId; });
+            
+            relations.push({
+                source: sourceTable.name,
+                sourceField: sourceField,
+                target: targetTable.name,
+                targetField: targetField
+            });
+            
+            renderRelations();
+            closeRelationModal();
+        }
+
+        function renderRelations() {
+            var area = document.getElementById('relationArea');
+            if (relations.length === 0) {
+                area.className = 'relation-area';
+                area.innerHTML = '<div class="empty-tip">点击已选表中的字段建立关联关系</div>';
+                return;
+            }
+            
+            area.className = 'relation-area has-data';
+            var html = relations.map(function(r, index) {
+                return '<div class="relation-item">' +
+                    '<span class="relation-text">' + r.source + '[' + r.sourceField + '] → ' + r.target + '[' + r.targetField + ']</span>' +
+                    '<button class="btn btn-danger" style="padding: 2px 8px; font-size: 12px;" onclick="removeRelation(' + index + ')">删除</button>' +
+                '</div>';
+            }).join('');
+            
+            area.innerHTML = html;
+        }
+
+        function removeRelation(index) {
+            relations.splice(index, 1);
+            renderRelations();
+        }
+
+        renderTableList();
+    </script>
+</body>
+</html>

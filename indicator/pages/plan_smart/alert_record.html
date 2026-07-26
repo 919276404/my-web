@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提醒与规则执行记录查询</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .tabs-container { border-bottom: 1px solid #e0e0e0; margin-bottom: 15px; }
+        .tab-item { display: inline-block; padding: 10px 20px; font-size: 14px; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .tab-item.active { color: #1e73be; border-bottom-color: #1e73be; font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .page-size-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-success { background: #e8f5e9; color: #2e7d32; }
+        .badge-failed { background: #ffebee; color: #c62828; }
+        .badge-warning { background: #fff3e0; color: #e65100; }
+        .badge-level1 { background: #ffebee; color: #c62828; }
+        .badge-level2 { background: #fff3e0; color: #e65100; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-view { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-view:hover { background: #f0f5ff; }
+        .action-btn-plan { background: #fff; color: #2e7d32; border: 1px solid #2e7d32; }
+        .action-btn-plan:hover { background: #e8f5e9; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 800px; max-height: 85vh; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; overflow-y: auto; max-height: calc(85vh - 110px); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; }
+        .detail-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e0e0e0; }
+        .detail-section:last-child { border-bottom: none; }
+        .detail-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .detail-info { display: flex; flex-wrap: wrap; gap: 15px; }
+        .detail-item { display: flex; flex-direction: column; min-width: 150px; }
+        .detail-label { font-size: 12px; color: #999; margin-bottom: 2px; }
+        .detail-value { font-size: 13px; color: #333; }
+        .detail-full { width: 100%; }
+        .detail-full .detail-value { white-space: pre-wrap; }
+        .link-btn { color: #1e73be; cursor: pointer; text-decoration: underline; font-size: 13px; }
+        .link-btn:hover { color: #1a64a5; }
+        .log-item { margin-bottom: 10px; padding: 10px; background: #f8fafc; border-radius: 4px; font-size: 13px; }
+        .log-title { font-weight: 600; color: #333; margin-bottom: 5px; }
+        .log-content { color: #666; }
+        .export-options { display: flex; flex-direction: column; gap: 15px; }
+        .export-option { padding: 15px; background: #f8fafc; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+        .export-option:hover { background: #e8f0fe; }
+        .export-option-title { font-weight: 600; color: #333; margin-bottom: 5px; }
+        .export-option-desc { font-size: 12px; color: #666; }
+        .plan-doc-list { margin-top: 10px; }
+        .plan-doc-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #f0f0f0; }
+        .plan-doc-item:last-child { border-bottom: none; }
+        .plan-doc-icon { font-size: 20px; }
+        .plan-doc-info { flex: 1; }
+        .plan-doc-name { font-size: 13px; color: #333; font-weight: 500; }
+        .plan-doc-date { font-size: 11px; color: #999; }
+        .plan-doc-action { padding: 4px 10px; font-size: 11px; background: #fff; border: 1px solid #1e73be; color: #1e73be; border-radius: 3px; cursor: pointer; }
+        .plan-doc-action:hover { background: #f0f5ff; }
+    </style>
+</head>
+<body>
+    <div class="tabs-container">
+        <div class="tab-item active" onclick="switchTab('tab1')">提醒历史台账</div>
+        <div class="tab-item" onclick="switchTab('tab2')">规则执行日志</div>
+    </div>
+
+    <div id="tab1" class="tab-content active">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" id="tab1SearchRule" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">提醒等级</span>
+                    <select class="search-select" id="tab1SearchLevel">
+                        <option>请选择</option>
+                        <option>一级提醒</option>
+                        <option>二级提醒</option>
+                    </select>
+                </div>
+                <div class="search-item">
+                    <span class="search-label">反馈状态</span>
+                    <select class="search-select" id="tab1SearchStatus">
+                        <option>请选择</option>
+                        <option>已处理</option>
+                        <option>待处理</option>
+                    </select>
+                </div>
+                <div class="search-item">
+                    <span class="search-label">执行时间段</span>
+                    <input type="date" class="search-input" id="tab1StartDate" style="min-width: 120px;">
+                    <span>-</span>
+                    <input type="date" class="search-input" id="tab1EndDate" style="min-width: 120px;">
+                </div>
+                <button class="btn btn-secondary" onclick="clearTab1Search()">清空</button>
+                <button class="btn btn-primary" onclick="doTab1Search()">查询</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                <div>
+                    <button class="btn btn-primary" onclick="openExportModal()">导出台账</button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>序号</th>
+                        <th>提醒编号</th>
+                        <th>规则名称</th>
+                        <th>提醒等级</th>
+                        <th>提醒内容摘要</th>
+                        <th>推送对象</th>
+                        <th>接收时间</th>
+                        <th>反馈状态</th>
+                        <th>纳入计划情况</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tab1TableBody">
+                </tbody>
+            </table>
+
+            <div class="pagination-container">
+                <div class="pagination-info">已选择 0 项 本页 3 条 共有 256 条</div>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                </select>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" disabled>‹</button>
+                    <button class="pagination-btn" disabled>‹‹</button>
+                    <button class="pagination-current">1</button>
+                    <button class="pagination-btn">2</button>
+                    <button class="pagination-btn">3</button>
+                    <button class="pagination-btn">››</button>
+                    <button class="pagination-btn">›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" id="tab2SearchRule" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">执行时间段</span>
+                    <input type="date" class="search-input" id="tab2StartDate" style="min-width: 120px;">
+                    <span>-</span>
+                    <input type="date" class="search-input" id="tab2EndDate" style="min-width: 120px;">
+                </div>
+                <button class="btn btn-secondary" onclick="clearTab2Search()">清空</button>
+                <button class="btn btn-primary" onclick="doTab2Search()">查询</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                <div>
+                    <button class="btn btn-primary" onclick="exportLog()">导出日志</button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>执行时间</th>
+                        <th>涉及数据量</th>
+                        <th>触发提醒数量</th>
+                        <th>执行结果</th>
+                        <th>执行异常信息</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tab2TableBody">
+                </tbody>
+            </table>
+
+            <div class="pagination-container">
+                <div class="pagination-info">已选择 0 项 本页 5 条 共有 512 条</div>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                </select>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" disabled>‹</button>
+                    <button class="pagination-btn" disabled>‹‹</button>
+                    <button class="pagination-current">1</button>
+                    <button class="pagination-btn">2</button>
+                    <button class="pagination-btn">3</button>
+                    <button class="pagination-btn">››</button>
+                    <button class="pagination-btn">›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="exportModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">导出台账</div>
+                <div class="modal-close" onclick="closeExportModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <div class="export-option" onclick="exportExcel()">
+                        <div class="export-option-title">📊 Excel格式</div>
+                        <div class="export-option-desc">导出为Excel文件，包含全部字段，支持筛选和排序</div>
+                    </div>
+                    <div class="export-option" onclick="exportCSV()">
+                        <div class="export-option-title">📄 CSV格式</div>
+                        <div class="export-option-desc">导出为CSV文件，适合数据导入和批量处理</div>
+                    </div>
+                    <div class="export-option" onclick="exportPDF()">
+                        <div class="export-option-title">📑 PDF格式</div>
+                        <div class="export-option-desc">导出为PDF文件，适合打印和存档</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeExportModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="detailModalTitle">详情</div>
+                <div class="modal-close" onclick="closeDetailModal()">×</div>
+            </div>
+            <div class="modal-body" id="detailContent">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="planModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">查看计划文档</div>
+                <div class="modal-close" onclick="closePlanModal()">×</div>
+            </div>
+            <div class="modal-body" id="planContent">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePlanModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var alertData = [
+            { id: 1, alertNo: 'ALERT-2026-0001', ruleName: '高频超标主体提醒规则', level: '一级提醒', 
+              summary: 'XX食品有限公司近12个月农残超标3次，建议纳入优先抽检名单', 
+              target: '李四（监管所抽检专员）', receiveTime: '2026-07-05 09:30', 
+              feedbackStatus: '已处理', planStatus: '已纳入2026年度计划', 
+              detail: { subjectName: 'XX食品有限公司', historyIndex: '农残超标', exceedCount: 3, 
+                       suggest: '建议纳入优先抽检名单，增加抽检频次至每季度1次', 
+                       dataSource: '历史抽检结果表、企业历史超标台账',
+                       riskTrend: '近12个月农残超标呈上升趋势，需加强监管' },
+              planDocs: [
+                  { name: '2026年度食品抽检计划-XX食品有限公司专项', date: '2026-07-05', size: '2.3MB', type: 'pdf' },
+                  { name: 'XX食品有限公司抽检频次调整说明', date: '2026-07-06', size: '1.1MB', type: 'doc' }
+              ] },
+            { id: 2, alertNo: 'ALERT-2026-0002', ruleName: '季节周期风险提醒规则', level: '二级提醒', 
+              summary: '夏季熟肉制品微生物专项抽检提醒，历史同期超标率8.5%', 
+              target: '王五（抽检科室联络员）', receiveTime: '2026-07-05 10:00', 
+              feedbackStatus: '待处理', planStatus: '-', 
+              detail: { riskCategory: '熟肉制品', period: '夏季（6-8月）', historyRate: '8.5%', 
+                       suggest: '建议在夏季增加熟肉制品抽检频次，重点监测微生物指标',
+                       dataSource: '风险趋势分析表',
+                       riskTrend: '夏季高温高湿环境有利于微生物繁殖，历史数据显示该时期超标率明显上升' },
+              planDocs: [] },
+            { id: 3, alertNo: 'ALERT-2026-0003', ruleName: '区域品类风险提醒规则', level: '一级提醒', 
+              summary: '朝阳区蔬菜农药残留超标率12.5%，高于全市平均4.3个百分点', 
+              target: '赵六（科室负责人）', receiveTime: '2026-07-05 10:30', 
+              feedbackStatus: '已处理', planStatus: '暂缓纳入，待评估', 
+              detail: { region: '朝阳区', category: '蔬菜', exceedRate: '12.5%', 
+                       cityAvg: '8.2%', diff: '+4.3个百分点',
+                       suggest: '建议增加朝阳区蔬菜抽样比例，加强对本地蔬菜生产基地的监管',
+                       dataSource: '区域品类风险统计表、历史抽检结果表',
+                       riskTrend: '朝阳区蔬菜农药残留超标率连续3个月高于全市平均水平' },
+              planDocs: [
+                  { name: '朝阳区蔬菜专项抽检方案', date: '2026-07-08', size: '3.5MB', type: 'pdf' }
+              ] }
+        ];
+
+        var logData = [
+            { id: 1, ruleName: '高频超标主体提醒规则', execTime: '2026-07-05 09:00:00', 
+              dataCount: '12,580条', alertCount: '45条', result: '执行成功', 
+              errorInfo: '无', 
+              detail: { execType: '定时执行', execRange: '全区域', 
+                       startTime: '2026-07-05 09:00:00', endTime: '2026-07-05 09:05:32', 
+                       duration: '5分32秒',
+                       dataSource: '历史抽检结果表、企业历史超标台账',
+                       processedRecords: [
+                           { type: '符合条件', count: 45, desc: '触发提醒' },
+                           { type: '不符合条件', count: 12535, desc: '未触发提醒' }
+                       ],
+                       logs: [
+                           '2026-07-05 09:00:00 - 开始执行高频超标主体提醒规则',
+                           '2026-07-05 09:00:02 - 读取历史抽检结果表数据，共12,580条记录',
+                           '2026-07-05 09:02:15 - 读取企业历史超标台账数据',
+                           '2026-07-05 09:03:40 - 执行超标次数判定逻辑',
+                           '2026-07-05 09:05:10 - 生成45条提醒信息',
+                           '2026-07-05 09:05:32 - 执行完成，耗时5分32秒'
+                       ] } },
+            { id: 2, ruleName: '季节周期风险提醒规则', execTime: '2026-07-05 10:00:00', 
+              dataCount: '8,230条', alertCount: '12条', result: '执行成功', 
+              errorInfo: '无',
+              detail: { execType: '定时执行', execRange: '全区域',
+                       startTime: '2026-07-05 10:00:00', endTime: '2026-07-05 10:03:18',
+                       duration: '3分18秒',
+                       dataSource: '风险趋势分析表',
+                       processedRecords: [
+                           { type: '符合条件', count: 12, desc: '触发提醒' },
+                           { type: '不符合条件', count: 8218, desc: '未触发提醒' }
+                       ],
+                       logs: [
+                           '2026-07-05 10:00:00 - 开始执行季节周期风险提醒规则',
+                           '2026-07-05 10:00:01 - 读取风险趋势分析表数据，共8,230条记录',
+                           '2026-07-05 10:01:30 - 执行季节周期判定逻辑',
+                           '2026-07-05 10:02:45 - 生成12条提醒信息',
+                           '2026-07-05 10:03:18 - 执行完成，耗时3分18秒'
+                       ] } },
+            { id: 3, ruleName: '区域品类风险提醒规则', execTime: '2026-07-05 10:30:00', 
+              dataCount: '15,620条', alertCount: '8条', result: '部分成功', 
+              errorInfo: '部分区域数据缺失，已跳过',
+              detail: { execType: '定时执行', execRange: '全区域',
+                       startTime: '2026-07-05 10:30:00', endTime: '2026-07-05 10:08:45',
+                       duration: '8分45秒',
+                       dataSource: '区域品类风险统计表',
+                       processedRecords: [
+                           { type: '符合条件', count: 8, desc: '触发提醒' },
+                           { type: '不符合条件', count: 15590, desc: '未触发提醒' },
+                           { type: '数据缺失', count: 22, desc: '已跳过' }
+                       ],
+                       logs: [
+                           '2026-07-05 10:30:00 - 开始执行区域品类风险提醒规则',
+                           '2026-07-05 10:30:02 - 读取区域品类风险统计表数据',
+                           '2026-07-05 10:02:30 - 发现部分区域数据缺失（22条），已跳过',
+                           '2026-07-05 10:06:15 - 执行区域品类超标率判定逻辑',
+                           '2026-07-05 10:08:30 - 生成8条提醒信息',
+                           '2026-07-05 10:08:45 - 执行完成，耗时8分45秒，部分数据缺失'
+                       ] } },
+            { id: 4, ruleName: '高频超标经营主体提醒规则', execTime: '2026-07-05 11:00:00', 
+              dataCount: '9,850条', alertCount: '23条', result: '执行成功', 
+              errorInfo: '无',
+              detail: { execType: '定时执行', execRange: '全区域',
+                       startTime: '2026-07-05 11:00:00', endTime: '2026-07-05 11:04:20',
+                       duration: '4分20秒',
+                       dataSource: '历史抽检结果表、当前在产企业清单',
+                       processedRecords: [
+                           { type: '符合条件', count: 23, desc: '触发提醒' },
+                           { type: '不符合条件', count: 9827, desc: '未触发提醒' }
+                       ],
+                       logs: [
+                           '2026-07-05 11:00:00 - 开始执行高频超标经营主体提醒规则',
+                           '2026-07-05 11:00:01 - 读取历史抽检结果表数据，共9,850条记录',
+                           '2026-07-05 11:01:45 - 读取当前在产企业清单数据',
+                           '2026-07-05 11:02:30 - 执行经营主体超标率判定逻辑',
+                           '2026-07-05 11:03:50 - 生成23条提醒信息',
+                           '2026-07-05 11:04:20 - 执行完成，耗时4分20秒'
+                       ] } },
+            { id: 5, ruleName: '标准更新适配性抽检提醒规则', execTime: '2026-07-05 11:30:00', 
+              dataCount: '3,200条', alertCount: '5条', result: '执行成功', 
+              errorInfo: '无',
+              detail: { execType: '事件触发', execRange: '全品类',
+                       startTime: '2026-07-05 11:30:00', endTime: '2026-07-05 11:32:05',
+                       duration: '2分05秒',
+                       dataSource: '历史抽检结果表、标准更新记录表',
+                       processedRecords: [
+                           { type: '符合条件', count: 5, desc: '触发提醒' },
+                           { type: '不符合条件', count: 3195, desc: '未触发提醒' }
+                       ],
+                       logs: [
+                           '2026-07-05 11:30:00 - 标准更新事件触发执行',
+                           '2026-07-05 11:30:01 - 读取标准更新记录表数据',
+                           '2026-07-05 11:30:30 - 匹配历史抽检结果表中涉及更新标准的产品',
+                           '2026-07-05 11:31:45 - 执行标准适配性判定逻辑',
+                           '2026-07-05 11:32:05 - 生成5条提醒信息，执行完成'
+                       ] } }
+        ];
+
+        function renderTab1Table(data) {
+            var tbody = document.getElementById('tab1TableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var levelBadge = item.level === '一级提醒' ? 'badge-level1' : 'badge-level2';
+                var statusBadge = item.feedbackStatus === '已处理' ? 'badge-success' : 'badge-warning';
+                var hasPlanDoc = item.planDocs && item.planDocs.length > 0;
+                
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.alertNo + '</td>' +
+                    '<td>' + item.ruleName + '</td>' +
+                    '<td><span class="badge ' + levelBadge + '">' + item.level + '</span></td>' +
+                    '<td>' + item.summary + '</td>' +
+                    '<td>' + item.target + '</td>' +
+                    '<td>' + item.receiveTime + '</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + item.feedbackStatus + '</span></td>' +
+                    '<td>' + item.planStatus + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-view" onclick="openAlertDetail(' + item.id + ')">查看详情</button>' +
+                        (hasPlanDoc ? '<button class="action-btn action-btn-plan" onclick="openPlanDoc(' + item.id + ')">查看计划文档</button>' : '') +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function renderTab2Table(data) {
+            var tbody = document.getElementById('tab2TableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var resultBadge = item.result === '执行成功' ? 'badge-success' : 
+                                 (item.result === '部分成功' ? 'badge-warning' : 'badge-failed');
+                
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.ruleName + '</td>' +
+                    '<td>' + item.execTime + '</td>' +
+                    '<td>' + item.dataCount + '</td>' +
+                    '<td>' + item.alertCount + '</td>' +
+                    '<td><span class="badge ' + resultBadge + '">' + item.result + '</span></td>' +
+                    '<td>' + item.errorInfo + '</td>' +
+                    '<td><button class="action-btn action-btn-view" onclick="openLogDetail(' + item.id + ')">查看详情</button></td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelector('.tab-item[onclick="switchTab(\'' + tabId + '\')"]').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function openExportModal() {
+            document.getElementById('exportModal').classList.add('active');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('active');
+        }
+
+        function exportExcel() {
+            closeExportModal();
+            alert('台账已导出为Excel格式，正在下载...');
+        }
+
+        function exportCSV() {
+            closeExportModal();
+            alert('台账已导出为CSV格式，正在下载...');
+        }
+
+        function exportPDF() {
+            closeExportModal();
+            alert('台账已导出为PDF格式，正在下载...');
+        }
+
+        function exportLog() {
+            alert('规则执行日志已导出，正在下载...');
+        }
+
+        function openAlertDetail(id) {
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (!item) return;
+
+            document.getElementById('detailModalTitle').textContent = '提醒详情 - ' + item.alertNo;
+            
+            var detailHtml = '<div class="detail-section">' +
+                '<div class="detail-title">基本信息</div>' +
+                '<div class="detail-info">' +
+                    '<div class="detail-item"><div class="detail-label">提醒编号</div><div class="detail-value">' + item.alertNo + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">规则名称</div><div class="detail-value">' + item.ruleName + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">提醒等级</div><div class="detail-value">' + item.level + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">推送对象</div><div class="detail-value">' + item.target + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">接收时间</div><div class="detail-value">' + item.receiveTime + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">反馈状态</div><div class="detail-value">' + item.feedbackStatus + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">纳入计划情况</div><div class="detail-value">' + item.planStatus + '</div></div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="detail-section">' +
+                '<div class="detail-title">提醒内容</div>' +
+                '<div class="detail-info">' +
+                    '<div class="detail-item detail-full"><div class="detail-label">摘要</div><div class="detail-value">' + item.summary + '</div></div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="detail-section">' +
+                '<div class="detail-title">关联数据</div>' +
+                '<div class="detail-info">';
+            
+            if (item.detail) {
+                if (item.detail.subjectName) detailHtml += '<div class="detail-item"><div class="detail-label">主体名称</div><div class="detail-value">' + item.detail.subjectName + '</div></div>';
+                if (item.detail.historyIndex) detailHtml += '<div class="detail-item"><div class="detail-label">历史超标指标</div><div class="detail-value">' + item.detail.historyIndex + '</div></div>';
+                if (item.detail.exceedCount) detailHtml += '<div class="detail-item"><div class="detail-label">超标次数</div><div class="detail-value">' + item.detail.exceedCount + '次</div></div>';
+                if (item.detail.riskCategory) detailHtml += '<div class="detail-item"><div class="detail-label">风险品类</div><div class="detail-value">' + item.detail.riskCategory + '</div></div>';
+                if (item.detail.period) detailHtml += '<div class="detail-item"><div class="detail-label">季节周期</div><div class="detail-value">' + item.detail.period + '</div></div>';
+                if (item.detail.historyRate) detailHtml += '<div class="detail-item"><div class="detail-label">历史同期超标率</div><div class="detail-value">' + item.detail.historyRate + '</div></div>';
+                if (item.detail.region) detailHtml += '<div class="detail-item"><div class="detail-label">区域名称</div><div class="detail-value">' + item.detail.region + '</div></div>';
+                if (item.detail.category) detailHtml += '<div class="detail-item"><div class="detail-label">品类名称</div><div class="detail-value">' + item.detail.category + '</div></div>';
+                if (item.detail.exceedRate) detailHtml += '<div class="detail-item"><div class="detail-label">超标率</div><div class="detail-value">' + item.detail.exceedRate + '</div></div>';
+                if (item.detail.cityAvg) detailHtml += '<div class="detail-item"><div class="detail-label">全市平均</div><div class="detail-value">' + item.detail.cityAvg + '</div></div>';
+                if (item.detail.diff) detailHtml += '<div class="detail-item"><div class="detail-label">差值</div><div class="detail-value">' + item.detail.diff + '</div></div>';
+                if (item.detail.dataSource) detailHtml += '<div class="detail-item"><div class="detail-label">数据来源</div><div class="detail-value">' + item.detail.dataSource + '</div></div>';
+                if (item.detail.suggest) detailHtml += '<div class="detail-item detail-full"><div class="detail-label">建议</div><div class="detail-value">' + item.detail.suggest + '</div></div>';
+                if (item.detail.riskTrend) detailHtml += '<div class="detail-item detail-full"><div class="detail-label">风险趋势</div><div class="detail-value">' + item.detail.riskTrend + '</div></div>';
+            }
+            
+            detailHtml += '</div></div>' +
+                '<div class="detail-section">' +
+                '<div class="detail-title">数据链接</div>' +
+                '<div class="link-btn" onclick="alert(\'跳转到关联历史数据页面\')">📊 查看关联历史数据</div>' +
+                '</div>';
+            
+            document.getElementById('detailContent').innerHTML = detailHtml;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function openLogDetail(id) {
+            var item = logData.find(function(d) { return d.id === id; });
+            if (!item) return;
+
+            document.getElementById('detailModalTitle').textContent = '规则执行详情 - ' + item.ruleName;
+            
+            var detailHtml = '<div class="detail-section">' +
+                '<div class="detail-title">基本信息</div>' +
+                '<div class="detail-info">' +
+                    '<div class="detail-item"><div class="detail-label">规则名称</div><div class="detail-value">' + item.ruleName + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">执行时间</div><div class="detail-value">' + item.execTime + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">涉及数据量</div><div class="detail-value">' + item.dataCount + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">触发提醒数量</div><div class="detail-value">' + item.alertCount + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">执行结果</div><div class="detail-value">' + item.result + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">异常信息</div><div class="detail-value">' + item.errorInfo + '</div></div>' +
+                '</div>' +
+                '</div>';
+            
+            if (item.detail) {
+                detailHtml += '<div class="detail-section">' +
+                    '<div class="detail-title">执行信息</div>' +
+                    '<div class="detail-info">' +
+                        '<div class="detail-item"><div class="detail-label">执行类型</div><div class="detail-value">' + item.detail.execType + '</div></div>' +
+                        '<div class="detail-item"><div class="detail-label">执行范围</div><div class="detail-value">' + item.detail.execRange + '</div></div>' +
+                        '<div class="detail-item"><div class="detail-label">开始时间</div><div class="detail-value">' + item.detail.startTime + '</div></div>' +
+                        '<div class="detail-item"><div class="detail-label">结束时间</div><div class="detail-value">' + item.detail.endTime + '</div></div>' +
+                        '<div class="detail-item"><div class="detail-label">耗时</div><div class="detail-value">' + item.detail.duration + '</div></div>' +
+                        '<div class="detail-item"><div class="detail-label">数据来源</div><div class="detail-value">' + item.detail.dataSource + '</div></div>' +
+                    '</div>' +
+                    '</div>';
+                
+                if (item.detail.processedRecords) {
+                    detailHtml += '<div class="detail-section">' +
+                        '<div class="detail-title">处理记录统计</div>' +
+                        '<div class="detail-info">';
+                    item.detail.processedRecords.forEach(function(rec) {
+                        detailHtml += '<div class="detail-item"><div class="detail-label">' + rec.type + '</div><div class="detail-value">' + rec.count + '条 - ' + rec.desc + '</div></div>';
+                    });
+                    detailHtml += '</div></div>';
+                }
+                
+                if (item.detail.logs) {
+                    detailHtml += '<div class="detail-section">' +
+                        '<div class="detail-title">执行日志</div>';
+                    item.detail.logs.forEach(function(log) {
+                        detailHtml += '<div class="log-item"><div class="log-content">' + log + '</div></div>';
+                    });
+                    detailHtml += '</div>';
+                }
+            }
+            
+            document.getElementById('detailContent').innerHTML = detailHtml;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function openPlanDoc(id) {
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (!item || !item.planDocs || item.planDocs.length === 0) return;
+
+            var planHtml = '<div class="detail-section">' +
+                '<div class="detail-title">关联计划文档</div>' +
+                '<div class="plan-doc-list">';
+            
+            item.planDocs.forEach(function(doc) {
+                var icon = doc.type === 'pdf' ? '📕' : (doc.type === 'doc' ? '📘' : '📄');
+                planHtml += '<div class="plan-doc-item">' +
+                    '<div class="plan-doc-icon">' + icon + '</div>' +
+                    '<div class="plan-doc-info">' +
+                        '<div class="plan-doc-name">' + doc.name + '</div>' +
+                        '<div class="plan-doc-date">' + doc.date + ' | ' + doc.size + '</div>' +
+                    '</div>' +
+                    '<button class="plan-doc-action" onclick="downloadDoc(\'' + doc.name + '\')">下载</button>' +
+                    '</div>';
+            });
+            
+            planHtml += '</div></div>';
+            
+            document.getElementById('planContent').innerHTML = planHtml;
+            document.getElementById('planModal').classList.add('active');
+        }
+
+        function closePlanModal() {
+            document.getElementById('planModal').classList.remove('active');
+        }
+
+        function downloadDoc(docName) {
+            alert('正在下载文档：' + docName);
+        }
+
+        function clearTab1Search() {
+            document.getElementById('tab1SearchRule').value = '';
+            document.getElementById('tab1SearchLevel').value = '请选择';
+            document.getElementById('tab1SearchStatus').value = '请选择';
+            document.getElementById('tab1StartDate').value = '';
+            document.getElementById('tab1EndDate').value = '';
+            renderTab1Table(alertData);
+        }
+
+        function doTab1Search() {
+            var ruleName = document.getElementById('tab1SearchRule').value.trim().toLowerCase();
+            var level = document.getElementById('tab1SearchLevel').value;
+            var status = document.getElementById('tab1SearchStatus').value;
+            
+            var filtered = alertData.filter(function(item) {
+                var matchName = !ruleName || item.ruleName.toLowerCase().includes(ruleName);
+                var matchLevel = level === '请选择' || item.level === level;
+                var matchStatus = status === '请选择' || item.feedbackStatus === status;
+                return matchName && matchLevel && matchStatus;
+            });
+            
+            renderTab1Table(filtered);
+        }
+
+        function clearTab2Search() {
+            document.getElementById('tab2SearchRule').value = '';
+            document.getElementById('tab2StartDate').value = '';
+            document.getElementById('tab2EndDate').value = '';
+            renderTab2Table(logData);
+        }
+
+        function doTab2Search() {
+            var ruleName = document.getElementById('tab2SearchRule').value.trim().toLowerCase();
+            
+            var filtered = logData.filter(function(item) {
+                var matchName = !ruleName || item.ruleName.toLowerCase().includes(ruleName);
+                return matchName;
+            });
+            
+            renderTab2Table(filtered);
+        }
+
+        renderTab1Table(alertData);
+        renderTab2Table(logData);
+    </script>
+</body>
+</html>

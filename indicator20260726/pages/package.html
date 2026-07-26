@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>样本费管理</title>
+    <title>打包价管理</title>
     <link rel="stylesheet" href="../css/styles.css">
     <style>
         body {
@@ -104,6 +104,10 @@
             min-width: 150px;
         }
 
+        .search-item input {
+            min-width: 200px;
+        }
+
         .search-actions {
             margin-left: auto;
             display: flex;
@@ -143,6 +147,7 @@
             text-align: left;
             border-bottom: 1px solid #f0f5f2;
             font-size: 13px;
+            white-space: nowrap;
         }
 
         th {
@@ -236,7 +241,7 @@
     <div class="tabs-container">
         <div class="tabs-header">
             <div class="tab active">
-                <span>样本费管理</span>
+                <span>打包价管理</span>
                 <span class="tab-close">×</span>
             </div>
             <div class="tabs-actions">
@@ -247,32 +252,26 @@
         <div class="search-panel">
             <div class="search-row">
                 <div class="search-item">
-                    <label>食品大类(一级):</label>
-                    <select>
-                        <option value="">请选择</option>
-                    </select>
+                    <label>报送分类2:</label>
+                    <input type="text" placeholder="请输入">
                 </div>
                 <div class="search-item">
-                    <label>食品亚类(二级):</label>
-                    <select>
-                        <option value="">请选择</option>
-                    </select>
+                    <label>打包价名称:</label>
+                    <input type="text" placeholder="请输入">
                 </div>
                 <div class="search-item">
-                    <label>食品次亚类(三级):</label>
+                    <label>打包规则:</label>
                     <select>
                         <option value="">请选择</option>
-                    </select>
-                </div>
-                <div class="search-item">
-                    <label>食品细类(四级):</label>
-                    <select>
-                        <option value="">请选择</option>
+                        <option value="single-price-add">单项价格相同，按个数加价</option>
+                        <option value="fixed-total">固定总价</option>
+                        <option value="single-price-add-limit">单项价格相同，按个数加价，有最高限价</option>
+                        <option value="same-price-add">单价相同，按个数加价，有最高限价</option>
                     </select>
                 </div>
                 <div class="search-actions">
                     <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
-                    <button class="btn btn-primary" onclick="handleSearch('sample')">查询</button>
+                    <button class="btn btn-primary" onclick="handleSearch('package')">查询</button>
                 </div>
             </div>
         </div>
@@ -280,24 +279,28 @@
         <div class="table-panel">
             <div class="table-header">
                 <div style="display:flex;gap:10px">
+                    <button class="btn btn-primary" style="background:#1e9a6c;">导出本页</button>
                     <button class="btn btn-primary" style="background:#1e9a6c;">导出</button>
-                    <button class="btn btn-secondary">导入</button>
-                    <button class="btn btn-secondary">下载模板</button>
-                    <button class="btn btn-primary" onclick="openModal('sampleAddModal')">+ 新增</button>
+                    <button class="btn btn-primary" onclick="openModal('packageAddModal')">+ 新增</button>
+                    <button class="btn btn-primary" style="background:#1e9a6c;">+ 复制新增</button>
+                </div>
+                <div class="table-actions">
+                    <button class="btn btn-secondary">查询配置</button>
+                    <button class="btn btn-secondary">表格配置</button>
                 </div>
             </div>
 
             <div class="table-container">
-                <table id="sampleTable">
+                <table id="packageTable">
                     <thead>
                         <tr>
-                            <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
+                            <th class="checkbox-cell"><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
                             <th>序号</th>
-                            <th>食品大类(一级)</th>
-                            <th>食品亚类(二级)</th>
-                            <th>食品次亚类(三级)</th>
-                            <th>食品细类(四级)</th>
-                            <th>单价(元)</th>
+                            <th>报送分类2</th>
+                            <th>食品分类</th>
+                            <th>打包价名称</th>
+                            <th>打包规则</th>
+                            <th>检验项目名称</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -309,105 +312,42 @@
         </div>
     </div>
 
-    <!-- 新增弹窗 -->
-    <div id="sampleAddModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">新增</div>
-                <div class="modal-close" onclick="closeModal('sampleAddModal')">&times;</div>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="required">食品大类(一级):</label>
-                    <select id="foodLevel1">
-                        <option value="">请选择</option>
-                        <option value="婴幼儿配方食品">婴幼儿配方食品</option>
-                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
-                        <option value="特殊膳食食品">特殊膳食食品</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="required">食品亚类(二级):</label>
-                    <select id="foodLevel2">
-                        <option value="">请选择</option>
-                        <option value="婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)">婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)</option>
-                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
-                        <option value="营养补充品">营养补充品</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="required">食品次亚类(三级):</label>
-                    <select id="foodLevel3">
-                        <option value="">请选择</option>
-                        <option value="幼儿配方食品">幼儿配方食品</option>
-                        <option value="婴儿配方食品">婴儿配方食品</option>
-                        <option value="较大婴儿配方食品">较大婴儿配方食品</option>
-                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
-                        <option value="营养补充品">营养补充品</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="required">食品细类(四级):</label>
-                    <select id="foodLevel4">
-                        <option value="">请选择</option>
-                        <option value="幼儿配方食品">幼儿配方食品</option>
-                        <option value="乳基婴儿配方食品、豆基婴儿配方食品">乳基婴儿配方食品、豆基婴儿配方食品</option>
-                        <option value="乳基较大婴儿配方食品、豆基较大婴儿配方食品">乳基较大婴儿配方食品、豆基较大婴儿配方食品</option>
-                        <option value="特定全营养配方食品">特定全营养配方食品</option>
-                        <option value="全营养配方食品">全营养配方食品</option>
-                        <option value="运动营养食品">运动营养食品</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="required">单价(元):</label>
-                    <select id="price">
-                        <option value="">请选择</option>
-                        <option value="1800">1800</option>
-                        <option value="2000">2000</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('sampleAddModal')">取消</button>
-                <button class="btn btn-primary" onclick="confirmAdd('sample')">确认</button>
-            </div>
-        </div>
-    </div>
-
     <script src="../js/common.js"></script>
     <script>
-        const pageType = 'sample';
+        const pageType = 'package';
 
-        const foodTypes = [
-            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '幼儿配方食品', level4: '幼儿配方食品' },
-            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '婴儿配方食品', level4: '乳基婴儿配方食品、豆基婴儿配方食品' },
-            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '较大婴儿配方食品', level4: '乳基较大婴儿配方食品、豆基较大婴儿配方食品' },
-            { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '特定全营养配方食品' },
-            { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '全营养配方食品' },
-            { level1: '特殊膳食食品', level2: '营养补充品', level3: '营养补充品', level4: '运动营养食品' }
+        const packageDataList = [
+            { id: '1', category2: '', foodCategory: '', packageName: '磺胺类', rule: '单项价格相同，按个数加价', items: '磺胺嘧啶,磺胺邻二甲氧嘧啶,磺胺间...' },
+            { id: '2', category2: '', foodCategory: '', packageName: '磺胺类总量', rule: '固定总价', items: '甲氧苄啶,磺胺类（总量）' },
+            { id: '3', category2: '', foodCategory: '', packageName: '脂肪酸', rule: '固定总价', items: '(花生酸+山嵛酸)/总脂肪酸,亚油酸/...' },
+            { id: '4', category2: '', foodCategory: '', packageName: '青霉素类', rule: '单项价格相同，按个数加价', items: '双氯青霉素,乙氧萘胺青霉素,甲氧苯...' },
+            { id: '5', category2: '', foodCategory: '', packageName: '氯酸盐高氯酸盐', rule: '单项价格相同，按个数加价', items: '高氯酸盐,氯酸盐' },
+            { id: '6', category2: '', foodCategory: '', packageName: '农药', rule: '单价相同，按个数加价，有最高限价', items: '氯酸盐甲酯,特乐酚,灭螨醌,甲氧滴滴...' },
+            { id: '7', category2: '', foodCategory: '', packageName: '氟虫腈', rule: '单项价格相同，按个数加价', items: '氟虫腈砜,氟虫腈亚砜,氟甲腈,氟虫腈' },
+            { id: '8', category2: '', foodCategory: '', packageName: '氯丙那林非诺特罗', rule: '单项价格相同，按个数加价', items: '非诺特罗,氯丙那林' },
+            { id: '9', category2: '', foodCategory: '', packageName: '头孢', rule: '单项价格相同，按个数加价', items: '头孢噻肟,头孢氨苄,头孢噻呋,头孢匹林' },
+            { id: '10', category2: '', foodCategory: '', packageName: '硝喹', rule: '单项价格相同，按个数加价', items: '羟甲基甲硝唑喹啉,羟基甲硝唑,洛硝达...' }
         ];
 
-        // 生成463条数据
-        function generateSampleData() {
+        function generatePackageData() {
             const data = [];
-            for (let i = 0; i < 463; i++) {
-                const food = foodTypes[i % foodTypes.length];
+            for (let i = 0; i < 28; i++) {
+                const item = packageDataList[i % packageDataList.length];
                 data.push({
                     id: Utils.generateId(),
-                    foodLevel1: food.level1,
-                    foodLevel2: food.level2,
-                    foodLevel3: food.level3,
-                    foodLevel4: food.level4,
-                    price: i % 3 === 0 ? 2000 : 1800
+                    category2: item.category2,
+                    foodCategory: item.foodCategory,
+                    packageName: item.packageName,
+                    rule: item.rule,
+                    items: item.items
                 });
             }
             return data;
         }
 
-        const sampleData = generateSampleData();
+        const packageData = generatePackageData();
 
-        // 初始化页面管理
-        PageManager.init(pageType, sampleData);
+        PageManager.init(pageType, packageData);
 
         function renderTable(pageType) {
             const tbody = document.getElementById('tableBody');
@@ -418,18 +358,23 @@
                 html += '<tr>';
                 html += `<td class="checkbox-cell"><input type="checkbox" data-id="${item.id}"></td>`;
                 html += `<td>${(PageManager.currentPage[pageType] - 1) * PageManager.pageSize[pageType] + index + 1}</td>`;
-                html += `<td>${item.foodLevel1}</td>`;
-                html += `<td>${item.foodLevel2}</td>`;
-                html += `<td>${item.foodLevel3}</td>`;
-                html += `<td>${item.foodLevel4}</td>`;
-                html += `<td>${item.price}</td>`;
+                html += `<td>${item.category2 || ''}</td>`;
+                html += `<td>${item.foodCategory || ''}</td>`;
+                html += `<td>${item.packageName}</td>`;
+                html += `<td>${item.rule}</td>`;
+                html += `<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.items}</td>`;
                 html += '<td><div class="action-links">';
-                html += `<a href="#" class="action-link" onclick="openModal('sampleAddModal')">编辑</a>`;
+                html += `<a href="#" class="action-link" onclick="handleEdit('${pageType}', '${item.id}')">编辑</a>`;
+                html += `<a href="#" class="action-link" onclick="handleCopy('${pageType}', '${item.id}')">复制</a>`;
                 html += `<a href="#" class="action-link" onclick="handleDelete('${pageType}', '${item.id}')">删除</a>`;
                 html += '</div></td></tr>';
             });
 
             tbody.innerHTML = html;
+        }
+
+        function handleCopy(pageType, id) {
+            console.log('复制:', pageType, id);
         }
 
         function renderPagination(pageType) {
@@ -442,7 +387,6 @@
             pagination.innerHTML = PaginationTemplate.render(pageType, currentPage, totalPages, totalCount, pageSize);
         }
 
-        // 页面加载完成后渲染
         document.addEventListener('DOMContentLoaded', function() {
             renderTable(pageType);
             renderPagination(pageType);

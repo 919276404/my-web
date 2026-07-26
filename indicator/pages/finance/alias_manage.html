@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检验项目别名管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #c62828; border: 1px solid #c62828; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 500px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #c62828; margin-left: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: #fff; cursor: pointer; }
+        .form-textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; min-height: 80px; resize: vertical; }
+        .rule-config { padding: 10px; background: #f8fafc; border-radius: 4px; margin-top: 10px; }
+        .rule-item { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .rule-item:last-child { margin-bottom: 0; }
+        .rule-label { font-size: 12px; color: #666; min-width: 80px; }
+        .rule-value { font-size: 13px; color: #333; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-active { background: #e8f5e9; color: #2e7d32; }
+        .badge-inactive { background: #f5f5f5; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">别名名称</span>
+                <input type="text" class="search-input" id="searchAlias" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">标准检测项目</span>
+                <input type="text" class="search-input" id="searchStandard" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">状态</span>
+                <select class="search-select" id="searchStatus">
+                    <option>请选择</option>
+                    <option>启用</option>
+                    <option>停用</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <div>
+                <button class="btn btn-primary" onclick="openAddModal()">+ 新增别名</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary">📥 导入</button>
+                <button class="btn btn-secondary">📤 导出</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>别名名称</th>
+                    <th>标准检测项目名称</th>
+                    <th>计算规则</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 5 条 共有 128 条</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="aliasModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增别名</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalId" value="">
+                <div class="form-item">
+                    <label class="form-label required">别名名称</label>
+                    <input type="text" class="form-input" id="aliasName" placeholder="请输入别名名称">
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">标准检测项目名称</label>
+                    <select class="form-select" id="standardItem">
+                        <option value="">请选择</option>
+                        <option value="农药残留">农药残留</option>
+                        <option value="兽药残留">兽药残留</option>
+                        <option value="食品添加剂">食品添加剂</option>
+                        <option value="微生物">微生物</option>
+                        <option value="重金属">重金属</option>
+                        <option value="营养成分">营养成分</option>
+                        <option value="理化指标">理化指标</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">计算规则配置</label>
+                    <div class="rule-config">
+                        <div class="rule-item">
+                            <span class="rule-label">核算方式：</span>
+                            <select class="form-select" id="calcMethod" style="flex: 1; min-width: auto;">
+                                <option value="按项计算">按项计算</option>
+                                <option value="按批次计算">按批次计算</option>
+                                <option value="按含量计算">按含量计算</option>
+                            </select>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">费用标准：</span>
+                            <input type="number" class="form-input" id="feeStandard" placeholder="0.00" style="flex: 1; min-width: auto;">
+                            <span style="font-size: 12px; color: #666;">元</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">备注：</span>
+                            <input type="text" class="form-input" id="ruleNote" placeholder="请输入备注" style="flex: 1; min-width: auto;">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">状态</label>
+                    <select class="form-select" id="aliasStatus">
+                        <option value="启用">启用</option>
+                        <option value="停用">停用</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveAlias()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var aliasData = [
+            { id: 1, aliasName: '农残', standardItem: '农药残留', calcMethod: '按项计算', feeStandard: 150, 
+              ruleNote: '常规农药残留检测项目', status: '启用', createTime: '2026-01-15 10:00' },
+            { id: 2, aliasName: '兽残', standardItem: '兽药残留', calcMethod: '按项计算', feeStandard: 200, 
+              ruleNote: '常规兽药残留检测项目', status: '启用', createTime: '2026-01-18 14:30' },
+            { id: 3, aliasName: '添加剂', standardItem: '食品添加剂', calcMethod: '按项计算', feeStandard: 80, 
+              ruleNote: '常见食品添加剂检测', status: '启用', createTime: '2026-02-01 09:00' },
+            { id: 4, aliasName: '菌落总数', standardItem: '微生物', calcMethod: '按批次计算', feeStandard: 50, 
+              ruleNote: '微生物基础检测项目', status: '启用', createTime: '2026-02-10 11:00' },
+            { id: 5, aliasName: '重金属', standardItem: '重金属', calcMethod: '按含量计算', feeStandard: 300, 
+              ruleNote: '重金属元素检测', status: '停用', createTime: '2026-03-01 16:00' }
+        ];
+
+        function renderTable(data) {
+            var tbody = document.getElementById('tableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var statusBadge = item.status === '启用' ? 'badge-active' : 'badge-inactive';
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.aliasName + '</td>' +
+                    '<td>' + item.standardItem + '</td>' +
+                    '<td>' + item.calcMethod + '(' + item.feeStandard + '元)</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + item.status + '</span></td>' +
+                    '<td>' + item.createTime + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-edit" onclick="openEditModal(' + item.id + ')">编辑</button>' +
+                        '<button class="action-btn action-btn-delete" onclick="deleteAlias(' + item.id + ')">删除</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '新增别名';
+            document.getElementById('modalMode').value = 'add';
+            document.getElementById('modalId').value = '';
+            document.getElementById('aliasName').value = '';
+            document.getElementById('standardItem').value = '';
+            document.getElementById('calcMethod').value = '按项计算';
+            document.getElementById('feeStandard').value = '';
+            document.getElementById('ruleNote').value = '';
+            document.getElementById('aliasStatus').value = '启用';
+            document.getElementById('aliasModal').classList.add('active');
+        }
+
+        function openEditModal(id) {
+            var item = aliasData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            document.getElementById('modalTitle').textContent = '编辑别名';
+            document.getElementById('modalMode').value = 'edit';
+            document.getElementById('modalId').value = id;
+            document.getElementById('aliasName').value = item.aliasName;
+            document.getElementById('standardItem').value = item.standardItem;
+            document.getElementById('calcMethod').value = item.calcMethod;
+            document.getElementById('feeStandard').value = item.feeStandard;
+            document.getElementById('ruleNote').value = item.ruleNote;
+            document.getElementById('aliasStatus').value = item.status;
+            document.getElementById('aliasModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('aliasModal').classList.remove('active');
+        }
+
+        function saveAlias() {
+            var mode = document.getElementById('modalMode').value;
+            var id = parseInt(document.getElementById('modalId').value);
+            var aliasName = document.getElementById('aliasName').value.trim();
+            var standardItem = document.getElementById('standardItem').value;
+            var calcMethod = document.getElementById('calcMethod').value;
+            var feeStandard = document.getElementById('feeStandard').value;
+            var ruleNote = document.getElementById('ruleNote').value.trim();
+            var status = document.getElementById('aliasStatus').value;
+            
+            if (!aliasName) { alert('请输入别名名称'); return; }
+            if (!standardItem) { alert('请选择标准检测项目名称'); return; }
+            if (!feeStandard) { alert('请输入费用标准'); return; }
+            
+            if (mode === 'add') {
+                var now = new Date();
+                var timeStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + 
+                             String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                
+                aliasData.unshift({
+                    id: aliasData.length + 1,
+                    aliasName: aliasName,
+                    standardItem: standardItem,
+                    calcMethod: calcMethod,
+                    feeStandard: parseFloat(feeStandard),
+                    ruleNote: ruleNote,
+                    status: status,
+                    createTime: timeStr
+                });
+            } else {
+                var item = aliasData.find(function(d) { return d.id === id; });
+                if (item) {
+                    item.aliasName = aliasName;
+                    item.standardItem = standardItem;
+                    item.calcMethod = calcMethod;
+                    item.feeStandard = parseFloat(feeStandard);
+                    item.ruleNote = ruleNote;
+                    item.status = status;
+                }
+            }
+            
+            renderTable(aliasData);
+            closeModal();
+            alert('保存成功');
+        }
+
+        function deleteAlias(id) {
+            if (confirm('确定要删除该别名吗？')) {
+                aliasData = aliasData.filter(function(d) { return d.id !== id; });
+                renderTable(aliasData);
+                alert('删除成功');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchAlias').value = '';
+            document.getElementById('searchStandard').value = '';
+            document.getElementById('searchStatus').value = '请选择';
+            renderTable(aliasData);
+        }
+
+        function doSearch() {
+            var alias = document.getElementById('searchAlias').value.trim().toLowerCase();
+            var standard = document.getElementById('searchStandard').value.trim().toLowerCase();
+            var status = document.getElementById('searchStatus').value;
+            
+            var filtered = aliasData.filter(function(item) {
+                var matchAlias = !alias || item.aliasName.toLowerCase().includes(alias);
+                var matchStandard = !standard || item.standardItem.toLowerCase().includes(standard);
+                var matchStatus = status === '请选择' || item.status === status;
+                return matchAlias && matchStandard && matchStatus;
+            });
+            
+            renderTable(filtered);
+        }
+
+        renderTable(aliasData);
+    </script>
+</body>
+</html>

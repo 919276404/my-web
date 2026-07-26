@@ -277,6 +277,193 @@
         .go-page-btn:hover {
             background: #f5f7fa;
         }
+
+        /* 模态框样式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 50px;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            border: none;
+            background: none;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #666;
+        }
+
+        .modal-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .modal-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .modal-search-icon {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .modal-search-input {
+            flex: 1;
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background: #fafafa;
+        }
+
+        .modal-collapse-btn {
+            padding: 6px 16px;
+            border: none;
+            background: none;
+            color: #1e73be;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .modal-collapse-btn:hover {
+            text-decoration: underline;
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-form {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .form-input {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background: #fff;
+        }
+
+        .form-select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background: #fff;
+            cursor: pointer;
+            min-height: 32px;
+        }
+
+        .form-date-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-date-range input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .form-date-range span {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: #e3f2fd;
+            color: #1e73be;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 20px;
+            border-top: 1px solid #f0f0f0;
+            background: #fafafa;
+        }
     </style>
 </head>
 <body>
@@ -307,7 +494,7 @@
             <button class="btn btn-primary">
                 <span>🔍</span>分析
             </button>
-            <button class="btn btn-blue">
+            <button class="btn btn-blue" onclick="showMoreFilter()">
                 <span>⋯</span>更多筛选条件
             </button>
             <button class="btn btn-secondary">
@@ -432,5 +619,258 @@
             </div>
         </div>
     </div>
+
+    <!-- 更多筛选条件模态框 -->
+    <div class="modal-overlay" id="moreFilterModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">更多筛选条件</span>
+                <button class="modal-close" onclick="closeMoreFilter()">×</button>
+            </div>
+            <div class="modal-toolbar">
+                <div class="modal-search">
+                    <span class="modal-search-icon">🔍</span>
+                    <input type="text" class="modal-search-input" placeholder="请筛选所需的过滤条件">
+                </div>
+                <button class="modal-collapse-btn" onclick="toggleForm()">收起更多条件</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div class="modal-form" id="filterForm">
+                    <div class="form-group">
+                        <label class="form-label">抽样编号:</label>
+                        <input type="text" class="form-input" placeholder="请输入关键字检索">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">年度:</label>
+                        <select class="form-select">
+                            <option>2026</option>
+                            <option>2025</option>
+                            <option>2024</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">任务类别:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">任务来源省:</label>
+                        <div>
+                            <span class="tag">北京 <span class="tag-remove" onclick="this.parentElement.remove()">×</span></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">任务来源:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">报送分类A:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">报送分类B:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">是否评价性抽检:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">第一次提交到秘书处的时间:</label>
+                        <div class="form-date-range">
+                            <input type="date">
+                            <span>-</span>
+                            <input type="date">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">食品大类:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">食品亚类:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">食品次亚类:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">食品细类:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">抽样日期:</label>
+                        <div class="form-date-range">
+                            <input type="date">
+                            <span>-</span>
+                            <input type="date">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">结论:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">检验机构名称:</label>
+                        <input type="text" class="form-input" placeholder="请输入关键字检索">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">抽样单位名称:</label>
+                        <input type="text" class="form-input" placeholder="请输入关键字检索">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">结论:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">检验机构:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">抽样场所:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">样品状态:</label>
+                        <div>
+                            <span class="tag">已完全提交 <span class="tag-remove" onclick="this.parentElement.remove()">×</span></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">抽样环节:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">样品名称:</label>
+                        <input type="text" class="form-input" placeholder="请输入关键字检索">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">检验目的:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">被抽样单位:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">被抽样单位名称:</label>
+                        <input type="text" class="form-input" placeholder="请输入关键字检索">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">被抽样单位:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">生产企业名称:</label>
+                        <input type="text" class="form-input" placeholder="请输入关键字检索">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">生产企业:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">第三方企业名称:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">第三方企业:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">网络平台:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">网络平台:</label>
+                        <select class="form-select">
+                            <option>请选择条件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">更新时间:</label>
+                        <div class="form-date-range">
+                            <input type="date">
+                            <span>-</span>
+                            <input type="date">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMoreFilter()">关闭</button>
+                <button class="btn btn-blue">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showMoreFilter() {
+            document.getElementById('moreFilterModal').classList.add('active');
+        }
+
+        function closeMoreFilter() {
+            document.getElementById('moreFilterModal').classList.remove('active');
+        }
+
+        function toggleForm() {
+            var form = document.getElementById('filterForm');
+            var btn = document.querySelector('.modal-collapse-btn');
+            if (form.style.display === 'none') {
+                form.style.display = 'grid';
+                btn.textContent = '收起更多条件';
+            } else {
+                form.style.display = 'none';
+                btn.textContent = '展开更多条件';
+            }
+        }
+
+        document.getElementById('moreFilterModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMoreFilter();
+            }
+        });
+    </script>
 </body>
 </html>

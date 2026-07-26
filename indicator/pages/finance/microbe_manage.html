@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微生物管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #c62828; border: 1px solid #c62828; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .action-btn-rule { background: #fff; color: #f57c00; border: 1px solid #f57c00; }
+        .action-btn-rule:hover { background: #fff3e0; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #c62828; margin-left: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: #fff; cursor: pointer; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-item { flex: 1; }
+        .special-rule-section { padding: 15px; background: #fff3e0; border-radius: 4px; margin-top: 15px; border: 1px solid #ffe0b2; }
+        .special-rule-title { font-weight: 600; color: #e65100; margin-bottom: 10px; font-size: 14px; }
+        .badge-special { background: #fff3e0; color: #e65100; }
+        .badge-normal { background: #f5f5f5; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">微生物项目名称</span>
+                <input type="text" class="search-input" id="searchName" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">检验依据</span>
+                <input type="text" class="search-input" id="searchStandard" placeholder="请输入">
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <div>
+                <button class="btn btn-primary" onclick="openAddModal()">+ 新增项目</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary">📤 单项导出</button>
+                <button class="btn btn-secondary">📤 批量导出</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>微生物项目名称</th>
+                    <th>检验依据</th>
+                    <th>单价（元）</th>
+                    <th>特殊规则</th>
+                    <th>特殊规则价格（元）</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 5 条 共有 86 条</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="microbeModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增微生物项目</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalId" value="">
+                <div class="form-item">
+                    <label class="form-label required">微生物项目名称</label>
+                    <input type="text" class="form-input" id="microbeName" placeholder="请输入微生物项目名称">
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">检验依据</label>
+                    <input type="text" class="form-input" id="testStandard" placeholder="请输入检验依据">
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">单价（元）</label>
+                    <input type="number" class="form-input" id="unitPrice" placeholder="0.00">
+                </div>
+                <div class="special-rule-section">
+                    <div class="special-rule-title">特殊规则设置</div>
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label class="form-label">是否启用特殊规则</label>
+                            <select class="form-select" id="hasSpecialRule" onchange="toggleSpecialRule()">
+                                <option value="否">否</option>
+                                <option value="是">是</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label class="form-label">特殊规则价格（元）</label>
+                            <input type="number" class="form-input" id="specialPrice" placeholder="0.00" disabled>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">特殊规则说明</label>
+                        <textarea class="form-input" id="specialNote" placeholder="请输入特殊规则说明" style="min-height: 60px;" disabled></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveMicrobe()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var microbeData = [
+            { id: 1, name: '菌落总数', standard: 'GB 4789.2-2022', unitPrice: 50, hasSpecialRule: false, specialPrice: 0, specialNote: '' },
+            { id: 2, name: '大肠菌群', standard: 'GB 4789.3-2022', unitPrice: 50, hasSpecialRule: false, specialPrice: 0, specialNote: '' },
+            { id: 3, name: '沙门氏菌', standard: 'GB 4789.4-2022', unitPrice: 150, hasSpecialRule: true, specialPrice: 200, specialNote: '阳性样品需增加血清分型检测' },
+            { id: 4, name: '金黄色葡萄球菌', standard: 'GB 4789.10-2022', unitPrice: 120, hasSpecialRule: false, specialPrice: 0, specialNote: '' },
+            { id: 5, name: '蜡样芽孢杆菌', standard: 'GB 4789.14-2022', unitPrice: 80, hasSpecialRule: true, specialPrice: 120, specialNote: '需进行毒素检测' }
+        ];
+
+        function renderTable(data) {
+            var tbody = document.getElementById('tableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var specialBadge = item.hasSpecialRule ? 'badge-special' : 'badge-normal';
+                var specialText = item.hasSpecialRule ? '有' : '无';
+                var specialPriceText = item.hasSpecialRule ? item.specialPrice.toFixed(2) : '-';
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td>' + item.standard + '</td>' +
+                    '<td>' + item.unitPrice.toFixed(2) + '</td>' +
+                    '<td><span class="badge ' + specialBadge + '">' + specialText + '</span></td>' +
+                    '<td>' + specialPriceText + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-edit" onclick="openEditModal(' + item.id + ')">编辑</button>' +
+                        (item.hasSpecialRule ? '<button class="action-btn action-btn-rule" onclick="editSpecialRule(' + item.id + ')">特殊规则</button>' : '') +
+                        '<button class="action-btn action-btn-delete" onclick="deleteMicrobe(' + item.id + ')">删除</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function toggleSpecialRule() {
+            var hasRule = document.getElementById('hasSpecialRule').value === '是';
+            document.getElementById('specialPrice').disabled = !hasRule;
+            document.getElementById('specialNote').disabled = !hasRule;
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '新增微生物项目';
+            document.getElementById('modalMode').value = 'add';
+            document.getElementById('modalId').value = '';
+            document.getElementById('microbeName').value = '';
+            document.getElementById('testStandard').value = '';
+            document.getElementById('unitPrice').value = '';
+            document.getElementById('hasSpecialRule').value = '否';
+            document.getElementById('specialPrice').value = '';
+            document.getElementById('specialPrice').disabled = true;
+            document.getElementById('specialNote').value = '';
+            document.getElementById('specialNote').disabled = true;
+            document.getElementById('microbeModal').classList.add('active');
+        }
+
+        function openEditModal(id) {
+            var item = microbeData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            document.getElementById('modalTitle').textContent = '编辑微生物项目';
+            document.getElementById('modalMode').value = 'edit';
+            document.getElementById('modalId').value = id;
+            document.getElementById('microbeName').value = item.name;
+            document.getElementById('testStandard').value = item.standard;
+            document.getElementById('unitPrice').value = item.unitPrice;
+            document.getElementById('hasSpecialRule').value = item.hasSpecialRule ? '是' : '否';
+            document.getElementById('specialPrice').value = item.specialPrice || '';
+            document.getElementById('specialNote').value = item.specialNote || '';
+            toggleSpecialRule();
+            document.getElementById('microbeModal').classList.add('active');
+        }
+
+        function editSpecialRule(id) {
+            openEditModal(id);
+        }
+
+        function closeModal() {
+            document.getElementById('microbeModal').classList.remove('active');
+        }
+
+        function saveMicrobe() {
+            var mode = document.getElementById('modalMode').value;
+            var id = parseInt(document.getElementById('modalId').value);
+            var name = document.getElementById('microbeName').value.trim();
+            var standard = document.getElementById('testStandard').value.trim();
+            var unitPrice = document.getElementById('unitPrice').value;
+            var hasSpecialRule = document.getElementById('hasSpecialRule').value === '是';
+            var specialPrice = document.getElementById('specialPrice').value;
+            var specialNote = document.getElementById('specialNote').value.trim();
+            
+            if (!name) { alert('请输入微生物项目名称'); return; }
+            if (!standard) { alert('请输入检验依据'); return; }
+            if (!unitPrice) { alert('请输入单价'); return; }
+            
+            if (mode === 'add') {
+                microbeData.unshift({
+                    id: microbeData.length + 1,
+                    name: name,
+                    standard: standard,
+                    unitPrice: parseFloat(unitPrice),
+                    hasSpecialRule: hasSpecialRule,
+                    specialPrice: hasSpecialRule ? parseFloat(specialPrice) : 0,
+                    specialNote: hasSpecialRule ? specialNote : ''
+                });
+            } else {
+                var item = microbeData.find(function(d) { return d.id === id; });
+                if (item) {
+                    item.name = name;
+                    item.standard = standard;
+                    item.unitPrice = parseFloat(unitPrice);
+                    item.hasSpecialRule = hasSpecialRule;
+                    item.specialPrice = hasSpecialRule ? parseFloat(specialPrice) : 0;
+                    item.specialNote = hasSpecialRule ? specialNote : '';
+                }
+            }
+            
+            renderTable(microbeData);
+            closeModal();
+            alert('保存成功');
+        }
+
+        function deleteMicrobe(id) {
+            if (confirm('确定要删除该微生物项目吗？')) {
+                microbeData = microbeData.filter(function(d) { return d.id !== id; });
+                renderTable(microbeData);
+                alert('删除成功');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchStandard').value = '';
+            renderTable(microbeData);
+        }
+
+        function doSearch() {
+            var name = document.getElementById('searchName').value.trim().toLowerCase();
+            var standard = document.getElementById('searchStandard').value.trim().toLowerCase();
+            
+            var filtered = microbeData.filter(function(d) {
+                var matchName = !name || d.name.toLowerCase().includes(name);
+                var matchStandard = !standard || d.standard.toLowerCase().includes(standard);
+                return matchName && matchStandard;
+            });
+            
+            renderTable(filtered);
+        }
+
+        renderTable(microbeData);
+    </script>
+</body>
+</html>

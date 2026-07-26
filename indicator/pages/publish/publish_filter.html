@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信息发布筛选与公示编号管理</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .filter-section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-item label {
+            font-weight: 500;
+            min-width: 100px;
+        }
+        .filter-item input, .filter-item select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #1890ff;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-left: 10px;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .btn-success {
+            background: #52c41a;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #73d13d;
+        }
+        .btn-warning {
+            background: #faad14;
+            color: #fff;
+        }
+        .btn-warning:hover {
+            background: #ffc53d;
+        }
+        .btn-danger {
+            background: #ff4d4f;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #ff7875;
+        }
+        .table-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .table-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        th {
+            background: #fafafa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-published {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        .status-unpublished {
+            background: #fff7e6;
+            color: #fa8c16;
+            border: 1px solid #ffd591;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover {
+            color: #666;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex: 0 0 auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .info-label {
+            font-weight: 500;
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="filter-item">
+                <label>抽样时间范围：</label>
+                <input type="date" id="startDate">
+                <span>至</span>
+                <input type="date" id="endDate">
+            </div>
+            <div class="filter-item">
+                <label>食品大类：</label>
+                <select id="foodCategory">
+                    <option value="">全部</option>
+                    <option value="粮食加工品">粮食加工品</option>
+                    <option value="食用油、油脂及其制品">食用油、油脂及其制品</option>
+                    <option value="调味品">调味品</option>
+                    <option value="肉制品">肉制品</option>
+                    <option value="乳制品">乳制品</option>
+                    <option value="饮料">饮料</option>
+                    <option value="方便食品">方便食品</option>
+                    <option value="饼干">饼干</option>
+                    <option value="罐头">罐头</option>
+                    <option value="冷冻饮品">冷冻饮品</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>被抽样单位名称：</label>
+                <input type="text" id="companyName" placeholder="请输入单位名称">
+            </div>
+            <div class="filter-item">
+                <label>判定结论：</label>
+                <select id="judgment">
+                    <option value="">全部</option>
+                    <option value="合格">合格</option>
+                    <option value="不合格">不合格</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-item">
+                <label>公示状态：</label>
+                <select id="publishStatus">
+                    <option value="">全部</option>
+                    <option value="已公示">已公示</option>
+                    <option value="未公示">未公示</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="searchData()">查询</button>
+            <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+            <button class="btn btn-success" onclick="addPublishInfo()">添加发布信息</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <h3>样品信息列表</h3>
+            <div>
+                <button class="btn btn-secondary" onclick="exportData()">导出数据</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>公示编号</th>
+                        <th>抽样编号</th>
+                        <th>食品名称</th>
+                        <th>食品大类</th>
+                        <th>被抽样单位名称</th>
+                        <th>判定结论</th>
+                        <th>抽样时间</th>
+                        <th>公示状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="sampleTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="publishModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="publishModalTitle">添加发布信息</div>
+                <div class="modal-close" onclick="closePublishModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalId" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>公示编号</label>
+                        <input type="text" id="publishNo" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>公示日期</label>
+                        <input type="date" id="publishDate">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>公示标题</label>
+                        <input type="text" id="publishTitle" placeholder="请输入公示标题">
+                    </div>
+                    <div class="form-group">
+                        <label>公示范围</label>
+                        <select id="publishScope">
+                            <option value="市级">市级</option>
+                            <option value="省级">省级</option>
+                            <option value="国家级">国家级</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>公示内容摘要</label>
+                    <textarea id="publishSummary" placeholder="请输入公示内容摘要"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>备注</label>
+                    <textarea id="publishRemark" placeholder="请输入备注信息"></textarea>
+                </div>
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <h4>关联样品</h4>
+                    <div id="selectedSamples"></div>
+                    <button class="btn btn-secondary" onclick="selectSamples()">选择样品</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePublishModal()">取消</button>
+                <button class="btn btn-primary" onclick="savePublishInfo()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">样品详情</div>
+                <div class="modal-close" onclick="closeDetailModal()">×</div>
+            </div>
+            <div class="modal-body" id="detailContent">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeDetailModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sampleSelectModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <div class="modal-title">选择样品</div>
+                <div class="modal-close" onclick="closeSampleSelectModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="filter-row" style="margin-bottom: 15px;">
+                    <div class="filter-item">
+                        <label>食品名称：</label>
+                        <input type="text" id="sampleSearchName" placeholder="请输入食品名称">
+                    </div>
+                    <button class="btn btn-primary" onclick="searchSampleSelect()">查询</button>
+                </div>
+                <div class="table-scroll" style="max-height: 400px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                                <th>序号</th>
+                                <th>抽样编号</th>
+                                <th>食品名称</th>
+                                <th>被抽样单位名称</th>
+                                <th>判定结论</th>
+                            </tr>
+                        </thead>
+                        <tbody id="selectSampleTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSampleSelectModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmSampleSelect()">确认选择</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var sampleData = [
+            { id: 1, sampleNo: 'CY2026001', foodName: '小麦粉', foodCategory: '粮食加工品', companyName: '北京面粉厂', judgment: '合格', sampleDate: '2026-01-10', publishNo: 'GS2026001', publishStatus: '已公示' },
+            { id: 2, sampleNo: 'CY2026002', foodName: '大豆油', foodCategory: '食用油、油脂及其制品', companyName: '北京粮油公司', judgment: '不合格', sampleDate: '2026-01-12', publishNo: 'GS2026002', publishStatus: '已公示' },
+            { id: 3, sampleNo: 'CY2026003', foodName: '酱油', foodCategory: '调味品', companyName: '北京调味食品厂', judgment: '合格', sampleDate: '2026-01-15', publishNo: '', publishStatus: '未公示' },
+            { id: 4, sampleNo: 'CY2026004', foodName: '猪肉香肠', foodCategory: '肉制品', companyName: '北京肉类加工厂', judgment: '不合格', sampleDate: '2026-01-18', publishNo: '', publishStatus: '未公示' },
+            { id: 5, sampleNo: 'CY2026005', foodName: '牛奶', foodCategory: '乳制品', companyName: '北京乳业集团', judgment: '合格', sampleDate: '2026-01-20', publishNo: '', publishStatus: '未公示' },
+            { id: 6, sampleNo: 'CY2026006', foodName: '瓶装水', foodCategory: '饮料', companyName: '北京饮品公司', judgment: '合格', sampleDate: '2026-01-22', publishNo: 'GS2026003', publishStatus: '已公示' },
+            { id: 7, sampleNo: 'CY2026007', foodName: '方便面', foodCategory: '方便食品', companyName: '北京食品厂', judgment: '不合格', sampleDate: '2026-01-25', publishNo: '', publishStatus: '未公示' },
+            { id: 8, sampleNo: 'CY2026008', foodName: '饼干', foodCategory: '饼干', companyName: '北京烘焙食品公司', judgment: '合格', sampleDate: '2026-01-28', publishNo: '', publishStatus: '未公示' },
+            { id: 9, sampleNo: 'CY2026009', foodName: '水果罐头', foodCategory: '罐头', companyName: '北京罐头厂', judgment: '合格', sampleDate: '2026-02-01', publishNo: '', publishStatus: '未公示' },
+            { id: 10, sampleNo: 'CY2026010', foodName: '冰淇淋', foodCategory: '冷冻饮品', companyName: '北京冷饮公司', judgment: '不合格', sampleDate: '2026-02-05', publishNo: '', publishStatus: '未公示' }
+        ];
+
+        var selectedSampleIds = [];
+
+        function init() {
+            renderTable(sampleData);
+        }
+
+        function renderTable(data) {
+            var tbody = document.getElementById('sampleTable');
+            tbody.innerHTML = '';
+            data.forEach(function(item, index) {
+                var row = '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + (item.publishNo || '-') + '</td>' +
+                    '<td>' + item.sampleNo + '</td>' +
+                    '<td>' + item.foodName + '</td>' +
+                    '<td>' + item.foodCategory + '</td>' +
+                    '<td>' + item.companyName + '</td>' +
+                    '<td>' + item.judgment + '</td>' +
+                    '<td>' + item.sampleDate + '</td>' +
+                    '<td><span class="status-tag ' + (item.publishStatus === '已公示' ? 'status-published' : 'status-unpublished') + '">' + item.publishStatus + '</span></td>' +
+                    '<td>' +
+                    '<button class="btn btn-primary" onclick="viewDetail(' + item.id + ')" style="padding: 4px 10px; font-size: 12px;">查看详情</button>' +
+                    '<button class="btn btn-warning" onclick="editPublishInfo(' + item.id + ')" style="padding: 4px 10px; font-size: 12px; margin-left: 5px;">编辑</button>' +
+                    '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        function searchData() {
+            var startDate = document.getElementById('startDate').value;
+            var endDate = document.getElementById('endDate').value;
+            var foodCategory = document.getElementById('foodCategory').value;
+            var companyName = document.getElementById('companyName').value;
+            var judgment = document.getElementById('judgment').value;
+            var publishStatus = document.getElementById('publishStatus').value;
+
+            var filtered = sampleData.filter(function(item) {
+                var match = true;
+                if (startDate && item.sampleDate < startDate) match = false;
+                if (endDate && item.sampleDate > endDate) match = false;
+                if (foodCategory && item.foodCategory !== foodCategory) match = false;
+                if (companyName && !item.companyName.includes(companyName)) match = false;
+                if (judgment && item.judgment !== judgment) match = false;
+                if (publishStatus && item.publishStatus !== publishStatus) match = false;
+                return match;
+            });
+            renderTable(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('foodCategory').value = '';
+            document.getElementById('companyName').value = '';
+            document.getElementById('judgment').value = '';
+            document.getElementById('publishStatus').value = '';
+            renderTable(sampleData);
+        }
+
+        function addPublishInfo() {
+            document.getElementById('modalMode').value = 'add';
+            document.getElementById('modalId').value = '';
+            document.getElementById('publishModalTitle').innerText = '添加发布信息';
+            document.getElementById('publishNo').value = generatePublishNo();
+            document.getElementById('publishDate').value = '';
+            document.getElementById('publishTitle').value = '';
+            document.getElementById('publishScope').value = '市级';
+            document.getElementById('publishSummary').value = '';
+            document.getElementById('publishRemark').value = '';
+            selectedSampleIds = [];
+            renderSelectedSamples();
+            document.getElementById('publishModal').classList.add('show');
+        }
+
+        function editPublishInfo(id) {
+            var item = sampleData.find(function(i) { return i.id === id; });
+            if (item) {
+                document.getElementById('modalMode').value = 'edit';
+                document.getElementById('modalId').value = id;
+                document.getElementById('publishModalTitle').innerText = '编辑发布信息';
+                document.getElementById('publishNo').value = item.publishNo || generatePublishNo();
+                document.getElementById('publishDate').value = '';
+                document.getElementById('publishTitle').value = '';
+                document.getElementById('publishScope').value = '市级';
+                document.getElementById('publishSummary').value = '';
+                document.getElementById('publishRemark').value = '';
+                selectedSampleIds = [id];
+                renderSelectedSamples();
+                document.getElementById('publishModal').classList.add('show');
+            }
+        }
+
+        function generatePublishNo() {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var count = sampleData.filter(function(i) {
+                return i.publishNo && i.publishNo.startsWith('GS' + year);
+            }).length + 1;
+            return 'GS' + year + month + day + String(count).padStart(3, '0');
+        }
+
+        function closePublishModal() {
+            document.getElementById('publishModal').classList.remove('show');
+        }
+
+        function savePublishInfo() {
+            var mode = document.getElementById('modalMode').value;
+            var id = document.getElementById('modalId').value;
+            var publishNo = document.getElementById('publishNo').value;
+            var publishDate = document.getElementById('publishDate').value;
+            var publishTitle = document.getElementById('publishTitle').value;
+            var publishScope = document.getElementById('publishScope').value;
+            var publishSummary = document.getElementById('publishSummary').value;
+            var publishRemark = document.getElementById('publishRemark').value;
+
+            if (!publishDate) {
+                alert('请选择公示日期');
+                return;
+            }
+            if (!publishTitle) {
+                alert('请输入公示标题');
+                return;
+            }
+            if (selectedSampleIds.length === 0) {
+                alert('请选择关联样品');
+                return;
+            }
+
+            selectedSampleIds.forEach(function(sampleId) {
+                var item = sampleData.find(function(i) { return i.id === sampleId; });
+                if (item) {
+                    item.publishNo = publishNo;
+                    item.publishStatus = '已公示';
+                }
+            });
+
+            alert('保存成功');
+            closePublishModal();
+            renderTable(sampleData);
+        }
+
+        function viewDetail(id) {
+            var item = sampleData.find(function(i) { return i.id === id; });
+            if (item) {
+                var detailHtml = '<div class="info-row"><span class="info-label">抽样编号：</span><span class="info-value">' + item.sampleNo + '</span></div>' +
+                    '<div class="info-row"><span class="info-label">公示编号：</span><span class="info-value">' + (item.publishNo || '-') + '</span></div>' +
+                    '<div class="info-row"><span class="info-label">食品名称：</span><span class="info-value">' + item.foodName + '</span></div>' +
+                    '<div class="info-row"><span class="info-label">食品大类：</span><span class="info-value">' + item.foodCategory + '</span></div>' +
+                    '<div class="info-row"><span class="info-label">被抽样单位名称：</span><span class="info-value">' + item.companyName + '</span></div>' +
+                    '<div class="info-row"><span class="info-label">判定结论：</span><span class="info-value">' + item.judgment + '</span></div>' +
+                    '<div class="info-row"><span class="info-label">抽样时间：</span><span class="info-value">' + item.sampleDate + '</span></div>' +
+                    '<div class="info-row"><span class="info-label">公示状态：</span><span class="info-value">' + item.publishStatus + '</span></div>';
+                document.getElementById('detailContent').innerHTML = detailHtml;
+                document.getElementById('detailModal').classList.add('show');
+            }
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        function selectSamples() {
+            document.getElementById('sampleSelectModal').classList.add('show');
+            renderSelectSampleTable(sampleData);
+        }
+
+        function closeSampleSelectModal() {
+            document.getElementById('sampleSelectModal').classList.remove('show');
+        }
+
+        function renderSelectSampleTable(data) {
+            var tbody = document.getElementById('selectSampleTable');
+            tbody.innerHTML = '';
+            data.forEach(function(item, index) {
+                var checked = selectedSampleIds.includes(item.id) ? 'checked' : '';
+                var row = '<tr>' +
+                    '<td><input type="checkbox" ' + checked + ' onclick="toggleSampleSelect(' + item.id + ')"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.sampleNo + '</td>' +
+                    '<td>' + item.foodName + '</td>' +
+                    '<td>' + item.companyName + '</td>' +
+                    '<td>' + item.judgment + '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        function toggleSelectAll() {
+            var checkboxes = document.querySelectorAll('#selectSampleTable input[type="checkbox"]');
+            var allChecked = document.getElementById('selectAll').checked;
+            checkboxes.forEach(function(cb) {
+                cb.checked = allChecked;
+                var id = parseInt(cb.parentElement.parentElement.children[2].innerText.replace('CY', ''));
+                if (allChecked && !selectedSampleIds.includes(id)) {
+                    selectedSampleIds.push(id);
+                } else if (!allChecked) {
+                    selectedSampleIds = selectedSampleIds.filter(function(i) { return i !== id; });
+                }
+            });
+        }
+
+        function toggleSampleSelect(id) {
+            var index = selectedSampleIds.indexOf(id);
+            if (index > -1) {
+                selectedSampleIds.splice(index, 1);
+            } else {
+                selectedSampleIds.push(id);
+            }
+        }
+
+        function searchSampleSelect() {
+            var keyword = document.getElementById('sampleSearchName').value;
+            var filtered = sampleData.filter(function(item) {
+                return item.foodName.includes(keyword);
+            });
+            renderSelectSampleTable(filtered);
+        }
+
+        function confirmSampleSelect() {
+            renderSelectedSamples();
+            closeSampleSelectModal();
+        }
+
+        function renderSelectedSamples() {
+            var container = document.getElementById('selectedSamples');
+            if (selectedSampleIds.length === 0) {
+                container.innerHTML = '<span style="color: #999;">未选择样品</span>';
+                return;
+            }
+            var html = '<ul style="max-height: 150px; overflow-y: auto;">';
+            selectedSampleIds.forEach(function(id) {
+                var item = sampleData.find(function(i) { return i.id === id; });
+                if (item) {
+                    html += '<li>' + item.sampleNo + ' - ' + item.foodName + ' <button onclick="removeSelectedSample(' + id + ')" style="margin-left: 10px; padding: 2px 6px; font-size: 12px;">删除</button></li>';
+                }
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        function removeSelectedSample(id) {
+            selectedSampleIds = selectedSampleIds.filter(function(i) { return i !== id; });
+            renderSelectedSamples();
+        }
+
+        function exportData() {
+            alert('导出功能开发中');
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史风险导向预设提醒规则管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .tabs-container { border-bottom: 1px solid #e0e0e0; margin-bottom: 15px; }
+        .tab-item { display: inline-block; padding: 10px 20px; font-size: 14px; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .tab-item.active { color: #1e73be; border-bottom-color: #1e73be; font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .btn-icon { padding: 6px 12px; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .page-size-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-high { background: #ffebee; color: #c62828; }
+        .badge-medium { background: #fff3e0; color: #e65100; }
+        .badge-low { background: #e8f5e9; color: #2e7d32; }
+        .badge-active { background: #e3f2fd; color: #1e73be; }
+        .badge-inactive { background: #f5f5f5; color: #999; }
+        .action-buttons { display: flex; gap: 4px; }
+        .action-btn { padding: 3px 8px; font-size: 11px; border: none; border-radius: 3px; cursor: pointer; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #ef5350; border: 1px solid #ef5350; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 700px; max-height: 90vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #e8e8e8; background: #fafafa; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 20px; color: #999; cursor: pointer; padding: 0 5px; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; max-height: calc(90vh - 120px); overflow-y: auto; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .form-item { display: flex; flex-direction: column; gap: 6px; min-width: 200px; }
+        .form-label { font-size: 13px; color: #666; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #ff4d4f; margin-left: 4px; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .form-input:focus { outline: none; border-color: #1e73be; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff; cursor: pointer; }
+        .form-textarea { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; resize: vertical; min-height: 80px; }
+        .form-textarea:focus { outline: none; border-color: #1e73be; }
+        .form-checkboxes { display: flex; flex-wrap: wrap; gap: 15px; }
+        .checkbox-item { display: flex; align-items: center; gap: 6px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #e8e8e8; background: #fafafa; }
+        .rules-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e0e0e0; }
+        .rules-section-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .rule-item { display: flex; gap: 10px; align-items: center; padding: 10px; background: #fafafa; border-radius: 4px; margin-bottom: 8px; }
+        .rule-field { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .rule-operator { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; min-width: 80px; }
+        .rule-value { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .btn-add-rule { padding: 4px 12px; font-size: 12px; background: #f5f5f5; color: #1e73be; border: 1px solid #1e73be; border-radius: 4px; cursor: pointer; }
+        .btn-add-rule:hover { background: #f0f5ff; }
+        .btn-remove-rule { padding: 4px 8px; font-size: 12px; background: #fff; color: #ef5350; border: 1px solid #ef5350; border-radius: 4px; cursor: pointer; }
+        .btn-remove-rule:hover { background: #ffebee; }
+        .tooltip { position: absolute; background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; z-index: 1001; }
+    </style>
+</head>
+<body>
+    <div class="tabs-container">
+        <div class="tab-item active" onclick="switchTab('tab1')">高频超标主体提醒规则</div>
+        <div class="tab-item" onclick="switchTab('tab2')">季节周期风险提醒规则</div>
+        <div class="tab-item" onclick="switchTab('tab3')">区域品类风险提醒规则</div>
+    </div>
+
+    <div id="tab1" class="tab-content active">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">规则编码</span>
+                    <input type="text" class="search-input" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">适用范围</span>
+                    <select class="search-select">
+                        <option>请选择</option>
+                        <option>生产企业</option>
+                        <option>经营主体</option>
+                        <option>餐饮单位</option>
+                    </select>
+                </div>
+                <div class="search-item">
+                    <span class="search-label">是否启用</span>
+                    <select class="search-select">
+                        <option>请选择</option>
+                        <option>是</option>
+                        <option>否</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+                <button class="btn btn-primary" onclick="doSearch()">查询</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="openModal('add', 'tab1')">+ 新增规则</button>
+                    <button class="btn btn-secondary btn-icon">◎ 启用</button>
+                    <button class="btn btn-secondary btn-icon">◎ 停用</button>
+                    <button class="btn btn-secondary btn-icon">⊗ 批量删除</button>
+                </div>
+
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>规则类型</th>
+                        <th>规则编码</th>
+                        <th>数据来源</th>
+                        <th>判定类型</th>
+                        <th>适用范围</th>
+                        <th>是否启用</th>
+                        <th>判定字段</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td>高频超标生产企业提醒规则</td>
+                        <td><span class="badge badge-high">高风险</span></td>
+                        <td>RULE-HF-001</td>
+                        <td>历史抽检结果表</td>
+                        <td>数值判定</td>
+                        <td>生产企业</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>超标次数、不合格率</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab1', 1)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(1)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td>高频超标经营主体提醒规则</td>
+                        <td><span class="badge badge-high">高风险</span></td>
+                        <td>RULE-HF-002</td>
+                        <td>历史抽检结果表</td>
+                        <td>数值判定</td>
+                        <td>经营主体</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>超标次数、不合格率</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab1', 2)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(2)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>3</td>
+                        <td>餐饮单位高频不合格提醒规则</td>
+                        <td><span class="badge badge-medium">中风险</span></td>
+                        <td>RULE-HF-003</td>
+                        <td>历史抽检结果表</td>
+                        <td>数值判定</td>
+                        <td>餐饮单位</td>
+                        <td><span class="badge badge-inactive">停用</span></td>
+                        <td>不合格率、微生物指标</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab1', 3)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(3)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-container">
+                <div class="pagination-info">已选择 0 项 本页 3 条 共有 12 条</div>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                    <option>20条/页</option>
+                    <option>50条/页</option>
+                </select>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" disabled>‹</button>
+                    <button class="pagination-btn" disabled>‹‹</button>
+                    <button class="pagination-current">1</button>
+                    <button class="pagination-btn">2</button>
+                    <button class="pagination-btn">3</button>
+                    <button class="pagination-btn">4</button>
+                    <button class="pagination-btn">5</button>
+                    <button class="pagination-btn">››</button>
+                    <button class="pagination-btn">›</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="pagination-info">跳转到</span>
+                    <input type="number" class="search-input" style="width: 50px; padding: 4px;" value="1" min="1" max="5">
+                    <span class="pagination-info">页</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">规则编码</span>
+                    <input type="text" class="search-input" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">适用季节</span>
+                    <select class="search-select">
+                        <option>请选择</option>
+                        <option>春季</option>
+                        <option>夏季</option>
+                        <option>秋季</option>
+                        <option>冬季</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+                <button class="btn btn-primary" onclick="doSearch()">查询</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="openModal('add', 'tab2')">+ 新增规则</button>
+                    <button class="btn btn-secondary btn-icon">◎ 启用</button>
+                    <button class="btn btn-secondary btn-icon">◎ 停用</button>
+                    <button class="btn btn-secondary btn-icon">⊗ 批量删除</button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>适用季节</th>
+                        <th>风险品类</th>
+                        <th>历史同期超标率</th>
+                        <th>建议频次</th>
+                        <th>是否启用</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td>夏季熟肉制品微生物专项提醒</td>
+                        <td>夏季</td>
+                        <td>熟肉制品</td>
+                        <td>8.5%</td>
+                        <td>增加50%</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab2', 1)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(1)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td>夏季冷饮食品专项提醒</td>
+                        <td>夏季</td>
+                        <td>冷饮食品</td>
+                        <td>6.2%</td>
+                        <td>增加30%</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab2', 2)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(2)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>3</td>
+                        <td>春节食品专项抽检提醒</td>
+                        <td>冬季</td>
+                        <td>节日食品</td>
+                        <td>4.8%</td>
+                        <td>增加40%</td>
+                        <td><span class="badge badge-inactive">停用</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab2', 3)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(3)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-container">
+                <div class="pagination-info">已选择 0 项 本页 3 条 共有 8 条</div>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                </select>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" disabled>‹</button>
+                    <button class="pagination-btn" disabled>‹‹</button>
+                    <button class="pagination-current">1</button>
+                    <button class="pagination-btn">››</button>
+                    <button class="pagination-btn">›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab3" class="tab-content">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">区域名称</span>
+                    <select class="search-select">
+                        <option>请选择</option>
+                        <option>东城区</option>
+                        <option>西城区</option>
+                        <option>朝阳区</option>
+                        <option>海淀区</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+                <button class="btn btn-primary" onclick="doSearch()">查询</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="openModal('add', 'tab3')">+ 新增规则</button>
+                    <button class="btn btn-secondary btn-icon">◎ 启用</button>
+                    <button class="btn btn-secondary btn-icon">◎ 停用</button>
+                    <button class="btn btn-secondary btn-icon">⊗ 批量删除</button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>区域名称</th>
+                        <th>品类名称</th>
+                        <th>区域超标率</th>
+                        <th>全市平均率</th>
+                        <th>差值</th>
+                        <th>建议增加比例</th>
+                        <th>是否启用</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td>朝阳区蔬菜农药残留专项提醒</td>
+                        <td>朝阳区</td>
+                        <td>蔬菜</td>
+                        <td>12.5%</td>
+                        <td>8.2%</td>
+                        <td>+4.3%</td>
+                        <td>增加50%</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab3', 1)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(1)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td>丰台区餐饮食品专项提醒</td>
+                        <td>丰台区</td>
+                        <td>餐饮食品</td>
+                        <td>9.8%</td>
+                        <td>6.5%</td>
+                        <td>+3.3%</td>
+                        <td>增加30%</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab3', 2)">编辑</button>
+                                <button class="action-btn action-btn-delete" onclick="confirmDelete(2)">删除</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-container">
+                <div class="pagination-info">已选择 0 项 本页 2 条 共有 5 条</div>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                </select>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" disabled>‹</button>
+                    <button class="pagination-btn" disabled>‹‹</button>
+                    <button class="pagination-current">1</button>
+                    <button class="pagination-btn">››</button>
+                    <button class="pagination-btn">›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ruleModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增规则</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalTab" value="tab1">
+                <input type="hidden" id="modalId" value="">
+                
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">规则名称</label>
+                        <input type="text" class="form-input" id="ruleName" placeholder="请输入规则名称">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">规则编码</label>
+                        <input type="text" class="form-input" id="ruleCode" placeholder="系统自动生成">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item" id="fieldRuleType">
+                        <label class="form-label">规则类型</label>
+                        <select class="form-select" id="ruleType">
+                            <option value="high">高风险</option>
+                            <option value="medium">中风险</option>
+                            <option value="low">低风险</option>
+                        </select>
+                    </div>
+                    <div class="form-item" id="fieldDataSource">
+                        <label class="form-label">数据来源</label>
+                        <select class="form-select" id="dataSource">
+                            <option value="history_result">历史抽检结果表</option>
+                            <option value="risk_trend">风险趋势分析表</option>
+                            <option value="region_risk">区域品类风险统计表</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" id="fieldTab1Specific">
+                    <div class="form-item">
+                        <label class="form-label">判定类型</label>
+                        <select class="form-select" id="judgeType">
+                            <option value="numeric">数值判定</option>
+                            <option value="text">文本判定</option>
+                            <option value="date">时间判定</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">适用范围</label>
+                        <select class="form-select" id="scope">
+                            <option value="production">生产企业</option>
+                            <option value="business">经营主体</option>
+                            <option value="catering">餐饮单位</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row" id="fieldTab2Specific" style="display: none;">
+                    <div class="form-item">
+                        <label class="form-label">适用季节</label>
+                        <select class="form-select" id="season">
+                            <option value="spring">春季</option>
+                            <option value="summer">夏季</option>
+                            <option value="autumn">秋季</option>
+                            <option value="winter">冬季</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">风险品类</label>
+                        <input type="text" class="form-input" id="riskCategory" placeholder="请输入风险品类">
+                    </div>
+                </div>
+
+                <div class="form-row" id="fieldTab3Specific" style="display: none;">
+                    <div class="form-item">
+                        <label class="form-label">区域名称</label>
+                        <select class="form-select" id="region">
+                            <option value="dongcheng">东城区</option>
+                            <option value="xicheng">西城区</option>
+                            <option value="chaoyang">朝阳区</option>
+                            <option value="haidian">海淀区</option>
+                            <option value="fengtai">丰台区</option>
+                            <option value="shijingshan">石景山区</option>
+                            <option value="tongzhou">通州区</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">品类名称</label>
+                        <input type="text" class="form-input" id="categoryName" placeholder="请输入品类名称">
+                    </div>
+                </div>
+
+                <div class="rules-section">
+                    <div class="rules-section-title">判定规则配置</div>
+                    <div id="rulesContainer">
+                        <div class="rule-item">
+                            <select class="rule-field">
+                                <option value="overdue_count">历史超标次数</option>
+                                <option value="unqualified_rate">抽检不合格率</option>
+                                <option value="region_rate_diff">区域超标率差值</option>
+                                <option value="last_inspect_date">上次抽检时间</option>
+                                <option value="production_status">企业生产状态</option>
+                            </select>
+                            <select class="rule-operator">
+                                <option value="ge">≥</option>
+                                <option value="gt">></option>
+                                <option value="eq">=</option>
+                                <option value="le">≤</option>
+                                <option value="lt"><</option>
+                            </select>
+                            <input type="text" class="rule-value" placeholder="请输入对比值">
+                            <button class="btn-remove-rule" onclick="removeRule(this)">-</button>
+                        </div>
+                    </div>
+                    <button class="btn-add-rule" onclick="addRule()">+ 添加判定条件</button>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label">是否启用</label>
+                        <select class="form-select" id="isEnabled">
+                            <option value="1">是</option>
+                            <option value="0">否</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">备注说明</label>
+                        <textarea class="form-textarea" id="remark" placeholder="请输入备注说明"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveRule()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var ruleData = {
+            tab1: [
+                { id: 1, name: '高频超标生产企业提醒规则', code: 'RULE-HF-001', type: 'high', dataSource: 'history_result', judgeType: 'numeric', scope: 'production', isEnabled: 1, rules: [{field: 'overdue_count', operator: 'ge', value: '3'}, {field: 'unqualified_rate', operator: 'ge', value: '5%'}] },
+                { id: 2, name: '高频超标经营主体提醒规则', code: 'RULE-HF-002', type: 'high', dataSource: 'history_result', judgeType: 'numeric', scope: 'business', isEnabled: 1, rules: [{field: 'overdue_count', operator: 'ge', value: '3'}, {field: 'unqualified_rate', operator: 'ge', value: '5%'}] },
+                { id: 3, name: '餐饮单位高频不合格提醒规则', code: 'RULE-HF-003', type: 'medium', dataSource: 'history_result', judgeType: 'numeric', scope: 'catering', isEnabled: 0, rules: [{field: 'unqualified_rate', operator: 'ge', value: '6%'}] }
+            ],
+            tab2: [
+                { id: 1, name: '夏季熟肉制品微生物专项提醒', code: 'RULE-SP-001', type: 'high', dataSource: 'risk_trend', season: 'summer', riskCategory: '熟肉制品', isEnabled: 1, rules: [{field: 'unqualified_rate', operator: 'ge', value: '8%'}] },
+                { id: 2, name: '夏季冷饮食品专项提醒', code: 'RULE-SP-002', type: 'high', dataSource: 'risk_trend', season: 'summer', riskCategory: '冷饮食品', isEnabled: 1, rules: [{field: 'unqualified_rate', operator: 'ge', value: '6%'}] },
+                { id: 3, name: '春节食品专项抽检提醒', code: 'RULE-SP-003', type: 'medium', dataSource: 'risk_trend', season: 'winter', riskCategory: '节日食品', isEnabled: 0, rules: [{field: 'unqualified_rate', operator: 'ge', value: '5%'}] }
+            ],
+            tab3: [
+                { id: 1, name: '朝阳区蔬菜农药残留专项提醒', code: 'RULE-RG-001', type: 'high', dataSource: 'region_risk', region: 'chaoyang', categoryName: '蔬菜', isEnabled: 1, rules: [{field: 'region_rate_diff', operator: 'ge', value: '4%'}] },
+                { id: 2, name: '丰台区餐饮食品专项提醒', code: 'RULE-RG-002', type: 'medium', dataSource: 'region_risk', region: 'fengtai', categoryName: '餐饮食品', isEnabled: 1, rules: [{field: 'region_rate_diff', operator: 'ge', value: '3%'}] }
+            ]
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelector('.tab-item[onclick="switchTab(\'' + tabId + '\')"]').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function clearSearch() { console.log('清空搜索'); }
+        function doSearch() { console.log('执行搜索'); }
+
+        function openModal(mode, tab, id) {
+            document.getElementById('modalMode').value = mode;
+            document.getElementById('modalTab').value = tab;
+            
+            if (mode === 'add') {
+                document.getElementById('modalTitle').textContent = '新增规则';
+                document.getElementById('modalId').value = '';
+                resetForm();
+            } else {
+                document.getElementById('modalTitle').textContent = '编辑规则';
+                document.getElementById('modalId').value = id;
+                loadRuleData(tab, id);
+            }
+            
+            showTabSpecificFields(tab);
+            document.getElementById('ruleModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('ruleModal').classList.remove('show');
+        }
+
+        function showTabSpecificFields(tab) {
+            document.getElementById('fieldTab1Specific').style.display = tab === 'tab1' ? 'flex' : 'none';
+            document.getElementById('fieldTab2Specific').style.display = tab === 'tab2' ? 'flex' : 'none';
+            document.getElementById('fieldTab3Specific').style.display = tab === 'tab3' ? 'flex' : 'none';
+            document.getElementById('fieldRuleType').style.display = tab !== 'tab3' ? 'block' : 'none';
+        }
+
+        function resetForm() {
+            document.getElementById('ruleName').value = '';
+            document.getElementById('ruleCode').value = '';
+            document.getElementById('ruleType').value = 'high';
+            document.getElementById('dataSource').value = 'history_result';
+            document.getElementById('judgeType').value = 'numeric';
+            document.getElementById('scope').value = 'production';
+            document.getElementById('season').value = 'summer';
+            document.getElementById('riskCategory').value = '';
+            document.getElementById('region').value = 'chaoyang';
+            document.getElementById('categoryName').value = '';
+            document.getElementById('isEnabled').value = '1';
+            document.getElementById('remark').value = '';
+            
+            var container = document.getElementById('rulesContainer');
+            container.innerHTML = '<div class="rule-item"><select class="rule-field"><option value="overdue_count">历史超标次数</option><option value="unqualified_rate">抽检不合格率</option><option value="region_rate_diff">区域超标率差值</option><option value="last_inspect_date">上次抽检时间</option><option value="production_status">企业生产状态</option></select><select class="rule-operator"><option value="ge">≥</option><option value="gt">></option><option value="eq">=</option><option value="le">≤</option><option value="lt"><</option></select><input type="text" class="rule-value" placeholder="请输入对比值"><button class="btn-remove-rule" onclick="removeRule(this)">-</button></div>';
+        }
+
+        function loadRuleData(tab, id) {
+            var data = ruleData[tab].find(item => item.id === id);
+            if (!data) return;
+            
+            document.getElementById('ruleName').value = data.name;
+            document.getElementById('ruleCode').value = data.code;
+            if (data.type) document.getElementById('ruleType').value = data.type;
+            if (data.dataSource) document.getElementById('dataSource').value = data.dataSource;
+            if (data.judgeType) document.getElementById('judgeType').value = data.judgeType;
+            if (data.scope) document.getElementById('scope').value = data.scope;
+            if (data.season) document.getElementById('season').value = data.season;
+            if (data.riskCategory) document.getElementById('riskCategory').value = data.riskCategory;
+            if (data.region) document.getElementById('region').value = data.region;
+            if (data.categoryName) document.getElementById('categoryName').value = data.categoryName;
+            document.getElementById('isEnabled').value = data.isEnabled ? '1' : '0';
+            
+            var container = document.getElementById('rulesContainer');
+            container.innerHTML = '';
+            if (data.rules) {
+                data.rules.forEach(function(rule) {
+                    var html = '<div class="rule-item">';
+                    html += '<select class="rule-field"><option value="overdue_count"' + (rule.field === 'overdue_count' ? ' selected' : '') + '>历史超标次数</option><option value="unqualified_rate"' + (rule.field === 'unqualified_rate' ? ' selected' : '') + '>抽检不合格率</option><option value="region_rate_diff"' + (rule.field === 'region_rate_diff' ? ' selected' : '') + '>区域超标率差值</option><option value="last_inspect_date"' + (rule.field === 'last_inspect_date' ? ' selected' : '') + '>上次抽检时间</option><option value="production_status"' + (rule.field === 'production_status' ? ' selected' : '') + '>企业生产状态</option></select>';
+                    html += '<select class="rule-operator"><option value="ge"' + (rule.operator === 'ge' ? ' selected' : '') + '>≥</option><option value="gt"' + (rule.operator === 'gt' ? ' selected' : '') + '>></option><option value="eq"' + (rule.operator === 'eq' ? ' selected' : '') + '>=</option><option value="le"' + (rule.operator === 'le' ? ' selected' : '') + '>≤</option><option value="lt"' + (rule.operator === 'lt' ? ' selected' : '') + '><</option></select>';
+                    html += '<input type="text" class="rule-value" value="' + (rule.value || '') + '">';
+                    html += '<button class="btn-remove-rule" onclick="removeRule(this)">-</button>';
+                    html += '</div>';
+                    container.innerHTML += html;
+                });
+            } else {
+                container.innerHTML = '<div class="rule-item"><select class="rule-field"><option value="overdue_count">历史超标次数</option><option value="unqualified_rate">抽检不合格率</option><option value="region_rate_diff">区域超标率差值</option><option value="last_inspect_date">上次抽检时间</option><option value="production_status">企业生产状态</option></select><select class="rule-operator"><option value="ge">≥</option><option value="gt">></option><option value="eq">=</option><option value="le">≤</option><option value="lt"><</option></select><input type="text" class="rule-value" placeholder="请输入对比值"><button class="btn-remove-rule" onclick="removeRule(this)">-</button></div>';
+            }
+        }
+
+        function addRule() {
+            var container = document.getElementById('rulesContainer');
+            var html = '<div class="rule-item">';
+            html += '<select class="rule-field"><option value="overdue_count">历史超标次数</option><option value="unqualified_rate">抽检不合格率</option><option value="region_rate_diff">区域超标率差值</option><option value="last_inspect_date">上次抽检时间</option><option value="production_status">企业生产状态</option></select>';
+            html += '<select class="rule-operator"><option value="ge">≥</option><option value="gt">></option><option value="eq">=</option><option value="le">≤</option><option value="lt"><</option></select>';
+            html += '<input type="text" class="rule-value" placeholder="请输入对比值">';
+            html += '<button class="btn-remove-rule" onclick="removeRule(this)">-</button>';
+            html += '</div>';
+            container.innerHTML += html;
+        }
+
+        function removeRule(btn) {
+            var container = document.getElementById('rulesContainer');
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert('至少保留一条判定规则');
+            }
+        }
+
+        function saveRule() {
+            var mode = document.getElementById('modalMode').value;
+            var tab = document.getElementById('modalTab').value;
+            var id = parseInt(document.getElementById('modalId').value);
+            
+            var formData = {
+                name: document.getElementById('ruleName').value,
+                code: document.getElementById('ruleCode').value,
+                type: document.getElementById('ruleType').value,
+                dataSource: document.getElementById('dataSource').value,
+                isEnabled: parseInt(document.getElementById('isEnabled').value),
+                rules: []
+            };
+            
+            if (tab === 'tab1') {
+                formData.judgeType = document.getElementById('judgeType').value;
+                formData.scope = document.getElementById('scope').value;
+            } else if (tab === 'tab2') {
+                formData.season = document.getElementById('season').value;
+                formData.riskCategory = document.getElementById('riskCategory').value;
+            } else if (tab === 'tab3') {
+                formData.region = document.getElementById('region').value;
+                formData.categoryName = document.getElementById('categoryName').value;
+            }
+            
+            var ruleItems = document.querySelectorAll('#rulesContainer .rule-item');
+            ruleItems.forEach(function(item) {
+                formData.rules.push({
+                    field: item.querySelector('.rule-field').value,
+                    operator: item.querySelector('.rule-operator').value,
+                    value: item.querySelector('.rule-value').value
+                });
+            });
+            
+            if (!formData.name.trim()) {
+                alert('请输入规则名称');
+                return;
+            }
+            
+            if (formData.rules.some(r => !r.value.trim())) {
+                alert('请填写所有判定规则的对比值');
+                return;
+            }
+            
+            if (mode === 'add') {
+                var newId = ruleData[tab].length > 0 ? Math.max(...ruleData[tab].map(r => r.id)) + 1 : 1;
+                formData.id = newId;
+                formData.code = tab === 'tab1' ? 'RULE-HF-' + String(newId).padStart(3, '0') :
+                               tab === 'tab2' ? 'RULE-SP-' + String(newId).padStart(3, '0') :
+                               'RULE-RG-' + String(newId).padStart(3, '0');
+                ruleData[tab].push(formData);
+                alert('规则添加成功');
+            } else {
+                var index = ruleData[tab].findIndex(item => item.id === id);
+                if (index !== -1) {
+                    ruleData[tab][index] = {...ruleData[tab][index], ...formData};
+                    alert('规则修改成功');
+                }
+            }
+            
+            closeModal();
+        }
+
+        function confirmDelete(id) {
+            if (confirm('确定要删除该规则吗？')) {
+                var activeTab = document.querySelector('.tab-item.active').getAttribute('onclick').match(/'([^']+)'/)[1];
+                ruleData[activeTab] = ruleData[activeTab].filter(item => item.id !== id);
+                alert('规则删除成功');
+            }
+        }
+
+        document.getElementById('ruleModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

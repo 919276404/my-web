@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年度计划说明填报</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .filter-section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-item label {
+            font-weight: 500;
+            min-width: 100px;
+        }
+        .filter-item input, .filter-item select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #1890ff;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-left: 10px;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .btn-success {
+            background: #52c41a;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #73d13d;
+        }
+        .table-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .table-scroll {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        th {
+            background: #fafafa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-pending {
+            background: #fff7e6;
+            color: #fa8c16;
+            border: 1px solid #ffd591;
+        }
+        .status-completed {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover {
+            color: #666;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex: 0 0 auto;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 150px;
+            font-family: inherit;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        .content-section {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .content-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #52c41a;
+        }
+        .content-text {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="filter-item">
+                <label>计划年度：</label>
+                <select id="planYear">
+                    <option value="">全部</option>
+                    <option value="2027">2027年</option>
+                    <option value="2026">2026年</option>
+                    <option value="2025">2025年</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>填报部门：</label>
+                <select id="deptName">
+                    <option value="">全部</option>
+                    <option value="东城区市场监管局">东城区市场监管局</option>
+                    <option value="西城区市场监管局">西城区市场监管局</option>
+                    <option value="朝阳区市场监管局">朝阳区市场监管局</option>
+                    <option value="海淀区市场监管局">海淀区市场监管局</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label>填报状态：</label>
+                <select id="reportStatus">
+                    <option value="">全部</option>
+                    <option value="未填报">未填报</option>
+                    <option value="已填报">已填报</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="searchData()">查询</button>
+            <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <h3>年度计划说明填报列表</h3>
+            <div>
+                <button class="btn btn-success" onclick="fillReport()">填报计划说明</button>
+                <button class="btn btn-secondary" onclick="exportData()" style="margin-left: 10px;">导出数据</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>报送批次号</th>
+                        <th>填报部门</th>
+                        <th>计划年度</th>
+                        <th>填报状态</th>
+                        <th>提交人</th>
+                        <th>提交时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="fillModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">年度计划说明填报</div>
+                <div class="modal-close" onclick="closeFillModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalId" value="">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>计划年度</label>
+                        <select id="fillYear">
+                            <option value="2027">2027年</option>
+                            <option value="2026">2026年</option>
+                            <option value="2025">2025年</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>填报部门</label>
+                        <select id="fillDept">
+                            <option value="东城区市场监管局">东城区市场监管局</option>
+                            <option value="西城区市场监管局">西城区市场监管局</option>
+                            <option value="朝阳区市场监管局">朝阳区市场监管局</option>
+                            <option value="海淀区市场监管局">海淀区市场监管局</option>
+                            <option value="丰台区市场监管局">丰台区市场监管局</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>工作思路</label>
+                    <textarea id="workThought" placeholder="请描述下一年度的工作思路，包括总体目标、工作重点、策略方向等"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>重点方向</label>
+                    <textarea id="focusArea" placeholder="请列出下一年度的重点工作方向，包括重点监管领域、专项整治计划、创新举措等"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>目标设定依据</label>
+                    <textarea id="targetBasis" placeholder="请说明目标设定的依据，包括历史数据分析、风险评估结果、上级要求、区域特点等"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>提交人</label>
+                    <input type="text" id="fillPerson" placeholder="请输入提交人姓名">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeFillModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveReport()">提交</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">计划说明详情</div>
+                <div class="modal-close" onclick="closeDetailModal()">×</div>
+            </div>
+            <div class="modal-body" id="detailContent">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeDetailModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var reportData = [
+            { id: 1, batchNo: 'JH2027001', deptName: '东城区市场监管局', planYear: '2027', status: '已填报', fillPerson: '张三', fillTime: '2026-01-15 10:30', thought: '以风险防控为核心，进一步强化食品安全抽检监测工作，提高抽检覆盖率和问题发现率。', focus: '1. 加强高风险食品品类抽检；2. 加大网络食品抽检力度；3. 深化部门协作机制；4. 推进智慧监管建设。', basis: '基于2026年抽检数据，问题食品主要集中在肉制品、水产品等品类。结合辖区实际情况，制定针对性抽检计划。' },
+            { id: 2, batchNo: 'JH2027002', deptName: '西城区市场监管局', planYear: '2027', status: '已填报', fillPerson: '李四', fillTime: '2026-01-16 14:20', thought: '围绕"四个最严"要求，全面提升食品安全监管水平，保障辖区食品安全。', focus: '1. 开展校园周边食品安全专项整治；2. 强化餐饮服务单位监管；3. 推进企业诚信体系建设；4. 加强食品安全宣传教育。', basis: '根据上级部门工作部署和辖区食品安全形势分析，制定年度工作计划。' },
+            { id: 3, batchNo: '', deptName: '朝阳区市场监管局', planYear: '2027', status: '未填报', fillPerson: '', fillTime: '', thought: '', focus: '', basis: '' },
+            { id: 4, batchNo: '', deptName: '海淀区市场监管局', planYear: '2027', status: '未填报', fillPerson: '', fillTime: '', thought: '', focus: '', basis: '' },
+            { id: 5, batchNo: 'JH2026001', deptName: '东城区市场监管局', planYear: '2026', status: '已填报', fillPerson: '张三', fillTime: '2025-01-18 11:00', thought: '以创建食品安全示范区为目标，全面提升食品安全保障能力。', focus: '1. 完善抽检监测体系；2. 加强风险预警能力；3. 强化应急处置机制。', basis: '根据市食安委工作要求和辖区实际情况制定。' }
+        ];
+
+        function init() {
+            renderTable(reportData);
+        }
+
+        function renderTable(data) {
+            var tbody = document.getElementById('reportTable');
+            tbody.innerHTML = '';
+            data.forEach(function(item, index) {
+                var statusClass = item.status === '已填报' ? 'status-completed' : 'status-pending';
+
+                var row = '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + (item.batchNo || '-') + '</td>' +
+                    '<td>' + item.deptName + '</td>' +
+                    '<td>' + item.planYear + '年</td>' +
+                    '<td><span class="status-tag ' + statusClass + '">' + item.status + '</span></td>' +
+                    '<td>' + (item.fillPerson || '-') + '</td>' +
+                    '<td>' + (item.fillTime || '-') + '</td>' +
+                    '<td>' +
+                    (item.status === '已填报' ? '<button class="btn btn-primary" onclick="viewReport(' + item.id + ')" style="padding: 4px 10px; font-size: 12px;">查看详情</button>' : '') +
+                    '<button class="btn btn-warning" onclick="editReport(' + item.id + ')" style="padding: 4px 10px; font-size: 12px; margin-left: 5px;">' + (item.status === '已填报' ? '修改' : '填报') + '</button>' +
+                    '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        function searchData() {
+            var year = document.getElementById('planYear').value;
+            var dept = document.getElementById('deptName').value;
+            var status = document.getElementById('reportStatus').value;
+
+            var filtered = reportData.filter(function(item) {
+                var match = true;
+                if (year && item.planYear !== year) match = false;
+                if (dept && item.deptName !== dept) match = false;
+                if (status && item.status !== status) match = false;
+                return match;
+            });
+            renderTable(filtered);
+        }
+
+        function resetFilter() {
+            document.getElementById('planYear').value = '';
+            document.getElementById('deptName').value = '';
+            document.getElementById('reportStatus').value = '';
+            renderTable(reportData);
+        }
+
+        function fillReport() {
+            document.getElementById('modalId').value = '';
+            document.getElementById('fillYear').value = '2027';
+            document.getElementById('fillDept').value = '';
+            document.getElementById('workThought').value = '';
+            document.getElementById('focusArea').value = '';
+            document.getElementById('targetBasis').value = '';
+            document.getElementById('fillPerson').value = '';
+            document.getElementById('fillModal').classList.add('show');
+        }
+
+        function editReport(id) {
+            var item = reportData.find(function(i) { return i.id === id; });
+            if (item) {
+                document.getElementById('modalId').value = item.id;
+                document.getElementById('fillYear').value = item.planYear;
+                document.getElementById('fillDept').value = item.deptName;
+                document.getElementById('workThought').value = item.thought;
+                document.getElementById('focusArea').value = item.focus;
+                document.getElementById('targetBasis').value = item.basis;
+                document.getElementById('fillPerson').value = item.fillPerson;
+                document.getElementById('fillModal').classList.add('show');
+            }
+        }
+
+        function closeFillModal() {
+            document.getElementById('fillModal').classList.remove('show');
+        }
+
+        function saveReport() {
+            var id = document.getElementById('modalId').value;
+            var year = document.getElementById('fillYear').value;
+            var dept = document.getElementById('fillDept').value;
+            var thought = document.getElementById('workThought').value;
+            var focus = document.getElementById('focusArea').value;
+            var basis = document.getElementById('targetBasis').value;
+            var fillPerson = document.getElementById('fillPerson').value;
+
+            if (!dept) {
+                alert('请选择填报部门');
+                return;
+            }
+            if (!fillPerson) {
+                alert('请输入提交人');
+                return;
+            }
+            if (!thought) {
+                alert('请填写工作思路');
+                return;
+            }
+
+            if (id) {
+                var item = reportData.find(function(i) { return i.id === parseInt(id); });
+                if (item) {
+                    item.thought = thought;
+                    item.focus = focus;
+                    item.basis = basis;
+                    item.fillPerson = fillPerson;
+                    item.fillTime = new Date().toLocaleString();
+                }
+            } else {
+                var newItem = {
+                    id: Date.now(),
+                    batchNo: 'JH' + year + String(reportData.length + 1).padStart(3, '0'),
+                    deptName: dept,
+                    planYear: year,
+                    status: '已填报',
+                    fillPerson: fillPerson,
+                    fillTime: new Date().toLocaleString(),
+                    thought: thought,
+                    focus: focus,
+                    basis: basis
+                };
+                reportData.push(newItem);
+            }
+
+            alert('提交成功');
+            closeFillModal();
+            renderTable(reportData);
+        }
+
+        function viewReport(id) {
+            var item = reportData.find(function(i) { return i.id === id; });
+            if (item) {
+                var html = '<div class="content-section">' +
+                    '<div class="content-title">工作思路</div>' +
+                    '<div class="content-text">' + item.thought + '</div>' +
+                    '</div>' +
+                    '<div class="content-section">' +
+                    '<div class="content-title">重点方向</div>' +
+                    '<div class="content-text">' + (item.focus || '无') + '</div>' +
+                    '</div>' +
+                    '<div class="content-section">' +
+                    '<div class="content-title">目标设定依据</div>' +
+                    '<div class="content-text">' + (item.basis || '无') + '</div>' +
+                    '</div>';
+                document.getElementById('detailContent').innerHTML = html;
+                document.getElementById('detailModal').classList.add('show');
+            }
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        function exportData() {
+            alert('导出功能开发中');
+        }
+
+        init();
+    </script>
+</body>
+</html>

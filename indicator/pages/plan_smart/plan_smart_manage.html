@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计划智能辅助管理</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .dashboard-container {
+            padding: 20px;
+        }
+        .dashboard-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .dashboard-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .card-header {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e73be;
+        }
+        .card-desc {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .quick-link {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #e8e8e8;
+        }
+        .quick-link:hover {
+            background: #f0f5ff;
+            border-color: #1e73be;
+        }
+        .link-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .link-text {
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-title">计划智能辅助管理</div>
+
+        <div class="card-grid">
+            <div class="dashboard-card">
+                <div class="card-header">预设规则总数</div>
+                <div class="card-value">8</div>
+                <div class="card-desc">包含高频超标、季节周期、区域品类等</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-header">启用规则数</div>
+                <div class="card-value">6</div>
+                <div class="card-desc">本月新增 2 条</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-header">触发提醒次数</div>
+                <div class="card-value">125</div>
+                <div class="card-desc">本月累计</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="card-header">数据资源库表</div>
+                <div class="card-value">12</div>
+                <div class="card-desc">历史数据类 6 张，实时数据类 6 张</div>
+            </div>
+        </div>
+
+        <div class="section-title">快速入口</div>
+        <div class="quick-links">
+            <div class="quick-link" onclick="parent.navigateTo('risk_rule_manage')">
+                <div class="link-icon">📋</div>
+                <div class="link-text">历史风险导向预设提醒规则管理</div>
+            </div>
+            <div class="quick-link" onclick="parent.navigateTo('rule_data_config')">
+                <div class="link-icon">🔗</div>
+                <div class="link-text">预设规则数据关联与提醒推送配置</div>
+            </div>
+            <div class="quick-link" onclick="parent.navigateTo('data_source_config')">
+                <div class="link-icon">🗄️</div>
+                <div class="link-text">数据资源库表可视化选择与关联配置</div>
+            </div>
+            <div class="quick-link" onclick="parent.navigateTo('judge_field_config')">
+                <div class="link-icon">⚖️</div>
+                <div class="link-text">判定字段选取与运算关系可视化定义</div>
+            </div>
+            <div class="quick-link" onclick="parent.navigateTo('rule_exec_config')">
+                <div class="link-icon">⚙️</div>
+                <div class="link-text">规则执行策略配置</div>
+            </div>
+            <div class="quick-link" onclick="parent.navigateTo('rule_history')">
+                <div class="link-icon">📜</div>
+                <div class="link-text">规则历史管理与复用</div>
+            </div>
+            <div class="quick-link" onclick="parent.navigateTo('alert_feedback')">
+                <div class="link-icon">💬</div>
+                <div class="link-text">提醒推送与反馈跟踪</div>
+            </div>
+            <div class="quick-link" onclick="parent.navigateTo('alert_record')">
+                <div class="link-icon">🔍</div>
+                <div class="link-text">提醒与规则执行记录查询</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

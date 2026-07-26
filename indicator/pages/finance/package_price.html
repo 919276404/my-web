@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打包价管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #c62828; border: 1px solid #c62828; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 800px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #c62828; margin-left: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: #fff; cursor: pointer; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-item { flex: 1; }
+        .dual-list-container { display: flex; gap: 15px; }
+        .list-panel { flex: 1; border: 1px solid #ddd; border-radius: 4px; background: #f8fafc; }
+        .list-header { padding: 10px; background: #fff; border-bottom: 1px solid #ddd; font-weight: 600; font-size: 13px; }
+        .list-body { padding: 10px; max-height: 200px; overflow-y: auto; }
+        .list-item { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 3px; cursor: pointer; margin-bottom: 4px; }
+        .list-item:hover { background: #e8f0fe; }
+        .list-item.selected { background: #d4e4ff; }
+        .list-item input[type="checkbox"] { margin: 0; }
+        .list-controls { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+        .list-btn { padding: 8px 16px; border: 1px solid #ddd; background: #fff; border-radius: 4px; cursor: pointer; }
+        .list-btn:hover { background: #f0f5ff; border-color: #1e73be; color: #1e73be; }
+        .rule-section { padding: 15px; background: #f8fafc; border-radius: 4px; margin-top: 15px; }
+        .rule-item { display: flex; gap: 15px; align-items: center; margin-bottom: 10px; }
+        .rule-item:last-child { margin-bottom: 0; }
+        .rule-label { font-size: 13px; color: #666; min-width: 100px; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">打包规则名称</span>
+                <input type="text" class="search-input" id="searchName" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">年份</span>
+                <select class="search-select" id="searchYear">
+                    <option>请选择</option>
+                    <option>2024</option>
+                    <option>2025</option>
+                    <option>2026</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <div>
+                <button class="btn btn-primary" onclick="openAddModal()">+ 新增打包规则</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary">📤 数据导出</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>打包规则名称</th>
+                    <th>包含项目数</th>
+                    <th>累加价格（元）</th>
+                    <th>最高限价（元）</th>
+                    <th>实际结算价（元）</th>
+                    <th>年份</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 5 条 共有 56 条</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="packageModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增打包规则</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalId" value="">
+                <div class="form-item">
+                    <label class="form-label required">打包规则名称</label>
+                    <input type="text" class="form-input" id="packageName" placeholder="请输入打包规则名称">
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">选择检验项目</label>
+                    <div class="dual-list-container">
+                        <div class="list-panel">
+                            <div class="list-header">可选项目</div>
+                            <div class="list-body" id="availableItems">
+                            </div>
+                        </div>
+                        <div class="list-controls">
+                            <button class="list-btn" onclick="addToSelected()">›</button>
+                            <button class="list-btn" onclick="removeFromSelected()">‹</button>
+                            <button class="list-btn" onclick="addAll()">››</button>
+                            <button class="list-btn" onclick="removeAll()">‹‹</button>
+                        </div>
+                        <div class="list-panel">
+                            <div class="list-header">已选项目</div>
+                            <div class="list-body" id="selectedItems">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rule-section">
+                    <div class="rule-item">
+                        <span class="rule-label">累加价格：</span>
+                        <input type="number" class="form-input" id="accumulatePrice" placeholder="0.00" style="flex: 1;">
+                        <span style="font-size: 13px; color: #666;">元</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-label">最高限价：</span>
+                        <input type="number" class="form-input" id="maxPrice" placeholder="0.00" style="flex: 1;">
+                        <span style="font-size: 13px; color: #666;">元</span>
+                    </div>
+                    <div class="rule-item">
+                        <span class="rule-label">实际结算价：</span>
+                        <input type="number" class="form-input" id="settlementPrice" placeholder="0.00" style="flex: 1;">
+                        <span style="font-size: 13px; color: #666;">元</span>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">年份</label>
+                    <select class="form-select" id="itemYear">
+                        <option value="">请选择</option>
+                        <option>2024</option>
+                        <option>2025</option>
+                        <option>2026</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="savePackage()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var packageData = [
+            { id: 1, name: '农药残留全项检测', items: ['有机磷农药', '有机氯农药', '拟除虫菊酯类农药'], accumulatePrice: 450, maxPrice: 400, settlementPrice: 400, year: '2026' },
+            { id: 2, name: '食品添加剂综合检测', items: ['防腐剂', '甜味剂', '着色剂', '抗氧化剂'], accumulatePrice: 320, maxPrice: 300, settlementPrice: 300, year: '2026' },
+            { id: 3, name: '微生物基础检测套餐', items: ['菌落总数', '大肠菌群', '霉菌', '酵母菌'], accumulatePrice: 200, maxPrice: 180, settlementPrice: 180, year: '2026' },
+            { id: 4, name: '重金属元素检测', items: ['铅', '镉', '汞', '砷', '铬'], accumulatePrice: 1500, maxPrice: 1200, settlementPrice: 1200, year: '2026' },
+            { id: 5, name: '营养成分分析', items: ['蛋白质', '脂肪', '碳水化合物', '膳食纤维'], accumulatePrice: 360, maxPrice: 350, settlementPrice: 350, year: '2026' }
+        ];
+
+        var allItems = [
+            { id: 'i1', name: '有机磷农药', price: 150 },
+            { id: 'i2', name: '有机氯农药', price: 150 },
+            { id: 'i3', name: '拟除虫菊酯类农药', price: 150 },
+            { id: 'i4', name: '防腐剂', price: 80 },
+            { id: 'i5', name: '甜味剂', price: 80 },
+            { id: 'i6', name: '着色剂', price: 80 },
+            { id: 'i7', name: '抗氧化剂', price: 80 },
+            { id: 'i8', name: '菌落总数', price: 50 },
+            { id: 'i9', name: '大肠菌群', price: 50 },
+            { id: 'i10', name: '霉菌', price: 50 },
+            { id: 'i11', name: '酵母菌', price: 50 },
+            { id: 'i12', name: '铅', price: 300 },
+            { id: 'i13', name: '镉', price: 300 },
+            { id: 'i14', name: '汞', price: 300 },
+            { id: 'i15', name: '砷', price: 300 },
+            { id: 'i16', name: '铬', price: 300 },
+            { id: 'i17', name: '蛋白质', price: 90 },
+            { id: 'i18', name: '脂肪', price: 90 },
+            { id: 'i19', name: '碳水化合物', price: 90 },
+            { id: 'i20', name: '膳食纤维', price: 90 }
+        ];
+
+        var selectedItemNames = [];
+
+        function renderTable(data) {
+            var tbody = document.getElementById('tableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td>' + item.items.length + '项</td>' +
+                    '<td>' + item.accumulatePrice.toFixed(2) + '</td>' +
+                    '<td>' + item.maxPrice.toFixed(2) + '</td>' +
+                    '<td>' + item.settlementPrice.toFixed(2) + '</td>' +
+                    '<td>' + item.year + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-edit" onclick="openEditModal(' + item.id + ')">编辑</button>' +
+                        '<button class="action-btn action-btn-delete" onclick="deletePackage(' + item.id + ')">删除</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function renderItemLists() {
+            var availableHtml = allItems.map(function(item) {
+                var isSelected = selectedItemNames.includes(item.name);
+                return '<div class="list-item ' + (isSelected ? 'selected' : '') + '" onclick="toggleItem(\'' + item.name + '\')">' +
+                    '<input type="checkbox" ' + (isSelected ? 'checked' : '') + '>' +
+                    '<span>' + item.name + ' (' + item.price + '元)</span>' +
+                    '</div>';
+            }).join('');
+            
+            var selectedHtml = allItems.filter(function(item) {
+                return selectedItemNames.includes(item.name);
+            }).map(function(item) {
+                return '<div class="list-item selected" onclick="toggleItem(\'' + item.name + '\')">' +
+                    '<input type="checkbox" checked>' +
+                    '<span>' + item.name + ' (' + item.price + '元)</span>' +
+                    '</div>';
+            }).join('');
+            
+            document.getElementById('availableItems').innerHTML = availableHtml;
+            document.getElementById('selectedItems').innerHTML = selectedHtml;
+        }
+
+        function toggleItem(name) {
+            var index = selectedItemNames.indexOf(name);
+            if (index > -1) {
+                selectedItemNames.splice(index, 1);
+            } else {
+                selectedItemNames.push(name);
+            }
+            renderItemLists();
+        }
+
+        function addToSelected() {
+            var checkboxes = document.querySelectorAll('#availableItems input[type="checkbox"]:checked');
+            checkboxes.forEach(function(cb) {
+                var name = cb.parentElement.querySelector('span').textContent.split('(')[0].trim();
+                if (!selectedItemNames.includes(name)) {
+                    selectedItemNames.push(name);
+                }
+            });
+            renderItemLists();
+        }
+
+        function removeFromSelected() {
+            var checkboxes = document.querySelectorAll('#selectedItems input[type="checkbox"]:checked');
+            checkboxes.forEach(function(cb) {
+                var name = cb.parentElement.querySelector('span').textContent.split('(')[0].trim();
+                var index = selectedItemNames.indexOf(name);
+                if (index > -1) {
+                    selectedItemNames.splice(index, 1);
+                }
+            });
+            renderItemLists();
+        }
+
+        function addAll() {
+            allItems.forEach(function(item) {
+                if (!selectedItemNames.includes(item.name)) {
+                    selectedItemNames.push(item.name);
+                }
+            });
+            renderItemLists();
+        }
+
+        function removeAll() {
+            selectedItemNames = [];
+            renderItemLists();
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '新增打包规则';
+            document.getElementById('modalMode').value = 'add';
+            document.getElementById('modalId').value = '';
+            document.getElementById('packageName').value = '';
+            selectedItemNames = [];
+            renderItemLists();
+            document.getElementById('accumulatePrice').value = '';
+            document.getElementById('maxPrice').value = '';
+            document.getElementById('settlementPrice').value = '';
+            document.getElementById('itemYear').value = '';
+            document.getElementById('packageModal').classList.add('active');
+        }
+
+        function openEditModal(id) {
+            var item = packageData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            document.getElementById('modalTitle').textContent = '编辑打包规则';
+            document.getElementById('modalMode').value = 'edit';
+            document.getElementById('modalId').value = id;
+            document.getElementById('packageName').value = item.name;
+            selectedItemNames = [...item.items];
+            renderItemLists();
+            document.getElementById('accumulatePrice').value = item.accumulatePrice;
+            document.getElementById('maxPrice').value = item.maxPrice;
+            document.getElementById('settlementPrice').value = item.settlementPrice;
+            document.getElementById('itemYear').value = item.year;
+            document.getElementById('packageModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('packageModal').classList.remove('active');
+        }
+
+        function savePackage() {
+            var mode = document.getElementById('modalMode').value;
+            var id = parseInt(document.getElementById('modalId').value);
+            var name = document.getElementById('packageName').value.trim();
+            var accumulatePrice = document.getElementById('accumulatePrice').value;
+            var maxPrice = document.getElementById('maxPrice').value;
+            var settlementPrice = document.getElementById('settlementPrice').value;
+            var year = document.getElementById('itemYear').value;
+            
+            if (!name) { alert('请输入打包规则名称'); return; }
+            if (selectedItemNames.length === 0) { alert('请选择至少一个检验项目'); return; }
+            if (!accumulatePrice) { alert('请输入累加价格'); return; }
+            if (!maxPrice) { alert('请输入最高限价'); return; }
+            if (!settlementPrice) { alert('请输入实际结算价'); return; }
+            if (!year) { alert('请选择年份'); return; }
+            
+            if (mode === 'add') {
+                packageData.unshift({
+                    id: packageData.length + 1,
+                    name: name,
+                    items: [...selectedItemNames],
+                    accumulatePrice: parseFloat(accumulatePrice),
+                    maxPrice: parseFloat(maxPrice),
+                    settlementPrice: parseFloat(settlementPrice),
+                    year: year
+                });
+            } else {
+                var item = packageData.find(function(d) { return d.id === id; });
+                if (item) {
+                    item.name = name;
+                    item.items = [...selectedItemNames];
+                    item.accumulatePrice = parseFloat(accumulatePrice);
+                    item.maxPrice = parseFloat(maxPrice);
+                    item.settlementPrice = parseFloat(settlementPrice);
+                    item.year = year;
+                }
+            }
+            
+            renderTable(packageData);
+            closeModal();
+            alert('保存成功');
+        }
+
+        function deletePackage(id) {
+            if (confirm('确定要删除该打包规则吗？')) {
+                packageData = packageData.filter(function(d) { return d.id !== id; });
+                renderTable(packageData);
+                alert('删除成功');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchYear').value = '请选择';
+            renderTable(packageData);
+        }
+
+        function doSearch() {
+            var name = document.getElementById('searchName').value.trim().toLowerCase();
+            var year = document.getElementById('searchYear').value;
+            
+            var filtered = packageData.filter(function(d) {
+                var matchName = !name || d.name.toLowerCase().includes(name);
+                var matchYear = year === '请选择' || d.year === year;
+                return matchName && matchYear;
+            });
+            
+            renderTable(filtered);
+        }
+
+        renderTable(packageData);
+    </script>
+</body>
+</html>

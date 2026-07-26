@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>样本费管理</title>
+    <title>检验费管理</title>
     <link rel="stylesheet" href="../css/styles.css">
     <style>
         body {
@@ -230,13 +230,99 @@
             border-radius: 3px;
             font-size: 13px;
         }
+
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 1000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 50px;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 750px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .modal-close {
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 12px 24px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: inline-block;
+            width: 140px;
+            text-align: right;
+            margin-right: 12px;
+            color: #333;
+        }
+
+        .form-control {
+            width: calc(100% - 170px);
+            padding: 6px 11px;
+            border: 1px solid #d9d9d9;
+            border-radius: 2px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #1e9a6c;
+        }
+
+        textarea.form-control {
+            height: 70px;
+            resize: vertical;
+        }
     </style>
 </head>
 <body>
     <div class="tabs-container">
         <div class="tabs-header">
             <div class="tab active">
-                <span>样本费管理</span>
+                <span>检验费管理</span>
                 <span class="tab-close">×</span>
             </div>
             <div class="tabs-actions">
@@ -247,32 +333,20 @@
         <div class="search-panel">
             <div class="search-row">
                 <div class="search-item">
-                    <label>食品大类(一级):</label>
-                    <select>
-                        <option value="">请选择</option>
-                    </select>
+                    <label>报送分类2:</label>
+                    <input type="text" placeholder="请输入">
                 </div>
                 <div class="search-item">
-                    <label>食品亚类(二级):</label>
-                    <select>
-                        <option value="">请选择</option>
-                    </select>
+                    <label>检验项目名称:</label>
+                    <input type="text" placeholder="请输入">
                 </div>
                 <div class="search-item">
-                    <label>食品次亚类(三级):</label>
-                    <select>
-                        <option value="">请选择</option>
-                    </select>
-                </div>
-                <div class="search-item">
-                    <label>食品细类(四级):</label>
-                    <select>
-                        <option value="">请选择</option>
-                    </select>
+                    <label>年份:</label>
+                    <input type="number" placeholder="请选择" min="2000" max="2099">
                 </div>
                 <div class="search-actions">
                     <button class="btn btn-secondary" onclick="resetSearch(this)">清空</button>
-                    <button class="btn btn-primary" onclick="handleSearch('sample')">查询</button>
+                    <button class="btn btn-primary" onclick="handleSearch('fee')">查询</button>
                 </div>
             </div>
         </div>
@@ -280,24 +354,30 @@
         <div class="table-panel">
             <div class="table-header">
                 <div style="display:flex;gap:10px">
+                    <button class="btn btn-primary" style="background:#1e9a6c;">导出本页</button>
                     <button class="btn btn-primary" style="background:#1e9a6c;">导出</button>
                     <button class="btn btn-secondary">导入</button>
                     <button class="btn btn-secondary">下载模板</button>
-                    <button class="btn btn-primary" onclick="openModal('sampleAddModal')">+ 新增</button>
+                    <button class="btn btn-primary" onclick="openModal('feeAddModal')">+ 新增</button>
+                </div>
+                <div class="table-actions">
+                    <button class="btn btn-secondary">查询配置</button>
+                    <button class="btn btn-secondary">表格配置</button>
                 </div>
             </div>
 
             <div class="table-container">
-                <table id="sampleTable">
+                <table id="feeTable">
                     <thead>
                         <tr>
-                            <th class="checkbox-cell"><input type="checkbox" id="selectAll"></th>
+                            <th class="checkbox-cell"><input type="checkbox" onchange="toggleAllCheckboxes(this)"></th>
                             <th>序号</th>
-                            <th>食品大类(一级)</th>
-                            <th>食品亚类(二级)</th>
-                            <th>食品次亚类(三级)</th>
-                            <th>食品细类(四级)</th>
+                            <th>报送分类2</th>
+                            <th>检验项目名称</th>
+                            <th>检验依据</th>
                             <th>单价(元)</th>
+                            <th>年份</th>
+                            <th>备注</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -310,104 +390,72 @@
     </div>
 
     <!-- 新增弹窗 -->
-    <div id="sampleAddModal" class="modal">
+    <div id="feeAddModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">新增</div>
-                <div class="modal-close" onclick="closeModal('sampleAddModal')">&times;</div>
+                <div class="modal-close" onclick="closeModal('feeAddModal')">&times;</div>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="required">食品大类(一级):</label>
-                    <select id="foodLevel1">
+                    <label>报送分类2:</label>
+                    <input type="text" class="form-control" placeholder="请输入">
+                </div>
+                <div class="form-group">
+                    <label><span style="color:#ff4d4f;margin-right:4px;">*</span>检验项目名称:</label>
+                    <select class="form-control">
                         <option value="">请选择</option>
-                        <option value="婴幼儿配方食品">婴幼儿配方食品</option>
-                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
-                        <option value="特殊膳食食品">特殊膳食食品</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="required">食品亚类(二级):</label>
-                    <select id="foodLevel2">
-                        <option value="">请选择</option>
-                        <option value="婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)">婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)</option>
-                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
-                        <option value="营养补充品">营养补充品</option>
-                    </select>
+                    <label>检验依据:</label>
+                    <input type="text" class="form-control" placeholder="请输入">
                 </div>
                 <div class="form-group">
-                    <label class="required">食品次亚类(三级):</label>
-                    <select id="foodLevel3">
-                        <option value="">请选择</option>
-                        <option value="幼儿配方食品">幼儿配方食品</option>
-                        <option value="婴儿配方食品">婴儿配方食品</option>
-                        <option value="较大婴儿配方食品">较大婴儿配方食品</option>
-                        <option value="特殊医学用途配方食品">特殊医学用途配方食品</option>
-                        <option value="营养补充品">营养补充品</option>
-                    </select>
+                    <label><span style="color:#ff4d4f;margin-right:4px;">*</span>单价(元):</label>
+                    <input type="number" class="form-control" placeholder="请输入">
                 </div>
                 <div class="form-group">
-                    <label class="required">食品细类(四级):</label>
-                    <select id="foodLevel4">
-                        <option value="">请选择</option>
-                        <option value="幼儿配方食品">幼儿配方食品</option>
-                        <option value="乳基婴儿配方食品、豆基婴儿配方食品">乳基婴儿配方食品、豆基婴儿配方食品</option>
-                        <option value="乳基较大婴儿配方食品、豆基较大婴儿配方食品">乳基较大婴儿配方食品、豆基较大婴儿配方食品</option>
-                        <option value="特定全营养配方食品">特定全营养配方食品</option>
-                        <option value="全营养配方食品">全营养配方食品</option>
-                        <option value="运动营养食品">运动营养食品</option>
-                    </select>
+                    <label><span style="color:#ff4d4f;margin-right:4px;">*</span>年份:</label>
+                    <input type="number" class="form-control" placeholder="请选择年份" min="2000" max="2099">
                 </div>
                 <div class="form-group">
-                    <label class="required">单价(元):</label>
-                    <select id="price">
-                        <option value="">请选择</option>
-                        <option value="1800">1800</option>
-                        <option value="2000">2000</option>
-                    </select>
+                    <label>备注:</label>
+                    <textarea class="form-control" placeholder="请输入"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('sampleAddModal')">取消</button>
-                <button class="btn btn-primary" onclick="confirmAdd('sample')">确认</button>
+                <button class="btn btn-secondary" onclick="closeModal('feeAddModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAdd('fee')">确认</button>
             </div>
         </div>
     </div>
 
     <script src="../js/common.js"></script>
     <script>
-        const pageType = 'sample';
+        const pageType = 'fee';
 
-        const foodTypes = [
-            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '幼儿配方食品', level4: '幼儿配方食品' },
-            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '婴儿配方食品', level4: '乳基婴儿配方食品、豆基婴儿配方食品' },
-            { level1: '婴幼儿配方食品', level2: '婴幼儿配方食品(湿法工艺、干法工艺、干湿法混合工艺)', level3: '较大婴儿配方食品', level4: '乳基较大婴儿配方食品、豆基较大婴儿配方食品' },
-            { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '特定全营养配方食品' },
-            { level1: '特殊医学用途配方食品', level2: '特殊医学用途配方食品', level3: '特殊医学用途配方食品', level4: '全营养配方食品' },
-            { level1: '特殊膳食食品', level2: '营养补充品', level3: '营养补充品', level4: '运动营养食品' }
-        ];
+        const items = ['盐酸二甲双胍', '育亨宾', '吗啡', '依他尼酸', '依诺沙星', '斯利司他', '西替利嗪', '胰乙酰化可的松', '托吡酯', '帕罗西汀'];
 
-        // 生成463条数据
-        function generateSampleData() {
+        function generateFeeData() {
             const data = [];
-            for (let i = 0; i < 463; i++) {
-                const food = foodTypes[i % foodTypes.length];
+            for (let i = 0; i < 994; i++) {
                 data.push({
                     id: Utils.generateId(),
-                    foodLevel1: food.level1,
-                    foodLevel2: food.level2,
-                    foodLevel3: food.level3,
-                    foodLevel4: food.level4,
-                    price: i % 3 === 0 ? 2000 : 1800
+                    category2: '',
+                    itemName: items[i % items.length],
+                    testStandard: '',
+                    price: 400,
+                    year: 2025,
+                    remark: ''
                 });
             }
             return data;
         }
 
-        const sampleData = generateSampleData();
+        const feeData = generateFeeData();
 
-        // 初始化页面管理
-        PageManager.init(pageType, sampleData);
+        PageManager.init(pageType, feeData);
 
         function renderTable(pageType) {
             const tbody = document.getElementById('tableBody');
@@ -418,13 +466,14 @@
                 html += '<tr>';
                 html += `<td class="checkbox-cell"><input type="checkbox" data-id="${item.id}"></td>`;
                 html += `<td>${(PageManager.currentPage[pageType] - 1) * PageManager.pageSize[pageType] + index + 1}</td>`;
-                html += `<td>${item.foodLevel1}</td>`;
-                html += `<td>${item.foodLevel2}</td>`;
-                html += `<td>${item.foodLevel3}</td>`;
-                html += `<td>${item.foodLevel4}</td>`;
+                html += `<td>${item.category2 || ''}</td>`;
+                html += `<td>${item.itemName}</td>`;
+                html += `<td>${item.testStandard || ''}</td>`;
                 html += `<td>${item.price}</td>`;
+                html += `<td>${item.year}</td>`;
+                html += `<td>${item.remark || ''}</td>`;
                 html += '<td><div class="action-links">';
-                html += `<a href="#" class="action-link" onclick="openModal('sampleAddModal')">编辑</a>`;
+                html += `<a href="#" class="action-link" onclick="openModal('feeAddModal')">编辑</a>`;
                 html += `<a href="#" class="action-link" onclick="handleDelete('${pageType}', '${item.id}')">删除</a>`;
                 html += '</div></td></tr>';
             });
@@ -442,7 +491,6 @@
             pagination.innerHTML = PaginationTemplate.render(pageType, currentPage, totalPages, totalCount, pageSize);
         }
 
-        // 页面加载完成后渲染
         document.addEventListener('DOMContentLoaded', function() {
             renderTable(pageType);
             renderPagination(pageType);

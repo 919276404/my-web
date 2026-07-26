@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>规则执行策略配置</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .tabs-container { border-bottom: 1px solid #e0e0e0; margin-bottom: 15px; }
+        .tab-item { display: inline-block; padding: 10px 20px; font-size: 14px; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .tab-item.active { color: #1e73be; border-bottom-color: #1e73be; font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .page-size-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-timer { background: #e3f2fd; color: #1e73be; }
+        .badge-event { background: #fff3e0; color: #e65100; }
+        .badge-manual { background: #e8f5e9; color: #2e7d32; }
+        .badge-active { background: #e8f5e9; color: #2e7d32; }
+        .badge-inactive { background: #f5f5f5; color: #999; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #ef5350; border: 1px solid #ef5350; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .action-btn-run { background: #fff; color: #2e7d32; border: 1px solid #2e7d32; }
+        .action-btn-run:hover { background: #e8f5e9; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; max-height: 90vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #e8e8e8; background: #fafafa; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 20px; color: #999; cursor: pointer; padding: 0 5px; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; max-height: calc(90vh - 120px); overflow-y: auto; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .form-item { display: flex; flex-direction: column; gap: 6px; min-width: 200px; }
+        .form-label { font-size: 13px; color: #666; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #ff4d4f; margin-left: 4px; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .form-input:focus { outline: none; border-color: #1e73be; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff; cursor: pointer; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #e8e8e8; background: #fafafa; }
+    </style>
+</head>
+<body>
+    <div class="tabs-container">
+        <div class="tab-item active" onclick="switchTab('tab1')">定时执行配置</div>
+        <div class="tab-item" onclick="switchTab('tab2')">事件触发配置</div>
+        <div class="tab-item" onclick="switchTab('tab3')">手动执行测试</div>
+    </div>
+
+    <div id="tab1" class="tab-content active">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">执行周期</span>
+                    <select class="search-select">
+                        <option>请选择</option>
+                        <option>按月</option>
+                        <option>按季</option>
+                        <option>按年</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+                <button class="btn btn-primary" onclick="doSearch()">查询</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                <div>
+                    <button class="btn btn-primary" onclick="openModal('add', 'tab1')">+ 新增定时配置</button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>执行类型</th>
+                        <th>执行周期</th>
+                        <th>执行日期</th>
+                        <th>执行范围</th>
+                        <th>容错设置</th>
+                        <th>是否启用</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td>高频超标主体提醒规则</td>
+                        <td><span class="badge badge-timer">定时执行</span></td>
+                        <td>按月</td>
+                        <td>每月1日</td>
+                        <td>全区域</td>
+                        <td>跳过缺失数据</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab1', 1)">编辑</button>
+                            <button class="action-btn action-btn-delete" onclick="confirmDelete('tab1', 1)">删除</button>
+                            <button class="action-btn action-btn-run" onclick="runRule(1)">立即执行</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td>季节周期风险提醒规则</td>
+                        <td><span class="badge badge-timer">定时执行</span></td>
+                        <td>按季</td>
+                        <td>每季首月15日</td>
+                        <td>全区域</td>
+                        <td>按默认值判定</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab1', 2)">编辑</button>
+                            <button class="action-btn action-btn-delete" onclick="confirmDelete('tab1', 2)">删除</button>
+                            <button class="action-btn action-btn-run" onclick="runRule(2)">立即执行</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>3</td>
+                        <td>区域品类风险提醒规则</td>
+                        <td><span class="badge badge-timer">定时执行</span></td>
+                        <td>按年</td>
+                        <td>每年1月1日</td>
+                        <td>全区域</td>
+                        <td>跳过缺失数据</td>
+                        <td><span class="badge badge-inactive">停用</span></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab1', 3)">编辑</button>
+                            <button class="action-btn action-btn-delete" onclick="confirmDelete('tab1', 3)">删除</button>
+                            <button class="action-btn action-btn-run" onclick="runRule(3)">立即执行</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-container">
+                <div class="pagination-info">已选择 0 项 本页 3 条 共有 12 条</div>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                </select>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" disabled>‹</button>
+                    <button class="pagination-btn" disabled>‹‹</button>
+                    <button class="pagination-current">1</button>
+                    <button class="pagination-btn">2</button>
+                    <button class="pagination-btn">››</button>
+                    <button class="pagination-btn">›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" placeholder="请输入">
+                </div>
+                <div class="search-item">
+                    <span class="search-label">触发事件</span>
+                    <select class="search-select">
+                        <option>请选择</option>
+                        <option>新纳入高风险企业名单</option>
+                        <option>标准更新</option>
+                        <option>节日前提醒</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+                <button class="btn btn-primary" onclick="doSearch()">查询</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+                <div>
+                    <button class="btn btn-primary" onclick="openModal('add', 'tab2')">+ 新增事件触发</button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox"></th>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>执行类型</th>
+                        <th>触发事件</th>
+                        <th>延迟执行</th>
+                        <th>执行范围</th>
+                        <th>是否启用</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td>新增高风险企业抽检提醒规则</td>
+                        <td><span class="badge badge-event">事件触发</span></td>
+                        <td>新纳入高风险企业名单</td>
+                        <td>即时</td>
+                        <td>特定企业</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab2', 1)">编辑</button>
+                            <button class="action-btn action-btn-delete" onclick="confirmDelete('tab2', 1)">删除</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td>标准更新适配性抽检提醒规则</td>
+                        <td><span class="badge badge-event">事件触发</span></td>
+                        <td>标准更新</td>
+                        <td>延迟7天</td>
+                        <td>全品类</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab2', 2)">编辑</button>
+                            <button class="action-btn action-btn-delete" onclick="confirmDelete('tab2', 2)">删除</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>3</td>
+                        <td>节日专项抽检提醒规则</td>
+                        <td><span class="badge badge-event">事件触发</span></td>
+                        <td>节日前提醒</td>
+                        <td>提前30天</td>
+                        <td>全区域</td>
+                        <td><span class="badge badge-active">启用</span></td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="openModal('edit', 'tab2', 3)">编辑</button>
+                            <button class="action-btn action-btn-delete" onclick="confirmDelete('tab2', 3)">删除</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-container">
+                <div class="pagination-info">已选择 0 项 本页 3 条 共有 8 条</div>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                </select>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" disabled>‹</button>
+                    <button class="pagination-btn" disabled>‹‹</button>
+                    <button class="pagination-current">1</button>
+                    <button class="pagination-btn">››</button>
+                    <button class="pagination-btn">›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab3" class="tab-content">
+        <div style="background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-size: 15px; font-weight: 600; margin-bottom: 20px;">规则手动执行测试</div>
+            
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <span class="search-label">选择规则</span>
+                    <select class="search-select" style="min-width: 250px;">
+                        <option>请选择规则</option>
+                        <option>高频超标主体提醒规则</option>
+                        <option>季节周期风险提醒规则</option>
+                        <option>区域品类风险提醒规则</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <span class="search-label">执行范围</span>
+                    <select class="search-select">
+                        <option>全区域</option>
+                        <option>特定区域</option>
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <span class="search-label">测试模式</span>
+                    <select class="search-select">
+                        <option>仅预览结果</option>
+                        <option>执行并生成提醒</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="runTest()">立即执行测试</button>
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #f0f0f0;">
+                <div style="font-size: 14px; font-weight: 500; margin-bottom: 10px;">测试结果预览</div>
+                <div style="background: #fafafa; padding: 15px; border-radius: 4px; font-size: 13px; color: #666;">
+                    <div>执行时间：2026-07-05 10:30:00</div>
+                    <div>涉及数据量：12,580 条</div>
+                    <div>触发提醒数量：45 条</div>
+                    <div>执行异常信息：无</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="execModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增定时配置</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalTab" value="tab1">
+                <input type="hidden" id="modalId" value="">
+
+                <div id="formTab1" style="display: block;">
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label class="form-label required">规则名称</label>
+                            <select class="form-select" id="timerRuleName">
+                                <option value="">请选择</option>
+                                <option value="高频超标主体提醒规则">高频超标主体提醒规则</option>
+                                <option value="季节周期风险提醒规则">季节周期风险提醒规则</option>
+                                <option value="区域品类风险提醒规则">区域品类风险提醒规则</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label class="form-label required">执行周期</label>
+                            <select class="form-select" id="timerCycle">
+                                <option value="">请选择</option>
+                                <option value="month">按月</option>
+                                <option value="quarter">按季</option>
+                                <option value="year">按年</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label class="form-label required">执行日期</label>
+                            <input type="text" class="form-input" id="timerDate" placeholder="例如：每月1日">
+                        </div>
+                        <div class="form-item">
+                            <label class="form-label required">执行范围</label>
+                            <select class="form-select" id="timerScope">
+                                <option value="">请选择</option>
+                                <option value="all_region">全区域</option>
+                                <option value="specific_region">特定区域</option>
+                                <option value="all_category">全品类</option>
+                                <option value="specific_category">特定品类</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label class="form-label required">容错设置</label>
+                            <select class="form-select" id="timerFault">
+                                <option value="">请选择</option>
+                                <option value="skip">跳过缺失数据</option>
+                                <option value="default">按默认值判定</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label class="form-label">是否启用</label>
+                            <select class="form-select" id="timerEnabled">
+                                <option value="1">是</option>
+                                <option value="0">否</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="formTab2" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label class="form-label required">规则名称</label>
+                            <select class="form-select" id="eventRuleName">
+                                <option value="">请选择</option>
+                                <option value="新增高风险企业抽检提醒规则">新增高风险企业抽检提醒规则</option>
+                                <option value="标准更新适配性抽检提醒规则">标准更新适配性抽检提醒规则</option>
+                                <option value="节日专项抽检提醒规则">节日专项抽检提醒规则</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label class="form-label required">触发事件</label>
+                            <select class="form-select" id="eventTrigger">
+                                <option value="">请选择</option>
+                                <option value="high_risk_add">新纳入高风险企业名单</option>
+                                <option value="standard_update">标准更新</option>
+                                <option value="festival_remind">节日前提醒</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label class="form-label required">延迟执行</label>
+                            <select class="form-select" id="eventDelay">
+                                <option value="">请选择</option>
+                                <option value="immediate">即时</option>
+                                <option value="delay_7d">延迟7天</option>
+                                <option value="advance_30d">提前30天</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label class="form-label required">执行范围</label>
+                            <select class="form-select" id="eventScope">
+                                <option value="">请选择</option>
+                                <option value="specific_enterprise">特定企业</option>
+                                <option value="all_category">全品类</option>
+                                <option value="all_region">全区域</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-item">
+                            <label class="form-label">是否启用</label>
+                            <select class="form-select" id="eventEnabled">
+                                <option value="1">是</option>
+                                <option value="0">否</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveConfig()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var timerData = [
+            { id: 1, ruleName: '高频超标主体提醒规则', cycle: 'month', date: '每月1日', scope: 'all_region', fault: 'skip', isEnabled: 1 },
+            { id: 2, ruleName: '季节周期风险提醒规则', cycle: 'quarter', date: '每季首月15日', scope: 'all_region', fault: 'default', isEnabled: 1 },
+            { id: 3, ruleName: '区域品类风险提醒规则', cycle: 'year', date: '每年1月1日', scope: 'all_region', fault: 'skip', isEnabled: 0 }
+        ];
+
+        var eventData = [
+            { id: 1, ruleName: '新增高风险企业抽检提醒规则', trigger: 'high_risk_add', delay: 'immediate', scope: 'specific_enterprise', isEnabled: 1 },
+            { id: 2, ruleName: '标准更新适配性抽检提醒规则', trigger: 'standard_update', delay: 'delay_7d', scope: 'all_category', isEnabled: 1 },
+            { id: 3, ruleName: '节日专项抽检提醒规则', trigger: 'festival_remind', delay: 'advance_30d', scope: 'all_region', isEnabled: 1 }
+        ];
+
+        var cycleNames = { month: '按月', quarter: '按季', year: '按年' };
+        var scopeNames = { all_region: '全区域', specific_region: '特定区域', all_category: '全品类', specific_category: '特定品类', specific_enterprise: '特定企业' };
+        var faultNames = { skip: '跳过缺失数据', default: '按默认值判定' };
+        var triggerNames = { high_risk_add: '新纳入高风险企业名单', standard_update: '标准更新', festival_remind: '节日前提醒' };
+        var delayNames = { immediate: '即时', delay_7d: '延迟7天', advance_30d: '提前30天' };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelector('.tab-item[onclick="switchTab(\'' + tabId + '\')"]').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function clearSearch() { console.log('清空搜索'); }
+        function doSearch() { console.log('执行搜索'); }
+        function runTest() { console.log('执行测试'); }
+
+        function openModal(mode, tab, id) {
+            document.getElementById('modalMode').value = mode;
+            document.getElementById('modalTab').value = tab;
+            document.getElementById('modalId').value = id || '';
+
+            document.getElementById('formTab1').style.display = 'none';
+            document.getElementById('formTab2').style.display = 'none';
+
+            if (tab === 'tab1') {
+                document.getElementById('modalTitle').textContent = mode === 'add' ? '新增定时配置' : '编辑定时配置';
+                document.getElementById('formTab1').style.display = 'block';
+
+                if (mode === 'add') {
+                    document.getElementById('timerRuleName').value = '';
+                    document.getElementById('timerCycle').value = '';
+                    document.getElementById('timerDate').value = '';
+                    document.getElementById('timerScope').value = '';
+                    document.getElementById('timerFault').value = '';
+                    document.getElementById('timerEnabled').value = '1';
+                } else {
+                    var data = timerData.find(item => item.id === parseInt(id));
+                    if (!data) return;
+                    document.getElementById('timerRuleName').value = data.ruleName;
+                    document.getElementById('timerCycle').value = data.cycle;
+                    document.getElementById('timerDate').value = data.date;
+                    document.getElementById('timerScope').value = data.scope;
+                    document.getElementById('timerFault').value = data.fault;
+                    document.getElementById('timerEnabled').value = data.isEnabled ? '1' : '0';
+                }
+            } else if (tab === 'tab2') {
+                document.getElementById('modalTitle').textContent = mode === 'add' ? '新增事件触发' : '编辑事件触发';
+                document.getElementById('formTab2').style.display = 'block';
+
+                if (mode === 'add') {
+                    document.getElementById('eventRuleName').value = '';
+                    document.getElementById('eventTrigger').value = '';
+                    document.getElementById('eventDelay').value = '';
+                    document.getElementById('eventScope').value = '';
+                    document.getElementById('eventEnabled').value = '1';
+                } else {
+                    var data = eventData.find(item => item.id === parseInt(id));
+                    if (!data) return;
+                    document.getElementById('eventRuleName').value = data.ruleName;
+                    document.getElementById('eventTrigger').value = data.trigger;
+                    document.getElementById('eventDelay').value = data.delay;
+                    document.getElementById('eventScope').value = data.scope;
+                    document.getElementById('eventEnabled').value = data.isEnabled ? '1' : '0';
+                }
+            }
+
+            document.getElementById('execModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('execModal').classList.remove('show');
+        }
+
+        function saveConfig() {
+            var mode = document.getElementById('modalMode').value;
+            var tab = document.getElementById('modalTab').value;
+            var id = parseInt(document.getElementById('modalId').value);
+
+            if (tab === 'tab1') {
+                var ruleName = document.getElementById('timerRuleName').value;
+                var cycle = document.getElementById('timerCycle').value;
+
+                if (!ruleName) { alert('请选择规则名称'); return; }
+                if (!cycle) { alert('请选择执行周期'); return; }
+
+                var formData = {
+                    ruleName: ruleName,
+                    cycle: cycle,
+                    date: document.getElementById('timerDate').value,
+                    scope: document.getElementById('timerScope').value,
+                    fault: document.getElementById('timerFault').value,
+                    isEnabled: parseInt(document.getElementById('timerEnabled').value)
+                };
+
+                if (mode === 'add') {
+                    formData.id = timerData.length > 0 ? Math.max(...timerData.map(r => r.id)) + 1 : 1;
+                    timerData.push(formData);
+                    alert('定时配置添加成功');
+                } else {
+                    var index = timerData.findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        timerData[index] = {...timerData[index], ...formData};
+                        alert('定时配置修改成功');
+                    }
+                }
+            } else if (tab === 'tab2') {
+                var ruleName = document.getElementById('eventRuleName').value;
+                var trigger = document.getElementById('eventTrigger').value;
+
+                if (!ruleName) { alert('请选择规则名称'); return; }
+                if (!trigger) { alert('请选择触发事件'); return; }
+
+                var formData = {
+                    ruleName: ruleName,
+                    trigger: trigger,
+                    delay: document.getElementById('eventDelay').value,
+                    scope: document.getElementById('eventScope').value,
+                    isEnabled: parseInt(document.getElementById('eventEnabled').value)
+                };
+
+                if (mode === 'add') {
+                    formData.id = eventData.length > 0 ? Math.max(...eventData.map(r => r.id)) + 1 : 1;
+                    eventData.push(formData);
+                    alert('事件触发配置添加成功');
+                } else {
+                    var index = eventData.findIndex(item => item.id === id);
+                    if (index !== -1) {
+                        eventData[index] = {...eventData[index], ...formData};
+                        alert('事件触发配置修改成功');
+                    }
+                }
+            }
+
+            renderTable(tab);
+            closeModal();
+        }
+
+        function confirmDelete(tab, id) {
+            if (confirm('确定要删除该配置吗？')) {
+                if (tab === 'tab1') {
+                    timerData = timerData.filter(item => item.id !== parseInt(id));
+                } else {
+                    eventData = eventData.filter(item => item.id !== parseInt(id));
+                }
+                renderTable(tab);
+                alert('删除成功');
+            }
+        }
+
+        function runRule(id) {
+            var data = timerData.find(item => item.id === parseInt(id));
+            if (data && data.isEnabled) {
+                alert('规则 "' + data.ruleName + '" 正在执行...\n\n执行时间：' + new Date().toLocaleString() + '\n执行范围：' + scopeNames[data.scope]);
+            } else if (data) {
+                alert('规则 "' + data.ruleName + '" 当前处于停用状态，无法执行');
+            }
+        }
+
+        function renderTable(tab) {
+            if (tab === 'tab1') {
+                var tbody = document.querySelector('#tab1 .data-table tbody');
+                var html = timerData.map(function(item, index) {
+                    return '<tr><td><input type="checkbox"></td><td>' + (index + 1) + '</td>' +
+                        '<td>' + item.ruleName + '</td>' +
+                        '<td><span class="badge badge-timer">定时执行</span></td>' +
+                        '<td>' + cycleNames[item.cycle] + '</td>' +
+                        '<td>' + item.date + '</td>' +
+                        '<td>' + scopeNames[item.scope] + '</td>' +
+                        '<td>' + faultNames[item.fault] + '</td>' +
+                        '<td><span class="badge ' + (item.isEnabled ? 'badge-active' : 'badge-inactive') + '">' + (item.isEnabled ? '启用' : '停用') + '</span></td>' +
+                        '<td><button class="action-btn action-btn-edit" onclick="openModal(\'edit\', \'tab1\', ' + item.id + ')">编辑</button><button class="action-btn action-btn-delete" onclick="confirmDelete(\'tab1\', ' + item.id + ')">删除</button><button class="action-btn action-btn-run" onclick="runRule(' + item.id + ')">立即执行</button></td></tr>';
+                }).join('');
+                tbody.innerHTML = html;
+            } else if (tab === 'tab2') {
+                var tbody = document.querySelector('#tab2 .data-table tbody');
+                var html = eventData.map(function(item, index) {
+                    return '<tr><td><input type="checkbox"></td><td>' + (index + 1) + '</td>' +
+                        '<td>' + item.ruleName + '</td>' +
+                        '<td><span class="badge badge-event">事件触发</span></td>' +
+                        '<td>' + triggerNames[item.trigger] + '</td>' +
+                        '<td>' + delayNames[item.delay] + '</td>' +
+                        '<td>' + scopeNames[item.scope] + '</td>' +
+                        '<td><span class="badge ' + (item.isEnabled ? 'badge-active' : 'badge-inactive') + '">' + (item.isEnabled ? '启用' : '停用') + '</span></td>' +
+                        '<td><button class="action-btn action-btn-edit" onclick="openModal(\'edit\', \'tab2\', ' + item.id + ')">编辑</button><button class="action-btn action-btn-delete" onclick="confirmDelete(\'tab2\', ' + item.id + ')">删除</button></td></tr>';
+                }).join('');
+                tbody.innerHTML = html;
+            }
+        }
+
+        document.getElementById('execModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

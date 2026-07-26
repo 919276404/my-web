@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复杂警示运算与自定义函数支持</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .page-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        .layout-container { display: flex; gap: 15px; height: calc(100vh - 80px); }
+        .panel { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .panel-header { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; background: #fafafa; font-size: 14px; font-weight: 600; color: #333; }
+        .panel-body { flex: 1; padding: 15px; overflow-y: auto; }
+        .func-category { margin-bottom: 20px; }
+        .category-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px; padding-left: 10px; border-left: 3px solid #f57c00; }
+        .func-item { padding: 10px 15px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: all 0.3s; }
+        .func-item:hover { border-color: #1e73be; background: #f0f5ff; }
+        .func-name { font-size: 14px; font-weight: 500; color: #333; }
+        .func-desc { font-size: 12px; color: #999; margin-top: 4px; }
+        .func-example { font-size: 12px; color: #1e73be; margin-top: 4px; font-family: monospace; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; }
+        .btn-danger:hover { background: #fff2f0; }
+        .calc-container { min-height: 200px; border: 2px dashed #d9d9d9; border-radius: 6px; padding: 15px; }
+        .calc-container.has-data { border-style: solid; border-color: #f57c00; background: #fffbf5; }
+        .calc-item { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 10px; }
+        .calc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .calc-title { font-size: 14px; font-weight: 500; color: #333; }
+        .calc-formula { font-family: monospace; font-size: 14px; color: #333; padding: 10px; background: #f8fafc; border-radius: 4px; margin-bottom: 10px; }
+        .calc-fields { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .field-token { padding: 4px 10px; background: #1e9a6c; color: #fff; border-radius: 3px; font-size: 12px; cursor: pointer; }
+        .field-token:hover { background: #2daf7f; }
+        .operator-token { padding: 4px 10px; background: #f57c00; color: #fff; border-radius: 3px; font-size: 12px; cursor: pointer; }
+        .operator-token:hover { background: #fb8c00; }
+        .func-token { padding: 4px 10px; background: #1e73be; color: #fff; border-radius: 3px; font-size: 12px; cursor: pointer; }
+        .func-token:hover { background: #1a64a5; }
+        .available-tokens { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .token-group { margin-bottom: 10px; }
+        .token-label { font-size: 12px; color: #999; margin-bottom: 5px; }
+        .custom-formula { margin-top: 15px; }
+        .formula-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 14px; min-height: 60px; resize: vertical; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 700px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { font-size: 13px; color: #666; margin-bottom: 5px; display: block; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; background: #fff; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="page-title">复杂警示运算与自定义函数支持</div>
+    
+    <div class="layout-container">
+        <div class="panel" style="width: 35%;">
+            <div class="panel-header">常用函数库</div>
+            <div class="panel-body">
+                <div class="func-category">
+                    <div class="category-title">计数函数</div>
+                    <div class="func-item" onclick="addFunction('COUNT')">
+                        <div class="func-name">COUNT</div>
+                        <div class="func-desc">统计符合条件的记录数</div>
+                        <div class="func-example">COUNT(历史超标次数 > 3)</div>
+                    </div>
+                    <div class="func-item" onclick="addFunction('SUM')">
+                        <div class="func-name">SUM</div>
+                        <div class="func-desc">计算数值字段的总和</div>
+                        <div class="func-example">SUM(超标倍数)</div>
+                    </div>
+                </div>
+                
+                <div class="func-category">
+                    <div class="category-title">平均值函数</div>
+                    <div class="func-item" onclick="addFunction('AVG')">
+                        <div class="func-name">AVG</div>
+                        <div class="func-desc">计算数值字段的平均值</div>
+                        <div class="func-example">AVG(超标倍数)</div>
+                    </div>
+                    <div class="func-item" onclick="addFunction('MAX')">
+                        <div class="func-name">MAX</div>
+                        <div class="func-desc">计算数值字段的最大值</div>
+                        <div class="func-example">MAX(超标倍数)</div>
+                    </div>
+                    <div class="func-item" onclick="addFunction('MIN')">
+                        <div class="func-name">MIN</div>
+                        <div class="func-desc">计算数值字段的最小值</div>
+                        <div class="func-example">MIN(超标倍数)</div>
+                    </div>
+                </div>
+                
+                <div class="func-category">
+                    <div class="category-title">时间函数</div>
+                    <div class="func-item" onclick="addFunction('DATE_DIFF')">
+                        <div class="func-name">DATE_DIFF</div>
+                        <div class="func-desc">计算两个日期之间的天数差</div>
+                        <div class="func-example">DATE_DIFF(当前时间, 上次抽检时间)</div>
+                    </div>
+                    <div class="func-item" onclick="addFunction('MONTH_COUNT')">
+                        <div class="func-name">MONTH_COUNT</div>
+                        <div class="func-desc">计算最近N个月内的记录数</div>
+                        <div class="func-example">MONTH_COUNT(6, 历史超标次数)</div>
+                    </div>
+                </div>
+                
+                <div class="func-category">
+                    <div class="category-title">百分比函数</div>
+                    <div class="func-item" onclick="addFunction('PERCENT')">
+                        <div class="func-name">PERCENT</div>
+                        <div class="func-desc">计算百分比</div>
+                        <div class="func-example">PERCENT(超标数量, 总数量)</div>
+                    </div>
+                    <div class="func-item" onclick="addFunction('RATE')">
+                        <div class="func-name">RATE</div>
+                        <div class="func-desc">计算比率</div>
+                        <div class="func-example">RATE(超标次数, 抽检次数)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="width: 65%;">
+            <div class="panel-header">运算公式配置区</div>
+            <div class="panel-body">
+                <div class="available-tokens">
+                    <div class="token-group">
+                        <div class="token-label">可用字段</div>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <span class="field-token" onclick="addToFormula('检测值')">检测值</span>
+                            <span class="field-token" onclick="addToFormula('限值')">限值</span>
+                            <span class="field-token" onclick="addToFormula('超标倍数')">超标倍数</span>
+                            <span class="field-token" onclick="addToFormula('历史超标次数')">历史超标次数</span>
+                            <span class="field-token" onclick="addToFormula('超标率')">超标率</span>
+                        </div>
+                    </div>
+                    <div class="token-group">
+                        <div class="token-label">运算符</div>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <span class="operator-token" onclick="addToFormula('+')">+</span>
+                            <span class="operator-token" onclick="addToFormula('-')">-</span>
+                            <span class="operator-token" onclick="addToFormula('*')">*</span>
+                            <span class="operator-token" onclick="addToFormula('/')">/</span>
+                            <span class="operator-token" onclick="addToFormula('(')">(</span>
+                            <span class="operator-token" onclick="addToFormula(')')">)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calc-container" id="calcContainer">
+                    <div style="text-align: center; color: #999; padding: 40px 0;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">📐</div>
+                        <div>点击左侧函数或上方字段构建计算公式</div>
+                    </div>
+                </div>
+                
+                <div class="custom-formula">
+                    <div class="panel-header" style="margin-bottom: 10px;">自定义表达式</div>
+                    <textarea class="formula-input" id="customFormula" placeholder="输入自定义计算公式，例如：检测值 / 限值 * 100"></textarea>
+                </div>
+                
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="saveFormula()">保存公式</button>
+                    <button class="btn btn-secondary" onclick="validateFormula()">验证公式</button>
+                    <button class="btn btn-secondary" onclick="resetFormula()">重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="funcModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="funcModalTitle">配置函数参数</div>
+                <div class="modal-close" onclick="closeFuncModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="funcName" value="">
+                <div class="form-item">
+                    <label class="form-label">函数名称</label>
+                    <input type="text" class="form-input" id="funcDisplayName" readonly>
+                </div>
+                <div id="funcParams"></div>
+                <div class="form-item">
+                    <label class="form-label">计算结果字段名</label>
+                    <input type="text" class="form-input" id="resultFieldName" placeholder="输入字段名称">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeFuncModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveFunction()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var formulas = [];
+        
+        function addFunction(funcName) {
+            document.getElementById('funcName').value = funcName;
+            document.getElementById('funcDisplayName').value = funcName;
+            document.getElementById('resultFieldName').value = '';
+            
+            var paramsHtml = '';
+            if (funcName === 'COUNT' || funcName === 'SUM' || funcName === 'AVG' || funcName === 'MAX' || funcName === 'MIN') {
+                paramsHtml = '<div class="form-item"><label class="form-label">字段</label><select class="form-select" id="paramField"><option value="检测值">检测值</option><option value="限值">限值</option><option value="超标倍数">超标倍数</option><option value="历史超标次数">历史超标次数</option><option value="超标率">超标率</option></select></div>';
+            } else if (funcName === 'DATE_DIFF') {
+                paramsHtml = '<div class="form-item"><label class="form-label">日期字段1</label><select class="form-select" id="paramField1"><option value="抽样时间">抽样时间</option><option value="生产日期">生产日期</option><option value="最近超标时间">最近超标时间</option></select></div><div class="form-item"><label class="form-label">日期字段2</label><select class="form-select" id="paramField2"><option value="抽样时间">抽样时间</option><option value="生产日期">生产日期</option><option value="最近超标时间">最近超标时间</option></select></div>';
+            } else if (funcName === 'MONTH_COUNT') {
+                paramsHtml = '<div class="form-item"><label class="form-label">月份数</label><input type="number" class="form-input" id="paramMonths" placeholder="例如：6"></div><div class="form-item"><label class="form-label">统计字段</label><select class="form-select" id="paramField"><option value="历史超标次数">历史超标次数</option><option value="超标倍数">超标倍数</option></select></div>';
+            } else if (funcName === 'PERCENT' || funcName === 'RATE') {
+                paramsHtml = '<div class="form-item"><label class="form-label">分子</label><select class="form-select" id="paramField1"><option value="历史超标次数">历史超标次数</option><option value="超标倍数">超标倍数</option></select></div><div class="form-item"><label class="form-label">分母</label><select class="form-select" id="paramField2"><option value="检测值">检测值</option><option value="限值">限值</option><option value="历史超标次数">历史超标次数</option></select></div>';
+            }
+            
+            document.getElementById('funcParams').innerHTML = paramsHtml;
+            document.getElementById('funcModal').classList.add('active');
+        }
+
+        function closeFuncModal() {
+            document.getElementById('funcModal').classList.remove('active');
+        }
+
+        function saveFunction() {
+            var funcName = document.getElementById('funcName').value;
+            var resultField = document.getElementById('resultFieldName').value;
+            
+            if (!resultField) {
+                alert('请输入计算结果字段名');
+                return;
+            }
+            
+            var formulaText = funcName + '(';
+            var params = [];
+            
+            if (document.getElementById('paramField')) {
+                params.push(document.getElementById('paramField').value);
+            }
+            if (document.getElementById('paramField1')) {
+                params.push(document.getElementById('paramField1').value);
+            }
+            if (document.getElementById('paramField2')) {
+                params.push(document.getElementById('paramField2').value);
+            }
+            if (document.getElementById('paramMonths')) {
+                params.push(document.getElementById('paramMonths').value);
+            }
+            
+            formulaText += params.join(', ') + ')';
+            
+            formulas.push({
+                id: Date.now(),
+                name: resultField,
+                formula: formulaText
+            });
+            
+            renderFormulas();
+            closeFuncModal();
+        }
+
+        function renderFormulas() {
+            var container = document.getElementById('calcContainer');
+            
+            if (formulas.length === 0) {
+                container.className = 'calc-container';
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px 0;"><div style="font-size: 24px; margin-bottom: 10px;">📐</div><div>点击左侧函数或上方字段构建计算公式</div></div>';
+                return;
+            }
+            
+            container.className = 'calc-container has-data';
+            var html = formulas.map(function(f, index) {
+                return '<div class="calc-item">' +
+                    '<div class="calc-header">' +
+                        '<span class="calc-title">' + f.name + '</span>' +
+                        '<button class="btn btn-danger" style="padding: 2px 8px; font-size: 12px;" onclick="deleteFormula(' + index + ')">删除</button>' +
+                    '</div>' +
+                    '<div class="calc-formula">' + f.formula + '</div>' +
+                '</div>';
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function deleteFormula(index) {
+            formulas.splice(index, 1);
+            renderFormulas();
+        }
+
+        function addToFormula(token) {
+            var textarea = document.getElementById('customFormula');
+            var start = textarea.selectionStart;
+            var end = textarea.selectionEnd;
+            var value = textarea.value;
+            
+            textarea.value = value.substring(0, start) + token + value.substring(end);
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = start + token.length;
+        }
+
+        function saveFormula() {
+            var formula = document.getElementById('customFormula').value.trim();
+            if (!formula) {
+                alert('请输入计算公式');
+                return;
+            }
+            
+            formulas.push({
+                id: Date.now(),
+                name: '自定义公式',
+                formula: formula
+            });
+            
+            renderFormulas();
+            document.getElementById('customFormula').value = '';
+        }
+
+        function validateFormula() {
+            var formula = document.getElementById('customFormula').value.trim();
+            if (!formula) {
+                alert('请输入计算公式');
+                return;
+            }
+            
+            alert('公式验证通过！\n\n公式: ' + formula);
+        }
+
+        function resetFormula() {
+            document.getElementById('customFormula').value = '';
+        }
+    </script>
+</body>
+</html>

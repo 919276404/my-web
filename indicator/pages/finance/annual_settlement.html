@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年度决算管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 180px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th, .data-table td { padding: 8px 6px; text-align: left; border-bottom: 1px solid #f0f0f0; white-space: nowrap; border: 1px solid #e0e0e0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; }
+        .data-table tr:hover { background: #fafafa; }
+        .data-table td.right { text-align: right; }
+        .data-table td.center { text-align: center; }
+        .yellow-cell { background: #fff3cd; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">食品大类:</span>
+                <select class="search-select" id="foodLevel1">
+                    <option value="">全部</option>
+                    <option value="粮食加工品">粮食加工品</option>
+                    <option value="食用油、油脂及其制品">食用油、油脂及其制品</option>
+                    <option value="调味品">调味品</option>
+                    <option value="饼干">饼干</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">食品亚类:</span>
+                <select class="search-select" id="foodLevel2">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">食品次亚类:</span>
+                <select class="search-select" id="foodLevel3">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">食品细类:</span>
+                <select class="search-select" id="foodLevel4">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">报送分类B:</span>
+                <select class="search-select" id="reportCategoryB">
+                    <option value="">全部</option>
+                    <option value="监督抽检">监督抽检</option>
+                    <option value="专项抽检">专项抽检</option>
+                    <option value="评价抽检">评价抽检</option>
+                    <option value="风险监测">风险监测</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" style="margin-left:auto;" onclick="doFilter()">筛选</button>
+            <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+            <button class="btn btn-primary" onclick="exportTable()">导出</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>食品大类(一级)</th>
+                    <th>食品亚类(二级)</th>
+                    <th>食品品种(三级)</th>
+                    <th>食品细类(四级)</th>
+                    <th>2026年检验项目</th>
+                    <th>单价(原价)(元)</th>
+                    <th>检验项次</th>
+                    <th>检验机构</th>
+                    <th>抽样单编号</th>
+                    <th>样本费(元)</th>
+                    <th>食品细类抽检数量</th>
+                </tr>
+            </thead>
+            <tbody id="tab1TableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">本页 26 条</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var testItems = [
+            { item: '苯甲酸及其钠盐(以苯甲酸计)', price: 150, times: 18, diffPrice: 150, detFee: 2700 },
+            { item: '大肠菌群', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '靛蓝', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '二氧化硫残留量', price: 100, times: 18, diffPrice: 100, detFee: 1800 },
+            { item: '过氧化值(以脂肪计)', price: 100, times: 18, diffPrice: 100, detFee: 1800 },
+            { item: '二氧化硫残留量', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '过氧化值(以脂肪计)', price: 100, times: 18, diffPrice: 100, detFee: 1800 },
+            { item: '金黄色葡萄球菌', price: 100, times: 18, diffPrice: 100, detFee: 1800 },
+            { item: '菌落总数', price: 60, times: 18, diffPrice: 60, detFee: 1080 },
+            { item: '亮蓝', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '铝的残留量(干样品,以Al计)', price: 300, times: 18, diffPrice: 300, detFee: 5400 },
+            { item: '霉菌', price: 100, times: 18, diffPrice: 100, detFee: 1800 },
+            { item: '铝的残留量(干样品,以Al计)', price: 300, times: 18, diffPrice: 300, detFee: 5400 },
+            { item: '霉菌', price: 100, times: 18, diffPrice: 100, detFee: 1800 },
+            { item: '柠檬黄', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '日落黄', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '沙门氏菌', price: 100, times: 18, diffPrice: 100, detFee: 1800 },
+            { item: '山梨酸及其钾盐(以山梨酸计)', price: 150, times: 18, diffPrice: 150, detFee: 2700 },
+            { item: '酸价(以脂肪计)(KOH)', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '酸价(以脂肪计)(KOH)', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '糖精钠(以糖精计)', price: 150, times: 18, diffPrice: 150, detFee: 2700 },
+            { item: '甜蜜素(以环己基氨基磺酸钠计)', price: 150, times: 18, diffPrice: 150, detFee: 2700 },
+            { item: '脱氢乙酸及其钠盐(以脱氢乙酸计)', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '苋菜红', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '胭脂红', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '诱惑红', price: 200, times: 18, diffPrice: 200, detFee: 3600 },
+            { item: '(空)', price: 0, times: 0, diffPrice: 0, detFee: 0 }
+        ];
+
+        function renderTab1Table() {
+            var tbody = document.getElementById('tab1TableBody');
+            var html = '';
+            var totalDetFee = 0;
+            var rowCount = testItems.length;
+            
+            testItems.forEach(function(item, index) {
+                totalDetFee += item.detFee;
+                var sampleFeeCell = '';
+                var countCell = '';
+                if (index === 0) {
+                    sampleFeeCell = '<td rowspan="' + rowCount + '" class="center">100</td>';
+                    countCell = '<td rowspan="' + rowCount + '" class="center">26</td>';
+                }
+                html += '<tr>' +
+                    '<td>饼干</td>' +
+                    '<td>饼干</td>' +
+                    '<td>饼干</td>' +
+                    '<td>饼干</td>' +
+                    '<td>' + item.item + '</td>' +
+                    '<td class="right">' + item.price + '</td>' +
+                    '<td class="center">1</td>' +
+                    '<td>北京市食品安全检测中心</td>' +
+                    '<td>SAM-' + String(index + 1).padStart(4, '0') + '</td>' +
+                    sampleFeeCell +
+                    countCell +
+                    '</tr>';
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        function doFilter() {
+            renderTab1Table();
+        }
+
+        function resetFilter() {
+            document.getElementById('foodLevel1').value = '';
+            document.getElementById('foodLevel2').value = '';
+            document.getElementById('foodLevel3').value = '';
+            document.getElementById('foodLevel4').value = '';
+            renderTab1Table();
+        }
+
+        function exportTable() {
+            var table = document.querySelector('.data-table');
+            var rows = table.querySelectorAll('tr');
+            var csvContent = '\uFEFF';
+            
+            rows.forEach(function(row) {
+                var cells = row.querySelectorAll('th, td');
+                var rowData = [];
+                cells.forEach(function(cell) {
+                    var text = cell.textContent || cell.innerText || '';
+                    text = text.replace(/"/g, '""');
+                    rowData.push('"' + text + '"');
+                });
+                csvContent += rowData.join(',') + '\n';
+            });
+            
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '年度决算汇总表.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        renderTab1Table();
+    </script>
+</body>
+</html>

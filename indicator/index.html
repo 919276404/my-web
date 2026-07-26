@@ -71,12 +71,48 @@
             fee: { title: '检验费管理', path: 'pages/fee.html' },
             sample: { title: '样本费管理', path: 'pages/sample.html' },
             package: { title: '打包价管理', path: 'pages/package.html' },
-            statistics: { title: '抽检项目统计', path: 'pages/statistics.html' },
+            inspection_item: { title: '检验项目', path: 'pages/inspection_items/inspection_item.html' },
+            inspection_category: { title: '检验项目类别', path: 'pages/inspection_items/inspection_category.html' },
+            statistics: { title: '抽检项目统计', path: 'pages/inspection_items/inspection_statistics.html' },
             analysis: { title: '统计分析', path: 'pages/analysis.html' },
             analysis_report: { title: '分析报表', path: 'pages/analysis_report.html' },
             analysis_report_detail: { title: '分析报告', path: 'pages/analysis_report_detail.html' },
             basic_statistics: { title: '基本统计', path: 'pages/basic_statistics.html' },
-            report_batch: { title: '工作报表-批次', path: 'pages/report_batch.html' }
+            report_batch: { title: '工作报表-批次', path: 'pages/report_batch.html' },
+            plan_assist: { title: '计划辅助制定', path: 'pages/plan_assist.html' },
+            plan_smart_manage: { title: '计划智能辅助管理', path: 'pages/plan_smart/plan_smart_manage.html' },
+            risk_rule_manage: { title: '历史风险导向预设提醒规则管理', path: 'pages/plan_smart/risk_rule_manage.html' },
+            rule_data_config: { title: '预设规则数据关联与提醒推送配置', path: 'pages/plan_smart/rule_data_config.html' },
+            data_source_config: { title: '数据资源库表可视化选择与关联配置', path: 'pages/plan_smart/data_source_config.html' },
+            judge_field_config: { title: '判定字段选取与运算关系可视化定义', path: 'pages/plan_smart/judge_field_config.html' },
+            rule_exec_config: { title: '规则执行策略配置', path: 'pages/plan_smart/rule_exec_config.html' },
+            rule_history: { title: '规则历史管理与复用', path: 'pages/plan_smart/rule_history.html' },
+            alert_feedback: { title: '提醒推送与反馈跟踪', path: 'pages/plan_smart/alert_feedback.html' },
+            alert_record: { title: '提醒与规则执行记录查询', path: 'pages/plan_smart/alert_record.html' },
+            alias_manage: { title: '检验项目别名管理', path: 'pages/finance/alias_manage.html' },
+            fee_manage: { title: '检验费管理', path: 'pages/finance/fee_manage.html' },
+            sample_fee: { title: '样本费管理', path: 'pages/finance/sample_fee.html' },
+            package_price: { title: '打包价管理', path: 'pages/finance/package_price.html' },
+            microbe_manage: { title: '微生物管理', path: 'pages/finance/microbe_manage.html' },
+            institution_discount: { title: '机构折扣管理', path: 'pages/finance/institution_discount.html' },
+            annual_settlement: { title: '年度决算管理', path: 'pages/finance/annual_settlement.html' },
+            risk_rule_visual: { title: '风险警示规则可视化自定义', path: 'pages/risk/risk_rule_visual.html' },
+            risk_field_config: { title: '警示判定字段与运算关系自定义', path: 'pages/risk/risk_field_config.html' },
+            risk_func_config: { title: '复杂警示运算与自定义函数支持', path: 'pages/risk/risk_func_config.html' },
+            risk_exec_config: { title: '警示规则执行策略配置', path: 'pages/risk/risk_exec_config.html' },
+            risk_history: { title: '警示规则历史管理与复用', path: 'pages/risk/risk_history.html' },
+            risk_alert_push: { title: '风险警示推送与接收反馈', path: 'pages/risk/risk_alert_push.html' },
+            risk_record_query: { title: '警示规则执行与警示记录查询', path: 'pages/risk/risk_record_query.html' },
+            publish_filter: { title: '信息发布筛选与公示编号管理', path: 'pages/publish/publish_filter.html' },
+            attachment_generate: { title: '附件自动生成', path: 'pages/publish/attachment_generate.html' },
+            attachment_approval: { title: '附件审批流转管理', path: 'pages/publish/attachment_approval.html' },
+            approval_flow: { title: '审批流程可视化设置', path: 'pages/publish/approval_flow.html' },
+            task_generate: { title: '年度任务自动生成', path: 'pages/report/task_generate.html' },
+            supervision_report: { title: '部门监督抽检数据填报', path: 'pages/report/supervision_report.html' },
+            risk_report: { title: '部门风险监测数据填报', path: 'pages/report/risk_report.html' },
+            halfyear_summary: { title: '半年度工作总结填报', path: 'pages/report/halfyear_summary.html' },
+            annual_plan: { title: '年度计划说明填报', path: 'pages/report/annual_plan.html' },
+            history_query: { title: '历史报送信息综合查询', path: 'pages/report/history_query.html' }
         };
 
         function navigateTo(pageName) {
@@ -144,13 +180,13 @@
             const parentLi = elem.parentElement;
             const submenu = parentLi.querySelector('.submenu');
             
-            // 切换当前菜单的展开状态
             if (parentLi.classList.contains('active')) {
                 parentLi.classList.remove('active');
                 submenu.style.display = 'none';
             } else {
-                // 先关闭其他已展开的子菜单
-                document.querySelectorAll('.sidebar-menu li.active').forEach(function(item) {
+                const parentUl = parentLi.parentElement;
+                const siblings = parentUl.querySelectorAll('li.active');
+                siblings.forEach(function(item) {
                     item.classList.remove('active');
                     const otherSubmenu = item.querySelector('.submenu');
                     if (otherSubmenu) {
@@ -158,7 +194,6 @@
                     }
                 });
                 
-                // 展开当前子菜单
                 parentLi.classList.add('active');
                 submenu.style.display = 'block';
             }
@@ -178,18 +213,6 @@
             <div class="sidebar-title">抽检应用分析</div>
         </div>
         <ul class="sidebar-menu">
-            <li>
-                <a href="#数据统计">
-                    <span class="icon">📈</span>
-                    <span>数据统计</span>
-                </a>
-            </li>
-            <li>
-                <a href="#异常标记">
-                    <span class="icon">⚠️</span>
-                    <span>异常标记</span>
-                </a>
-            </li>
             <li class="has-submenu">
                 <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
                     <span class="icon">🔬</span>
@@ -207,8 +230,8 @@
                     <span>检验项目解读</span>
                 </a>
                 <ul class="submenu">
-                    <li><a href="#检验项目">检验项目</a></li>
-                    <li><a href="#检验项目类别">检验项目类别</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('inspection_item'); toggleSubmenu(this.parentElement.parentElement.previousElementSibling.querySelector('a'))">检验项目</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('inspection_category'); toggleSubmenu(this.parentElement.parentElement.previousElementSibling.querySelector('a'))">检验项目类别</a></li>
                     <li><a href="javascript:void(0)" onclick="navigateTo('statistics'); toggleSubmenu(this.parentElement.parentElement.previousElementSibling.querySelector('a'))">抽检项目统计</a></li>
                 </ul>
             </li>
@@ -240,6 +263,92 @@
                     <li><a href="javascript:void(0)" onclick="navigateTo('analysis_report_detail')">分析报告</a></li>
                 </ul>
             </li>
+            <li>
+                <a href="javascript:void(0)" onclick="navigateTo('plan_assist')">
+                    <span class="icon">📋</span>
+                    <span>计划辅助制定</span>
+                </a>
+            </li>
+            <li class="has-submenu">
+                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                    <span class="icon">🤖</span>
+                    <span>计划智能辅助管理</span>
+                </a>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_rule_manage')">历史风险导向预设提醒规则管理</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('rule_data_config')">预设规则数据关联与提醒推送配置</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('data_source_config')">数据资源库表可视化选择与关联配置</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('judge_field_config')">判定字段选取与运算关系可视化定义</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('rule_exec_config')">规则执行策略配置</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('rule_history')">规则历史管理与复用</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('alert_feedback')">提醒推送与反馈跟踪</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('alert_record')">提醒与规则执行记录查询</a></li>
+                </ul>
+            </li>
+            <li class="has-submenu">
+                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                    <span class="icon">💰</span>
+                    <span>经费决算管理</span>
+                </a>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="navigateTo('alias_manage')">检验项目别名管理</a></li>
+                    <li class="has-submenu">
+                        <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                            <span>检验项目基础价格管理</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a href="javascript:void(0)" onclick="navigateTo('fee_manage')">检验费管理</a></li>
+                            <li><a href="javascript:void(0)" onclick="navigateTo('sample_fee')">样本费管理</a></li>
+                            <li><a href="javascript:void(0)" onclick="navigateTo('package_price')">打包价管理</a></li>
+                            <li><a href="javascript:void(0)" onclick="navigateTo('microbe_manage')">微生物管理</a></li>
+                            <li><a href="javascript:void(0)" onclick="navigateTo('institution_discount')">机构折扣管理</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('annual_settlement')">年度决算管理</a></li>
+                </ul>
+            </li>
+            <li class="has-submenu">
+                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                    <span class="icon">🔬</span>
+                    <span>监测风险警示</span>
+                </a>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_rule_visual')">风险警示规则可视化自定义</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_field_config')">警示判定字段与运算关系自定义</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_func_config')">复杂警示运算与自定义函数支持</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_exec_config')">警示规则执行策略配置</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_history')">警示规则历史管理与复用</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_alert_push')">风险警示推送与接收反馈</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_record_query')">警示规则执行与警示记录查询</a></li>
+                </ul>
+            </li>
+            <li class="has-submenu">
+                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                    <span class="icon">📢</span>
+                    <span>监测结果信息发布管理</span>
+                </a>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="navigateTo('publish_filter')">信息发布筛选与公示编号管理</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('attachment_generate')">附件自动生成</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('attachment_approval')">附件审批流转管理</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('approval_flow')">审批流程可视化设置</a></li>
+                </ul>
+            </li>
+            <li class="has-submenu">
+                <a href="javascript:void(0)" onclick="toggleSubmenu(this)">
+                    <span class="icon">📊</span>
+                    <span>监测总结和计划报送管理</span>
+                </a>
+                <ul class="submenu">
+                    <li><a href="javascript:void(0)" onclick="navigateTo('task_generate')">年度任务自动生成</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('supervision_report')">部门监督抽检数据填报</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('risk_report')">部门风险监测数据填报</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('halfyear_summary')">半年度工作总结填报</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('annual_plan')">年度计划说明填报</a></li>
+                    <li><a href="javascript:void(0)" onclick="navigateTo('history_query')">历史报送信息综合查询</a></li>
+                </ul>
+            </li>
+            
         </ul>
     </div>
 

@@ -55,7 +55,6 @@ body {
     list-style: none;
     flex: 1;
     padding: 10px 0;
-    overflow-y: auto;
 }
 
 .sidebar-menu li {
@@ -87,15 +86,6 @@ body {
 .sidebar-menu li .submenu li a {
     padding-left: 40px;
     font-size: 13px;
-}
-
-.sidebar-menu li .submenu li .submenu {
-    background: rgba(0,0,0,0.2);
-}
-
-.sidebar-menu li .submenu li .submenu li a {
-    padding-left: 60px;
-    font-size: 12px;
 }
 
 .sidebar-menu li .submenu li a.highlight {

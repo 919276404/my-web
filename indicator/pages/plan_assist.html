@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>计划辅助制定 - DTJ原型</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="../js/food_category_data.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f7fa; padding: 15px; height: calc(100vh - 30px); }
@@ -93,6 +94,21 @@
         .filter-item { display: flex; align-items: center; gap: 8px; }
         .filter-item label { font-size: 12px; color: #666; }
         .filter-item select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; min-width: 140px; }
+        .multi-select { position: relative; min-width: 180px; }
+        .multi-select-display { padding: 6px 32px 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; cursor: pointer; background: #fff; min-width: 180px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; transition: border-color 0.2s; }
+        .multi-select-display:hover { border-color: #1e9a6c; }
+        .multi-select-display::after { content: '▼'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 8px; color: #999; }
+        .multi-select-display.active { border-color: #1e9a6c; }
+        .multi-select-display.has-value { color: #1e9a6c; font-weight: 500; }
+        .multi-select-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-height: 240px; overflow-y: auto; z-index: 1000; display: none; }
+        .multi-select-dropdown.show { display: block; }
+        .multi-select-option { padding: 8px 12px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.15s; }
+        .multi-select-option:hover { background: #f0f9f4; }
+        .multi-select-option input { margin: 0; cursor: pointer; }
+        .multi-select-option label { cursor: pointer; flex: 1; color: #333; }
+        .multi-select-option.all-option { border-bottom: 1px solid #eee; background: #fafafa; font-weight: 500; color: #1e9a6c; }
+        .multi-select-option.all-option:hover { background: #f0f9f4; }
+        .multi-select-empty { padding: 12px; text-align: center; color: #999; font-size: 12px; }
         .filter-actions { display: flex; gap: 8px; margin-left: auto; }
         
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
@@ -122,6 +138,29 @@
         
         .clickable-num { color: #1e73be; cursor: pointer; text-decoration: underline; }
         .clickable-num:hover { color: #1a64a5; }
+        .action-link { color: #1e9a6c; cursor: pointer; text-decoration: none; font-weight: 500; }
+        .action-link:hover { color: #167a57; text-decoration: underline; }
+        .biz-batch-input { width: 80px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; text-align: center; transition: border-color 0.2s; }
+        .biz-batch-input:focus { outline: none; border-color: #1e9a6c; box-shadow: 0 0 0 2px rgba(30,154,108,0.1); }
+
+        /* 区域抽检明细表样式 */
+        .region-detail-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
+        .region-detail-table th, .region-detail-table td { border: 1px solid #d0d7de; padding: 4px 2px; text-align: center; white-space: nowrap; }
+        .region-detail-table th { background: #f6f8fa; font-weight: 600; color: #24292f; position: sticky; top: 0; z-index: 2; }
+        .region-detail-table th:first-child, .region-detail-table td:first-child { position: sticky; left: 0; background: #fff; z-index: 1; min-width: 100px; text-align: left; padding-left: 8px; }
+        .region-detail-table th:first-child { background: #f6f8fa; z-index: 3; }
+        .region-detail-table th:last-child, .region-detail-table td:last-child { background: #f0f9f4; font-weight: 600; }
+        .region-detail-table td.region-col { background: #fff; min-width: 50px; }
+        .region-detail-table tr:hover td { background: #f6f8fa; }
+        .region-detail-table tr:hover td:first-child { background: #f6f8fa; }
+        .region-detail-table .category-header { background: #e8f5ee; font-weight: 600; text-align: left; padding-left: 10px; }
+        .region-detail-table .level-cell { text-align: center; font-weight: 500; }
+        .region-detail-table .subtotal-row td { background: #fff9e6; font-weight: 600; }
+        .region-detail-table .subtotal-row td:first-child { background: #fff9e6; }
+        .region-detail-table .grand-subtotal-row td { background: #e8f5ee; font-weight: 600; }
+        .region-detail-table .grand-subtotal-row td:first-child { background: #e8f5ee; }
+        .region-detail-table .empty-cell { background: #fafbfc; }
+        .region-detail-wrapper { overflow-x: auto; max-height: 500px; border: 1px solid #d0d7de; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -136,8 +175,8 @@
         <div class="sub-tab-bar" id="subTabBar">
             <div class="sub-tab active" onclick="switchSubTab('variety')">品类数量设定</div>
             <div class="sub-tab" onclick="switchSubTab('business')">业态数量设定</div>
+            <div class="sub-tab" onclick="switchSubTab('region')">区域数量设定</div>
             <div class="sub-tab" onclick="switchSubTab('test')">检验项目设定</div>
-            <!-- <div class="sub-tab" onclick="switchSubTab('region')">区域数量设定</div> -->
         </div>
 
         <div class="content">
@@ -171,33 +210,35 @@
                         <div class="filter-bar">
                             <div class="filter-item">
                                 <label>食品大类：</label>
-                                <select id="filterLevel1" onchange="onLevelChange(1)">
-                                    <option value="">全部</option>
-                                    <option value="粮食加工品">粮食加工品</option>
-                                    <option value="食用油、油脂及其制品">食用油、油脂及其制品</option>
-                                </select>
+                                <div class="multi-select" id="msLevel1">
+                                    <div class="multi-select-display" onclick="toggleMultiSelect('msLevel1')">全部</div>
+                                    <div class="multi-select-dropdown" id="msLevel1Dropdown"></div>
+                                </div>
                             </div>
                             <div class="filter-item">
                                 <label>食品亚类：</label>
-                                <select id="filterLevel2" onchange="onLevelChange(2)">
-                                    <option value="">全部</option>
-                                </select>
+                                <div class="multi-select" id="msLevel2">
+                                    <div class="multi-select-display" onclick="toggleMultiSelect('msLevel2')">全部</div>
+                                    <div class="multi-select-dropdown" id="msLevel2Dropdown"></div>
+                                </div>
                             </div>
                             <div class="filter-item">
                                 <label>食品次亚类：</label>
-                                <select id="filterLevel3" onchange="onLevelChange(3)">
-                                    <option value="">全部</option>
-                                </select>
+                                <div class="multi-select" id="msLevel3">
+                                    <div class="multi-select-display" onclick="toggleMultiSelect('msLevel3')">全部</div>
+                                    <div class="multi-select-dropdown" id="msLevel3Dropdown"></div>
+                                </div>
                             </div>
                             <div class="filter-item">
                                 <label>食品细类：</label>
-                                <select id="filterLevel4">
-                                    <option value="">全部</option>
-                                </select>
+                                <div class="multi-select" id="msLevel4">
+                                    <div class="multi-select-display" onclick="toggleMultiSelect('msLevel4')">全部</div>
+                                    <div class="multi-select-dropdown" id="msLevel4Dropdown"></div>
+                                </div>
                             </div>
                             <div class="filter-actions">
-                                <button class="btn btn-primary" onclick="applyFilter()">筛选</button>
-                                <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+                                <button class="btn btn-primary" onclick="applyFcFilter()">筛选</button>
+                                <button class="btn btn-secondary" onclick="resetFcFilter()">重置</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -213,47 +254,37 @@
                                         <th>抽检批次</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>3.5%</td><td><input type="number" class="ratio-input" value="2" onchange="calcTotalVariety()"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>4.2%</td><td><input type="number" class="ratio-input" value="2" onchange="calcTotalVariety()"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>2.8%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>3.1%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>2.5%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>2.5%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>3.8%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>2.9%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>5.2%</td><td><input type="number" class="ratio-input" value="3" onchange="calcTotalVariety()"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>4.8%</td><td><input type="number" class="ratio-input" value="3" onchange="calcTotalVariety()"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>4.8%</td><td><input type="number" class="ratio-input" value="3" onchange="calcTotalVariety()"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>4.1%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>3.3%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>速食粮食产品</td><td>速食粮食产品</td><td>速食粮食产品</td><td>3.6%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>粮食加工品</td><td>粮食类预拌粉</td><td>粮食类预拌粉</td><td>粮食类预拌粉</td><td>2.2%</td><td><input type="number" class="ratio-input" value="0.5" onchange="calcTotalVariety()"></td><td class="calc-cell">250</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>花生油</td><td>4.5%</td><td><input type="number" class="ratio-input" value="2" onchange="calcTotalVariety()"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>玉米油</td><td>3.8%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>芝麻油</td><td>4.0%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>橄榄油、油橄榄果渣油</td><td>3.5%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>菜籽油</td><td>4.8%</td><td><input type="number" class="ratio-input" value="2" onchange="calcTotalVariety()"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>大豆油</td><td>3.8%</td><td><input type="number" class="ratio-input" value="2" onchange="calcTotalVariety()"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>食用植物调和油</td><td>5.1%</td><td><input type="number" class="ratio-input" value="2" onchange="calcTotalVariety()"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>油茶籽油</td><td>3.2%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用植物油</td><td>食用植物油</td><td>其他食用植物油</td><td>2.5%</td><td><input type="number" class="ratio-input" value="0.5" onchange="calcTotalVariety()"></td><td class="calc-cell">250</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用动物油脂</td><td>食用动物油脂</td><td>食用动物油脂</td><td>3.5%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr><td>食用油、油脂及其制品</td><td>食用油脂制品</td><td>食用油脂制品</td><td>食用油脂制品</td><td>3.2%</td><td><input type="number" class="ratio-input" value="1" onchange="calcTotalVariety()"></td><td class="calc-cell">500</td></tr>
-                                    <tr class="summary-row"><td colspan="4">合计</td><td id="totalRatio">20%</td><td></td><td id="totalCalc">10000</td></tr>
+                                <tbody id="foodCategoryTableBody">
+                                    <!-- 动态数据加载 -->
                                 </tbody>
                             </table>
+                            <div class="pagination-container" id="foodCategoryPagination">
+                                <div class="pagination-info" id="foodCategoryPageInfo">加载中...</div>
+                                <div class="pagination">
+                                    <button class="pagination-btn" onclick="goToFoodCategoryPage(1)" id="fcFirstBtn">首页</button>
+                                    <button class="pagination-btn" onclick="prevFoodCategoryPage()" id="fcPrevBtn">上一页</button>
+                                    <span class="pagination-numbers" id="fcPageNumbers"></span>
+                                    <button class="pagination-btn" onclick="nextFoodCategoryPage()" id="fcNextBtn">下一页</button>
+                                    <button class="pagination-btn" onclick="goToFoodCategoryPage(-1)" id="fcLastBtn">末页</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div id="totalRegion" class="module-content hidden">
                     <div class="section">
-                        <div class="section-title">区域人口数据设定</div>
+                        <div class="section-title">基础数据设定</div>
                         <div class="form-row">
                             <label class="form-label">全市常住人口：</label>
-                            <input type="number" class="form-input" id="cityPop" value="21893095" readonly>
+                            <input type="number" class="form-input" id="cityPop" value="21893095" onchange="calcTotalRegion()">
                             <span style="color: #999; font-size: 13px;">人</span>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">总抽检批次：</label>
+                            <input type="number" class="form-input" id="totalBatchesRegion" value="50000" onchange="calcTotalRegion()">
+                            <span style="color: #999; font-size: 13px;">批次</span>
                         </div>
                     </div>
 
@@ -267,30 +298,138 @@
                                         <th>常住人口</th>
                                         <th>人口占比(%)</th>
                                         <th>抽检批次</th>
-                                        <th>手动调整</th>
-                                        <th>最终批次</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td>东城区</td><td>704789</td><td>3.22%</td><td>1610</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">1610</td></tr>
-                                    <tr><td>西城区</td><td>1106214</td><td>5.05%</td><td>2525</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">2525</td></tr>
-                                    <tr><td>朝阳区</td><td>3452528</td><td>15.77%</td><td>7885</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">7885</td></tr>
-                                    <tr><td>海淀区</td><td>3135469</td><td>14.32%</td><td>7160</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">7160</td></tr>
-                                    <tr><td>丰台区</td><td>2019764</td><td>9.23%</td><td>4615</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">4615</td></tr>
-                                    <tr><td>石景山区</td><td>545381</td><td>2.49%</td><td>1245</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">1245</td></tr>
-                                    <tr><td>通州区</td><td>1840295</td><td>8.41%</td><td>4205</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">4205</td></tr>
-                                    <tr><td>顺义区</td><td>1324044</td><td>6.05%</td><td>3025</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">3025</td></tr>
-                                    <tr><td>昌平区</td><td>2269487</td><td>10.37%</td><td>5185</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">5185</td></tr>
-                                    <tr><td>大兴区</td><td>1993591</td><td>9.11%</td><td>4555</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">4555</td></tr>
-                                    <tr><td>房山区</td><td>1312778</td><td>5.99%</td><td>2995</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">2995</td></tr>
-                                    <tr><td>门头沟区</td><td>392606</td><td>1.79%</td><td>895</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">895</td></tr>
-                                    <tr><td>怀柔区</td><td>441040</td><td>2.01%</td><td>1005</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">1005</td></tr>
-                                    <tr><td>平谷区</td><td>457313</td><td>2.09%</td><td>1045</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">1045</td></tr>
-                                    <tr><td>密云区</td><td>527683</td><td>2.41%</td><td>1205</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">1205</td></tr>
-                                    <tr><td>延庆区</td><td>345671</td><td>1.58%</td><td>790</td><td><input type="number" class="adjust-input" value="0" onchange="calcTotalRegion()"></td><td class="final-cell">790</td></tr>
-                                    <tr class="summary-row"><td>合计</td><td>21893095</td><td>100%</td><td>50000</td><td></td><td>50000</td></tr>
+                                    <tr><td>东城区</td><td>704789</td><td>3.22%</td><td>1610</td></tr>
+                                    <tr><td>西城区</td><td>1106214</td><td>5.05%</td><td>2525</td></tr>
+                                    <tr><td>朝阳区</td><td>3452528</td><td>15.77%</td><td>7885</td></tr>
+                                    <tr><td>海淀区</td><td>3135469</td><td>14.32%</td><td>7160</td></tr>
+                                    <tr><td>丰台区</td><td>2019764</td><td>9.23%</td><td>4615</td></tr>
+                                    <tr><td>石景山区</td><td>545381</td><td>2.49%</td><td>1245</td></tr>
+                                    <tr><td>通州区</td><td>1840295</td><td>8.41%</td><td>4205</td></tr>
+                                    <tr><td>顺义区</td><td>1324044</td><td>6.05%</td><td>3025</td></tr>
+                                    <tr><td>昌平区</td><td>2269487</td><td>10.37%</td><td>5185</td></tr>
+                                    <tr><td>大兴区</td><td>1993591</td><td>9.11%</td><td>4555</td></tr>
+                                    <tr><td>房山区</td><td>1312778</td><td>5.99%</td><td>2995</td></tr>
+                                    <tr><td>门头沟区</td><td>392606</td><td>1.79%</td><td>895</td></tr>
+                                    <tr><td>怀柔区</td><td>441040</td><td>2.01%</td><td>1005</td></tr>
+                                    <tr><td>平谷区</td><td>457313</td><td>2.09%</td><td>1045</td></tr>
+                                    <tr><td>密云区</td><td>527683</td><td>2.41%</td><td>1205</td></tr>
+                                    <tr><td>延庆区</td><td>345671</td><td>1.58%</td><td>790</td></tr>
+                                    <tr><td>经开区</td><td>24442</td><td>0.11%</td><td>55</td></tr>
+                                    <tr class="summary-row"><td>合计</td><td>21893095</td><td>100%</td><td>50000</td></tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+<br>
+            <div class="section">
+                        <div class="section-title">各区域抽检设定</div>
+                        <div class="info-text">数据来源：26年全市食品生产经营主体数据</div>
+                        <div class="filter-bar">
+                            <div class="filter-item">
+                                <label>食品大类：</label>
+                                <select id="bizFilterLevel1" onchange="onBizLevelChange(1)">
+                                    <option value="">全部</option>
+                                    <option value="粮食加工品">粮食加工品</option>
+                                    <option value="食用油、油脂及其制品">食用油、油脂及其制品</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label>食品亚类：</label>
+                                <select id="bizFilterLevel2" onchange="onBizLevelChange(2)">
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label>食品次亚类：</label>
+                                <select id="bizFilterLevel3" onchange="onBizLevelChange(3)">
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <div class="filter-item">
+                                <label>食品细类：</label>
+                                <select id="bizFilterLevel4">
+                                    <option value="">全部</option>
+                                </select>
+                            </div>
+                            <div class="filter-actions">
+                                <button class="btn btn-primary" onclick="applyBizFilter()">筛选</button>
+                                <button class="btn btn-secondary" onclick="resetBizFilter()">重置</button>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="bizRiskTable">
+                                <thead>
+                                    <tr>
+                                        <th>食品大类(一级)</th>
+                                        <th>食品亚类(二级)</th>
+                                        <th>食品品种(三级)</th>
+                                        <th>食品细类(四级)</th>
+                                        <th>主体业态</th>
+                                        <th>主体数量</th>
+                                        <th>建议抽检批次</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">小麦粉</td><td rowspan="4">小麦粉</td><td rowspan="4">小麦粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','生产',256)">256</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','小麦粉','小麦粉','小麦粉','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','经营',189)">189</span></td><td><a class="action-link" onclick="openRegionModal('小麦粉','小麦粉','小麦粉','小麦粉','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','餐饮',142)">142</span></td><td><a class="action-link" onclick="openRegionModal('小麦粉','小麦粉','小麦粉','小麦粉','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','特食',78)">78</span></td><td><a class="action-link" onclick="openRegionModal('小麦粉','小麦粉','小麦粉','小麦粉','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">大米</td><td rowspan="4">大米</td><td rowspan="4">大米</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','生产',198)">198</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','大米','大米','大米','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','经营',156)">156</span></td><td><a class="action-link" onclick="openRegionModal('大米','大米','大米','大米','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','餐饮',118)">118</span></td><td><a class="action-link" onclick="openRegionModal('大米','大米','大米','大米','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','特食',65)">65</span></td><td><a class="action-link" onclick="openRegionModal('大米','大米','大米','大米','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">挂面</td><td rowspan="4">挂面</td><td rowspan="4">挂面</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','生产',134)">134</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','挂面','挂面','挂面','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','经营',98)">98</span></td><td><a class="action-link" onclick="openRegionModal('挂面','挂面','挂面','挂面','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','餐饮',76)">76</span></td><td><a class="action-link" onclick="openRegionModal('挂面','挂面','挂面','挂面','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','特食',45)">45</span></td><td><a class="action-link" onclick="openRegionModal('挂面','挂面','挂面','挂面','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物加工品</td><td rowspan="4">谷物加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','生产',89)">89</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物加工品','谷物加工品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','经营',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('谷物加工品','谷物加工品','谷物加工品','谷物加工品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','餐饮',52)">52</span></td><td><a class="action-link" onclick="openRegionModal('谷物加工品','谷物加工品','谷物加工品','谷物加工品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','特食',32)">32</span></td><td><a class="action-link" onclick="openRegionModal('谷物加工品','谷物加工品','谷物加工品','谷物加工品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">玉米粉(片、渣)</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','生产',112)">112</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','玉米粉(片、渣)','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','经营',85)">85</span></td><td><a class="action-link" onclick="openRegionModal('玉米粉','玉米粉','玉米粉','玉米粉','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','餐饮',64)">64</span></td><td><a class="action-link" onclick="openRegionModal('玉米粉','玉米粉','玉米粉','玉米粉','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','特食',38)">38</span></td><td><a class="action-link" onclick="openRegionModal('玉米粉','玉米粉','玉米粉','玉米粉','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">米粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','生产',167)">167</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','米粉','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','经营',123)">123</span></td><td><a class="action-link" onclick="openRegionModal('米粉','米粉','米粉','米粉','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','餐饮',95)">95</span></td><td><a class="action-link" onclick="openRegionModal('米粉','米粉','米粉','米粉','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','特食',56)">56</span></td><td><a class="action-link" onclick="openRegionModal('米粉','米粉','米粉','米粉','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">其他谷物碾磨加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','生产',76)">76</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','其他谷物碾磨加工品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','经营',55)">55</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','餐饮',42)">42</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','特食',26)">26</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">生湿面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','生产',189)">189</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','生湿面制品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','经营',142)">142</span></td><td><a class="action-link" onclick="openRegionModal('生湿面制品','生湿面制品','生湿面制品','生湿面制品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','餐饮',112)">112</span></td><td><a class="action-link" onclick="openRegionModal('生湿面制品','生湿面制品','生湿面制品','生湿面制品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','特食',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('生湿面制品','生湿面制品','生湿面制品','生湿面制品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">发酵面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','生产',156)">156</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','发酵面制品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','经营',118)">118</span></td><td><a class="action-link" onclick="openRegionModal('发酵面制品','发酵面制品','发酵面制品','发酵面制品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','餐饮',92)">92</span></td><td><a class="action-link" onclick="openRegionModal('发酵面制品','发酵面制品','发酵面制品','发酵面制品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','特食',54)">54</span></td><td><a class="action-link" onclick="openRegionModal('发酵面制品','发酵面制品','发酵面制品','发酵面制品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">米粉制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','生产',123)">123</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','米粉制品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','经营',92)">92</span></td><td><a class="action-link" onclick="openRegionModal('米粉制品','米粉制品','米粉制品','米粉制品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','餐饮',72)">72</span></td><td><a class="action-link" onclick="openRegionModal('米粉制品','米粉制品','米粉制品','米粉制品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','特食',42)">42</span></td><td><a class="action-link" onclick="openRegionModal('米粉制品','米粉制品','米粉制品','米粉制品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">其他谷物粉类制成品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','生产',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','其他谷物粉类制成品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','经营',48)">48</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','餐饮',36)">36</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','特食',24)">24</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','特食')">区域分布</a></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container" id="bizRiskPagination">
+                            <div class="pagination-info" id="bizRiskPageInfo">共 44 条记录，第 1/3 页</div>
+                            <div class="pagination">
+                                <button class="pagination-btn" onclick="goToBizRiskPage(1)" id="brFirstBtn">首页</button>
+                                <button class="pagination-btn" onclick="prevBizRiskPage()" id="brPrevBtn">上一页</button>
+                                <span class="pagination-numbers" id="brPageNumbers"></span>
+                                <button class="pagination-btn" onclick="nextBizRiskPage()" id="brNextBtn">下一页</button>
+                                <button class="pagination-btn" onclick="goToBizRiskPage(3)" id="brLastBtn">末页</button>
+                            </div>
                         </div>
                     </div>
 
@@ -375,7 +514,7 @@
                             </div>
                         </div>
                         <div class="table-container">
-                            <table class="data-table" id="bizRiskTable">
+                            <table class="data-table" id="bizRiskCoeffTable">
                                 <thead>
                                     <tr>
                                         <th>食品大类(一级)</th>
@@ -717,6 +856,26 @@
                     </div>
 
                     <div class="section">
+                        <div class="section-title">区域抽检明细表</div>
+                        <div class="region-detail-wrapper">
+                            <table class="region-detail-table" id="regionDetailTable">
+                                <thead id="regionDetailHead"></thead>
+                                <tbody id="regionDetailBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container" id="regionDetailPagination">
+                            <div class="pagination-info" id="regionDetailPageInfo"></div>
+                            <div class="pagination">
+                                <button class="pagination-btn" onclick="goToRegionDetailPage(1)">首页</button>
+                                <button class="pagination-btn" onclick="prevRegionDetailPage()">上一页</button>
+                                <span class="pagination-numbers" id="regionDetailPageNumbers"></span>
+                                <button class="pagination-btn" onclick="nextRegionDetailPage()">下一页</button>
+                                <button class="pagination-btn" onclick="goToRegionDetailPage(-1)">末页</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
                         <div class="section-title">计划概要</div>
                         <div style="font-size: 13px; line-height: 1.8; color: #555; padding: 12px; background: #fafafa; border-radius: 6px;">
                             <p><strong>风险导向抽检</strong>：基于历史数据分析，高风险品类占比提升至 <span style="color: #1e73be;">60%</span></p>
@@ -845,13 +1004,459 @@
             document.getElementById('totalCalc').textContent = Math.round(total * totalRatio / 100).toLocaleString();
         }
 
-        function calcTotalRegion() {
-            var adjusts = document.querySelectorAll('.adjust-input');
-            var results = document.querySelectorAll('.final-cell');
-            var base = [1610, 2525, 7885, 7160, 4615, 1245, 4205, 3025, 5185, 4555, 2995, 895, 1005, 1045, 1205, 790];
-            adjusts.forEach((input, idx) => {
-                results[idx].textContent = (base[idx] + (parseInt(input.value) || 0)).toLocaleString();
+        // ==================== 食品分类表格分页 ====================
+        var fcCurrentPage = 1;
+        var fcPageSize = 10;
+        var fcTotalPages = 1;
+        var fcFilteredData = null;
+
+        function getFcData() {
+            // 当 fcFilteredData 为 null 时表示未筛选（默认空），为数组时表示已筛选
+            if (fcFilteredData !== null) return fcFilteredData;
+            return [];
+        }
+
+        function initFoodCategoryTable() {
+            var tbody = document.getElementById('foodCategoryTableBody');
+            if (!tbody) { console.error('找不到 foodCategoryTableBody'); return; }
+            var data = (typeof foodCategoryData !== 'undefined' && foodCategoryData) ? foodCategoryData : [];
+
+            // 默认表格为空，提示用户先筛选
+            fcFilteredData = [];
+            fcCurrentPage = 1;
+            fcTotalPages = 1;
+            renderEmptyState('请选择筛选条件后点击「筛选」按钮查询数据');
+
+            var info = document.getElementById('foodCategoryPageInfo');
+            if (info) info.textContent = '请先筛选';
+
+            // Initialize multi-select dropdowns
+            var l1Set = new Set();
+            data.forEach(function(item) { l1Set.add(item.level1); });
+            var l1Opts = Array.from(l1Set).sort();
+            msState.msLevel1.options = l1Opts;
+            buildMultiSelect('msLevel1', l1Opts, [], onMsLevelChange);
+
+            var l2Set = new Set();
+            data.forEach(function(item) { l2Set.add(item.level2); });
+            var l2Opts = Array.from(l2Set).sort();
+            msState.msLevel2.options = l2Opts;
+            buildMultiSelect('msLevel2', l2Opts, [], null);
+
+            buildMultiSelect('msLevel3', [], [], null);
+            buildMultiSelect('msLevel4', [], [], null);
+
+            // 重置分页按钮状态
+            document.getElementById('fcFirstBtn').disabled = true;
+            document.getElementById('fcPrevBtn').disabled = true;
+            document.getElementById('fcNextBtn').disabled = true;
+            document.getElementById('fcLastBtn').disabled = true;
+            var nc = document.getElementById('fcPageNumbers');
+            if (nc) nc.innerHTML = '';
+        }
+
+        function renderEmptyState(msg) {
+            var tbody = document.getElementById('foodCategoryTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px 20px; color:#999; font-size:13px;">' + msg + '</td></tr>';
+        }
+
+        function renderFoodCategoryTable() {
+            var tbody = document.getElementById('foodCategoryTableBody');
+            if (!tbody) return;
+            var data = getFcData();
+            // 未筛选状态
+            if (fcFilteredData === null) {
+                renderEmptyState('请选择筛选条件后点击「筛选」按钮查询数据');
+                return;
+            }
+            // 已筛选但无结果
+            if (data.length === 0) {
+                renderEmptyState('没有符合条件的数据');
+                return;
+            }
+            var start = (fcCurrentPage - 1) * fcPageSize;
+            var end = Math.min(start + fcPageSize, data.length);
+            var pageData = data.slice(start, end);
+            var totalRatio = 0, totalBatches = 0;
+            data.forEach(function(item) {
+                totalRatio += (item.ratio || 0);
+                totalBatches += (item.batches || 0);
             });
+            var html = '';
+            pageData.forEach(function(item) {
+                html += '<tr>';
+                html += '<td>' + (item.level1 || '') + '</td>';
+                html += '<td>' + (item.level2 || '') + '</td>';
+                html += '<td>' + (item.level3 || '') + '</td>';
+                html += '<td>' + (item.level4 || '') + '</td>';
+                html += '<td>' + (item.problemRate || 0) + '%</td>';
+                html += '<td><input type="number" class="ratio-input" value="' + (item.ratio || 0) + '" step="0.1" min="0" max="100"></td>';
+                html += '<td class="calc-cell">' + (item.batches || 0).toLocaleString() + '</td>';
+                html += '</tr>';
+            });
+            html += '<tr class="summary-row"><td colspan="4">合计</td><td id="totalRatio">' + totalRatio.toFixed(1) + '%</td><td></td><td id="totalCalc">' + totalBatches.toLocaleString() + '</td></tr>';
+            tbody.innerHTML = html;
+        }
+
+        function renderFoodCategoryPagination() {
+            var data = getFcData();
+            fcTotalPages = Math.max(1, Math.ceil(data.length / fcPageSize));
+            if (fcCurrentPage > fcTotalPages) fcCurrentPage = fcTotalPages;
+            var info = document.getElementById('foodCategoryPageInfo');
+            if (info) info.textContent = '共 ' + data.length + ' 条记录，第 ' + fcCurrentPage + '/' + fcTotalPages + ' 页';
+            document.getElementById('fcFirstBtn').disabled = fcCurrentPage <= 1;
+            document.getElementById('fcPrevBtn').disabled = fcCurrentPage <= 1;
+            document.getElementById('fcNextBtn').disabled = fcCurrentPage >= fcTotalPages;
+            document.getElementById('fcLastBtn').disabled = fcCurrentPage >= fcTotalPages;
+            var nc = document.getElementById('fcPageNumbers');
+            if (nc) {
+                var html = '';
+                var s = Math.max(1, fcCurrentPage - 2);
+                var e = Math.min(fcTotalPages, fcCurrentPage + 2);
+                for (var i = s; i <= e; i++) {
+                    html += '<span class="pagination-number' + (i === fcCurrentPage ? ' active' : '') + '" onclick="goToFoodCategoryPage(' + i + ')">' + i + '</span>';
+                }
+                nc.innerHTML = html;
+            }
+        }
+
+        function goToFoodCategoryPage(page) {
+            if (page === -1) page = fcTotalPages;
+            page = Math.max(1, Math.min(page, fcTotalPages));
+            if (page === fcCurrentPage) return;
+            fcCurrentPage = page;
+            renderFoodCategoryTable();
+            renderFoodCategoryPagination();
+        }
+
+        function prevFoodCategoryPage() {
+            if (fcCurrentPage > 1) goToFoodCategoryPage(fcCurrentPage - 1);
+        }
+
+        function nextFoodCategoryPage() {
+            if (fcCurrentPage < fcTotalPages) goToFoodCategoryPage(fcCurrentPage + 1);
+        }
+
+        // Multi-select state: store selected values per level
+        var msState = {
+            msLevel1: { selected: [], options: [], level: 1 },
+            msLevel2: { selected: [], options: [], level: 2, parentLevel: 1 },
+            msLevel3: { selected: [], options: [], level: 3, parentLevel: 2 },
+            msLevel4: { selected: [], options: [], level: 4, parentLevel: 3 }
+        };
+
+        function toggleMultiSelect(id) {
+            Object.keys(msState).forEach(function(k) {
+                var dd = document.getElementById(k + 'Dropdown');
+                var dp = document.querySelector('#' + k + ' .multi-select-display');
+                if (k === id) {
+                    dd.classList.toggle('show');
+                    dp.classList.toggle('active');
+                } else {
+                    dd.classList.remove('show');
+                    if (dp) dp.classList.remove('active');
+                }
+            });
+        }
+
+        function closeAllMultiSelect() {
+            Object.keys(msState).forEach(function(k) {
+                var dd = document.getElementById(k + 'Dropdown');
+                var dp = document.querySelector('#' + k + ' .multi-select-display');
+                if (dd) dd.classList.remove('show');
+                if (dp) dp.classList.remove('active');
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.multi-select')) {
+                closeAllMultiSelect();
+            }
+        });
+
+        function buildMultiSelect(id, options, selected, onSelect) {
+            var dd = document.getElementById(id + 'Dropdown');
+            if (!dd) return;
+            dd.innerHTML = '';
+
+            // "全部" option
+            var allDiv = document.createElement('div');
+            allDiv.className = 'multi-select-option all-option';
+            allDiv.innerHTML = '<input type="checkbox" id="' + id + '_all"><label for="' + id + '_all">全选</label>';
+            allDiv.querySelector('input').addEventListener('change', function() {
+                var checked = this.checked;
+                var checkboxes = dd.querySelectorAll('.ms-option-cb');
+                checkboxes.forEach(function(cb) {
+                    cb.checked = checked;
+                });
+                updateMsDisplay(id);
+                if (onSelect) onSelect(id);
+            });
+            dd.appendChild(allDiv);
+
+            if (options.length === 0) {
+                var emptyDiv = document.createElement('div');
+                emptyDiv.className = 'multi-select-empty';
+                emptyDiv.textContent = '无可选项';
+                dd.appendChild(emptyDiv);
+                return;
+            }
+
+            options.forEach(function(opt) {
+                var div = document.createElement('div');
+                div.className = 'multi-select-option';
+                var cbId = id + '_cb_' + options.indexOf(opt);
+                div.innerHTML = '<input type="checkbox" class="ms-option-cb" id="' + cbId + '" value="' + opt + '"><label for="' + cbId + '">' + opt + '</label>';
+                div.querySelector('input').addEventListener('change', function() {
+                    updateMsDisplay(id);
+                    if (onSelect) onSelect(id);
+                });
+                dd.appendChild(div);
+            });
+
+            // Restore selection
+            if (selected && selected.length > 0) {
+                var cbs = dd.querySelectorAll('.ms-option-cb');
+                cbs.forEach(function(cb) {
+                    if (selected.indexOf(cb.value) !== -1) cb.checked = true;
+                });
+                updateMsDisplay(id);
+            }
+        }
+
+        function updateMsDisplay(id) {
+            var dd = document.getElementById(id + 'Dropdown');
+            var dp = document.querySelector('#' + id + ' .multi-select-display');
+            if (!dd || !dp) return;
+            var selected = [];
+            dd.querySelectorAll('.ms-option-cb:checked').forEach(function(cb) {
+                selected.push(cb.value);
+            });
+            msState[id].selected = selected;
+
+            // Update "all" checkbox state
+            var allCb = dd.querySelector('#' + id + '_all');
+            var cbs = dd.querySelectorAll('.ms-option-cb');
+            if (allCb) {
+                if (cbs.length > 0 && selected.length === cbs.length) {
+                    allCb.checked = true;
+                    allCb.indeterminate = false;
+                } else if (selected.length > 0) {
+                    allCb.checked = false;
+                    allCb.indeterminate = true;
+                } else {
+                    allCb.checked = false;
+                    allCb.indeterminate = false;
+                }
+            }
+
+            // Update display text
+            if (selected.length === 0) {
+                dp.textContent = '全部';
+                dp.classList.remove('has-value');
+            } else if (selected.length <= 2) {
+                dp.textContent = selected.join(', ');
+                dp.classList.add('has-value');
+            } else {
+                dp.textContent = selected.length + ' 项已选';
+                dp.classList.add('has-value');
+            }
+        }
+
+        function getMsSelected(id) {
+            return msState[id] ? msState[id].selected : [];
+        }
+
+        function updateFilterLevel1Options() {
+            var data = (typeof foodCategoryData !== 'undefined' && foodCategoryData) ? foodCategoryData : [];
+            var set = new Set();
+            data.forEach(function(item) { set.add(item.level1); });
+            var options = Array.from(set).sort();
+            msState.msLevel1.options = options;
+            buildMultiSelect('msLevel1', options, msState.msLevel1.selected, onMsLevelChange);
+        }
+
+        function onMsLevelChange(changedId) {
+            var data = (typeof foodCategoryData !== 'undefined' && foodCategoryData) ? foodCategoryData : [];
+
+            if (changedId === 'msLevel1') {
+                // Reset level2,3,4
+                msState.msLevel2.selected = [];
+                msState.msLevel3.selected = [];
+                msState.msLevel4.selected = [];
+                var l1Selected = getMsSelected('msLevel1');
+                var l2Set = new Set();
+                data.forEach(function(item) {
+                    if (l1Selected.length === 0 || l1Selected.indexOf(item.level1) !== -1) {
+                        l2Set.add(item.level2);
+                    }
+                });
+                var l2Opts = Array.from(l2Set).sort();
+                msState.msLevel2.options = l2Opts;
+                buildMultiSelect('msLevel2', l2Opts, [], null);
+
+                // Reset level3,4
+                msState.msLevel3.options = [];
+                buildMultiSelect('msLevel3', [], [], null);
+                msState.msLevel4.options = [];
+                buildMultiSelect('msLevel4', [], [], null);
+            } else if (changedId === 'msLevel2') {
+                msState.msLevel3.selected = [];
+                msState.msLevel4.selected = [];
+                var l1S = getMsSelected('msLevel1');
+                var l2S = getMsSelected('msLevel2');
+                var l3Set = new Set();
+                data.forEach(function(item) {
+                    if ((l1S.length === 0 || l1S.indexOf(item.level1) !== -1) &&
+                        (l2S.length === 0 || l2S.indexOf(item.level2) !== -1)) {
+                        l3Set.add(item.level3);
+                    }
+                });
+                var l3Opts = Array.from(l3Set).sort();
+                msState.msLevel3.options = l3Opts;
+                buildMultiSelect('msLevel3', l3Opts, [], null);
+
+                msState.msLevel4.options = [];
+                buildMultiSelect('msLevel4', [], [], null);
+            } else if (changedId === 'msLevel3') {
+                msState.msLevel4.selected = [];
+                var l1S2 = getMsSelected('msLevel1');
+                var l2S2 = getMsSelected('msLevel2');
+                var l3S = getMsSelected('msLevel3');
+                var l4Set = new Set();
+                data.forEach(function(item) {
+                    if ((l1S2.length === 0 || l1S2.indexOf(item.level1) !== -1) &&
+                        (l2S2.length === 0 || l2S2.indexOf(item.level2) !== -1) &&
+                        (l3S.length === 0 || l3S.indexOf(item.level3) !== -1)) {
+                        l4Set.add(item.level4);
+                    }
+                });
+                var l4Opts = Array.from(l4Set).sort();
+                msState.msLevel4.options = l4Opts;
+                buildMultiSelect('msLevel4', l4Opts, [], null);
+            }
+        }
+
+        function applyFcFilter() {
+            var l1 = getMsSelected('msLevel1');
+            var l2 = getMsSelected('msLevel2');
+            var l3 = getMsSelected('msLevel3');
+            var l4 = getMsSelected('msLevel4');
+            // 至少选择一个筛选条件
+            if (l1.length === 0 && l2.length === 0 && l3.length === 0 && l4.length === 0) {
+                fcFilteredData = [];
+                renderEmptyState('请至少选择一个筛选条件后再查询');
+                var info = document.getElementById('foodCategoryPageInfo');
+                if (info) info.textContent = '请先选择筛选条件';
+                document.getElementById('fcFirstBtn').disabled = true;
+                document.getElementById('fcPrevBtn').disabled = true;
+                document.getElementById('fcNextBtn').disabled = true;
+                document.getElementById('fcLastBtn').disabled = true;
+                var nc = document.getElementById('fcPageNumbers');
+                if (nc) nc.innerHTML = '';
+                closeAllMultiSelect();
+                return;
+            }
+            var data = (typeof foodCategoryData !== 'undefined' && foodCategoryData) ? foodCategoryData : [];
+            fcFilteredData = data.filter(function(item) {
+                if (l1.length > 0 && l1.indexOf(item.level1) === -1) return false;
+                if (l2.length > 0 && l2.indexOf(item.level2) === -1) return false;
+                if (l3.length > 0 && l3.indexOf(item.level3) === -1) return false;
+                if (l4.length > 0 && l4.indexOf(item.level4) === -1) return false;
+                return true;
+            });
+            fcCurrentPage = 1;
+            renderFoodCategoryTable();
+            renderFoodCategoryPagination();
+            closeAllMultiSelect();
+        }
+
+        function resetFcFilter() {
+            // Clear all selections
+            Object.keys(msState).forEach(function(k) {
+                msState[k].selected = [];
+                updateMsDisplay(k);
+            });
+            // Rebuild sub-level options
+            var data = (typeof foodCategoryData !== 'undefined' && foodCategoryData) ? foodCategoryData : [];
+            msState.msLevel3.options = [];
+            msState.msLevel4.options = [];
+            buildMultiSelect('msLevel3', [], [], null);
+            buildMultiSelect('msLevel4', [], [], null);
+            // Rebuild level2 from scratch
+            var l2Set = new Set();
+            data.forEach(function(item) { l2Set.add(item.level2); });
+            msState.msLevel2.options = Array.from(l2Set).sort();
+            buildMultiSelect('msLevel2', msState.msLevel2.options, [], null);
+
+            // 重置为初始空状态
+            fcFilteredData = null;
+            fcCurrentPage = 1;
+            fcTotalPages = 1;
+            renderEmptyState('请选择筛选条件后点击「筛选」按钮查询数据');
+            var info = document.getElementById('foodCategoryPageInfo');
+            if (info) info.textContent = '请先筛选';
+            document.getElementById('fcFirstBtn').disabled = true;
+            document.getElementById('fcPrevBtn').disabled = true;
+            document.getElementById('fcNextBtn').disabled = true;
+            document.getElementById('fcLastBtn').disabled = true;
+            var nc = document.getElementById('fcPageNumbers');
+            if (nc) nc.innerHTML = '';
+            closeAllMultiSelect();
+        }
+
+        var regionPopData = [
+            { name: '东城区', pop: 704789 },
+            { name: '西城区', pop: 1106214 },
+            { name: '朝阳区', pop: 3452528 },
+            { name: '海淀区', pop: 3135469 },
+            { name: '丰台区', pop: 2019764 },
+            { name: '石景山区', pop: 545381 },
+            { name: '通州区', pop: 1840295 },
+            { name: '顺义区', pop: 1324044 },
+            { name: '昌平区', pop: 2269487 },
+            { name: '大兴区', pop: 1993591 },
+            { name: '房山区', pop: 1312778 },
+            { name: '门头沟区', pop: 392606 },
+            { name: '怀柔区', pop: 441040 },
+            { name: '平谷区', pop: 457313 },
+            { name: '密云区', pop: 527683 },
+            { name: '延庆区', pop: 345671 },
+            { name: '经开区', pop: 24442 }
+        ];
+
+        function calcTotalRegion() {
+            var cityPop = parseInt(document.getElementById('cityPop').value) || 21893095;
+            var totalBatches = parseInt(document.getElementById('totalBatchesRegion').value) || 50000;
+            
+            var popCells = document.querySelectorAll('#totalRegion tbody tr:not(.summary-row) td:nth-child(2)');
+            var pctCells = document.querySelectorAll('#totalRegion tbody tr:not(.summary-row) td:nth-child(3)');
+            var batchCells = document.querySelectorAll('#totalRegion tbody tr:not(.summary-row) td:nth-child(4)');
+            
+            regionPopData.forEach((r, idx) => {
+                var pct = (r.pop / cityPop * 100).toFixed(2);
+                var batches = Math.round(totalBatches * r.pop / cityPop);
+                
+                if (popCells[idx]) popCells[idx].textContent = r.pop.toLocaleString();
+                if (pctCells[idx]) pctCells[idx].textContent = pct + '%';
+                if (batchCells[idx]) batchCells[idx].textContent = batches.toLocaleString();
+            });
+            
+            var finalSum = 0;
+            batchCells.forEach(cell => {
+                finalSum += parseInt(cell.textContent.replace(/,/g, '')) || 0;
+            });
+            
+            var summaryRow = document.querySelector('#totalRegion tr.summary-row');
+            if (summaryRow) {
+                var tds = summaryRow.querySelectorAll('td');
+                if (tds.length >= 4) {
+                    tds[1].textContent = cityPop.toLocaleString();
+                    tds[2].textContent = '100%';
+                    tds[3].textContent = finalSum.toLocaleString();
+                }
+            }
         }
 
         function calcTotalBusiness() {
@@ -861,6 +1466,40 @@
             var basePct = [3.5, 0.2, 1.1, 0.6, 1.5, 4.2, 6.9, 10.9, 0.15, 0.42, 0.11, 0.19, 2.86, 6.94, 15.10, 2.86, 0.69, 0.28];
             inputs.forEach((input, idx) => {
                 cells[idx].textContent = Math.round(total * basePct[idx] / 100 * (parseFloat(input.value) || 1)).toLocaleString();
+            });
+        }
+
+        // 为业态风险表格生成"建议抽检批次"列（可编辑文本框）
+        function fillBizSuggestedBatches() {
+            var table = document.getElementById('bizRiskTable');
+            if (!table) return;
+            var tbody = table.querySelector('tbody');
+            if (!tbody) return;
+            var rows = tbody.querySelectorAll('tr');
+            rows.forEach(function(row) {
+                // 若该行已有建议抽检批次列，则跳过（避免重复插入）
+                if (row.querySelector('.suggested-batch-cell')) return;
+                var tds = row.querySelectorAll('td');
+                if (tds.length < 2) return;
+                // 主体数量列是倒数第二个 td（操作列是最后一个）
+                var qtyTd = tds[tds.length - 2];
+                if (!qtyTd) return;
+                var qtyText = qtyTd.textContent.trim();
+                var qty = parseInt(qtyText) || 0;
+                // 根据主体数量生成建议抽检批次：约为主体数量的 5%~15%
+                var ratio = 0.05 + Math.random() * 0.10;
+                var batches = Math.max(1, Math.round(qty * ratio));
+                // 创建新单元格，内含可编辑文本框
+                var newTd = document.createElement('td');
+                newTd.className = 'suggested-batch-cell';
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'biz-batch-input';
+                input.value = batches;
+                input.min = 0;
+                input.step = 1;
+                newTd.appendChild(input);
+                qtyTd.parentNode.insertBefore(newTd, qtyTd.nextSibling);
             });
         }
 
@@ -1058,6 +1697,10 @@
         }
 
         var charts = {};
+
+        function initCharts() {
+            // 初始化图表（占位）
+        }
 
         function expandAllTrees() {
             var allIcons = document.querySelectorAll('.expand-icon');
@@ -1583,7 +2226,7 @@
             goToDetailPlanPage(detailPlanCurrentPage + 1);
         }
 
-        var foodCategoryData = [
+        var modalFoodCategoryData = [
             { id: 1, name: '粮食加工品', count: 71 },
             { id: 2, name: '食用油、油脂及其制品', count: 19 },
             { id: 3, name: '调味品', count: 115 },
@@ -1603,13 +2246,13 @@
             { id: 17, name: '水果制品', count: 39 }
         ];
 
-        var foodCategoryPageSize = 10;
-        var foodCategoryCurrentPage = 1;
+        var modalFcPageSize = 10;
+        var modalFcCurrentPage = 1;
 
         function openFoodCategoryModal() {
-            foodCategoryCurrentPage = 1;
-            renderFoodCategoryTable();
-            renderFoodCategoryPagination();
+            modalFcCurrentPage = 1;
+            renderModalFoodCategoryTable();
+            renderModalFoodCategoryPagination();
             document.getElementById('foodCategoryModal').classList.add('show');
         }
 
@@ -1617,10 +2260,10 @@
             document.getElementById('foodCategoryModal').classList.remove('show');
         }
 
-        function renderFoodCategoryTable() {
-            var start = (foodCategoryCurrentPage - 1) * foodCategoryPageSize;
-            var end = start + foodCategoryPageSize;
-            var pageData = foodCategoryData.slice(start, end);
+        function renderModalFoodCategoryTable() {
+            var start = (modalFcCurrentPage - 1) * modalFcPageSize;
+            var end = start + modalFcPageSize;
+            var pageData = modalFoodCategoryData.slice(start, end);
             
             var tbody = document.getElementById('foodCategoryModalBody');
             tbody.innerHTML = '';
@@ -1632,45 +2275,45 @@
             });
         }
 
-        function renderFoodCategoryPagination() {
-            var totalPages = Math.ceil(foodCategoryData.length / foodCategoryPageSize);
-            var pageInfo = '共 ' + foodCategoryData.length + ' 条记录，第 ' + foodCategoryCurrentPage + '/' + totalPages + ' 页';
-            document.getElementById('foodCategoryPageInfo').textContent = pageInfo;
+        function renderModalFoodCategoryPagination() {
+            var totalPages = Math.ceil(modalFoodCategoryData.length / modalFcPageSize);
+            var pageInfo = '共 ' + modalFoodCategoryData.length + ' 条记录，第 ' + modalFcCurrentPage + '/' + totalPages + ' 页';
+            document.getElementById('modalFcPageInfo').textContent = pageInfo;
             
-            var pageNumbers = document.getElementById('fcPageNumbers');
+            var pageNumbers = document.getElementById('mfcPageNumbers');
             pageNumbers.innerHTML = '';
             
             for (var i = 1; i <= totalPages; i++) {
                 var span = document.createElement('span');
-                span.className = 'pagination-number' + (i === foodCategoryCurrentPage ? ' active' : '');
+                span.className = 'pagination-number' + (i === modalFcCurrentPage ? ' active' : '');
                 span.textContent = i;
-                span.onclick = function() { goToFoodCategoryPage(parseInt(this.textContent)); };
+                span.onclick = function() { goToModalFoodCategoryPage(parseInt(this.textContent)); };
                 pageNumbers.appendChild(span);
             }
             
-            document.getElementById('fcFirstBtn').disabled = foodCategoryCurrentPage === 1;
-            document.getElementById('fcPrevBtn').disabled = foodCategoryCurrentPage === 1;
-            document.getElementById('fcNextBtn').disabled = foodCategoryCurrentPage === totalPages;
-            document.getElementById('fcLastBtn').disabled = foodCategoryCurrentPage === totalPages;
+            document.getElementById('mfcFirstBtn').disabled = modalFcCurrentPage === 1;
+            document.getElementById('mfcPrevBtn').disabled = modalFcCurrentPage === 1;
+            document.getElementById('mfcNextBtn').disabled = modalFcCurrentPage === totalPages;
+            document.getElementById('mfcLastBtn').disabled = modalFcCurrentPage === totalPages;
             
-            document.getElementById('fcFirstBtn').onclick = function() { goToFoodCategoryPage(1); };
-            document.getElementById('fcLastBtn').onclick = function() { goToFoodCategoryPage(totalPages); };
+            document.getElementById('mfcFirstBtn').onclick = function() { goToModalFoodCategoryPage(1); };
+            document.getElementById('mfcLastBtn').onclick = function() { goToModalFoodCategoryPage(totalPages); };
         }
 
-        function goToFoodCategoryPage(page) {
-            var totalPages = Math.ceil(foodCategoryData.length / foodCategoryPageSize);
+        function goToModalFoodCategoryPage(page) {
+            var totalPages = Math.ceil(modalFoodCategoryData.length / modalFcPageSize);
             if (page < 1 || page > totalPages) return;
-            foodCategoryCurrentPage = page;
-            renderFoodCategoryTable();
-            renderFoodCategoryPagination();
+            modalFcCurrentPage = page;
+            renderModalFoodCategoryTable();
+            renderModalFoodCategoryPagination();
         }
 
-        function prevFoodCategoryPage() {
-            goToFoodCategoryPage(foodCategoryCurrentPage - 1);
+        function prevModalFoodCategoryPage() {
+            goToModalFoodCategoryPage(modalFcCurrentPage - 1);
         }
 
-        function nextFoodCategoryPage() {
-            goToFoodCategoryPage(foodCategoryCurrentPage + 1);
+        function nextModalFoodCategoryPage() {
+            goToModalFoodCategoryPage(modalFcCurrentPage + 1);
         }
 
         var enterpriseData = [];
@@ -1717,6 +2360,92 @@
 
         function closeEnterpriseModal() {
             document.getElementById('enterpriseModal').classList.remove('show');
+        }
+
+        var regionDataCache = {};
+        var regions = ['东城区', '西城区', '朝阳区', '丰台区', '石景山区', '海淀区', '门头沟区', '房山区', '通州区', '顺义区', '昌平区', '大兴区', '怀柔区', '平谷区', '密云区', '延庆区', '经开区'];
+
+        function openRegionModal(cat, subcat, variety, subvariety, biztype) {
+            var key = cat + '|' + subcat + '|' + variety + '|' + subvariety + '|' + biztype;
+            
+            if (!regionDataCache[key]) {
+                regionDataCache[key] = generateRegionData(cat, subcat, variety, subvariety, biztype);
+            }
+            
+            var data = regionDataCache[key];
+            document.getElementById('regionModalTitle').textContent = subvariety + ' - ' + biztype + ' 区域分布';
+            document.getElementById('regionModalInfo').textContent = '食品大类：' + cat + ' / 食品亚类：' + subcat + ' / 食品品种：' + variety + ' / 食品细类：' + subvariety + ' / 主体业态：' + biztype;
+            
+            var total = data.reduce(function(sum, r) { return sum + r.count; }, 0);
+            document.getElementById('regionModalTotal').textContent = total;
+
+            var tbody = document.getElementById('regionModalBody');
+            tbody.innerHTML = '';
+            var batchTotal = 0;
+            data.forEach(function(r) {
+                var pct = total > 0 ? ((r.count / total) * 100).toFixed(2) + '%' : '0%';
+                // 根据主体数量随机生成建议抽检批次：约为主体数量的 5%~15%
+                var ratio = 0.05 + Math.random() * 0.10;
+                var batches = Math.max(1, Math.round(r.count * ratio));
+                batchTotal += batches;
+                var tr = document.createElement('tr');
+                var batchTd = document.createElement('td');
+                var batchInput = document.createElement('input');
+                batchInput.type = 'number';
+                batchInput.className = 'biz-batch-input';
+                batchInput.value = batches;
+                batchInput.min = 0;
+                batchInput.step = 1;
+                // 编辑时实时更新合计
+                batchInput.addEventListener('input', function() {
+                    var sum = 0;
+                    var inputs = tbody.querySelectorAll('.biz-batch-input');
+                    inputs.forEach(function(inp) { sum += (parseInt(inp.value) || 0); });
+                    document.getElementById('regionModalBatchTotal').textContent = sum;
+                });
+                batchTd.appendChild(batchInput);
+                tr.innerHTML = '<td>' + r.name + '</td><td>' + r.count + '</td><td>' + pct + '</td>';
+                tr.appendChild(batchTd);
+                tbody.appendChild(tr);
+            });
+            document.getElementById('regionModalBatchTotal').textContent = batchTotal;
+
+            document.getElementById('regionModal').classList.add('show');
+        }
+
+        function closeRegionModal() {
+            document.getElementById('regionModal').classList.remove('show');
+        }
+
+        // 保存区域分布弹窗中编辑后的建议抽检批次
+        function saveRegionBatches() {
+            var tbody = document.getElementById('regionModalBody');
+            if (!tbody) return;
+            var inputs = tbody.querySelectorAll('.biz-batch-input');
+            var savedData = [];
+            inputs.forEach(function(inp, idx) {
+                var tr = inp.closest('tr');
+                var regionName = tr ? tr.cells[0].textContent.trim() : ('区域' + (idx + 1));
+                savedData.push({ region: regionName, batches: parseInt(inp.value) || 0 });
+            });
+            console.log('区域建议抽检批次已保存:', savedData);
+            alert('保存成功！共 ' + savedData.length + ' 条区域建议抽检批次数据。');
+            closeRegionModal();
+        }
+
+        function generateRegionData(cat, subcat, variety, subvariety, biztype) {
+            var baseCount = 100;
+            var seed = 0;
+            var str = cat + subcat + variety + subvariety + biztype;
+            for (var i = 0; i < str.length; i++) {
+                seed = (seed * 31 + str.charCodeAt(i)) & 0x7fffffff;
+            }
+            
+            return regions.map(function(name, idx) {
+                var variance = ((seed + idx * 7) % 100) / 100;
+                var count = Math.floor(baseCount * (0.3 + variance * 1.5));
+                return { name: name, count: count };
+            });
         }
 
         function renderEnterpriseTable() {
@@ -1845,13 +2574,23 @@
         }
 
         window.onload = function() {
-            initCharts();
-            calcTotalVariety();
-            expandAllTrees();
-            initTestRiskPagination();
-            initBizRiskPagination();
-            initTotalPlanPagination();
-            initDetailPlanPagination();
+            var _calls = [
+                function() { if (typeof initCharts === 'function') initCharts(); },
+                function() { if (typeof initFoodCategoryTable === 'function') initFoodCategoryTable(); },
+                function() { if (typeof calcTotalVariety === 'function') calcTotalVariety(); },
+                function() { if (typeof expandAllTrees === 'function') expandAllTrees(); },
+                function() { if (typeof initTestRiskPagination === 'function') initTestRiskPagination(); },
+                function() { if (typeof initBizRiskPagination === 'function') initBizRiskPagination(); },
+                function() { if (typeof initTotalPlanPagination === 'function') initTotalPlanPagination(); },
+                function() { if (typeof initDetailPlanPagination === 'function') initDetailPlanPagination(); },
+                function() { if (typeof calcTotalRegion === 'function') calcTotalRegion(); },
+                function() { if (typeof fillBizSuggestedBatches === 'function') fillBizSuggestedBatches(); },
+                function() { if (typeof initRegionDetailTable === 'function') initRegionDetailTable(); },
+                function() { if (typeof initPlanSummaryTable === 'function') initPlanSummaryTable(); }
+            ];
+            for (var i = 0; i < _calls.length; i++) {
+                try { _calls[i](); } catch (e) { console.error('初始化第' + (i+1) + '步出错:', e); }
+            }
         };
 
         window.onresize = function() {
@@ -1867,6 +2606,453 @@
 
         function closeAnalysisModal() {
             document.getElementById('analysisModal').classList.remove('show');
+        }
+
+        // ============ 区域抽检明细表 ============
+        var regionDetailData = null;
+        var regionDetailCurrentPage = 1;
+        var regionDetailPageSize = 50;
+        var regionDetailTotalPages = 1;
+
+        var REGIONS = ['东城区', '西城区', '朝阳区', '丰台区', '石景山区', '海淀区', '门头沟区', '房山区', '通州区', '顺义区', '昌平区', '大兴区', '怀柔区', '平谷区', '密云区', '延庆区', '经开区'];
+
+        var REGION_CATEGORIES = [
+            {
+                name: '粮食加工品',
+                subCategories: [
+                    { name: '小麦粉', varieties: ['小麦粉'] },
+                    { name: '大米', varieties: ['大米'] }
+                ]
+            },
+            {
+                name: '食用油、油脂及其制品',
+                subCategories: [
+                    { name: '花生油', varieties: ['花生油'] },
+                    { name: '玉米油', varieties: ['玉米油'] },
+                    { name: '芝麻油', varieties: ['芝麻油'] },
+                    { name: '橄榄油、油橄榄果渣油', varieties: ['橄榄油', '油橄榄果渣油'] },
+                    { name: '菜籽油', varieties: ['菜籽油'] },
+                    { name: '大豆油', varieties: ['大豆油'] },
+                    { name: '食用植物调和油', varieties: ['食用植物调和油'] },
+                    { name: '其他食用植物油', varieties: ['其他食用植物油'] }
+                ]
+            }
+        ];
+
+        var REGION_BIZ_TYPES = ['生产', '经营', '餐饮'];
+
+        function genRegionDetailData() {
+            var rows = [];
+            // 生成粮食加工品类数据
+            REGION_CATEGORIES.forEach(function(cat) {
+                cat.subCategories.forEach(function(sub) {
+                    sub.varieties.forEach(function(varName) {
+                        REGION_BIZ_TYPES.forEach(function(bizType) {
+                            var row = {
+                                category: cat.name,
+                                subCategory: sub.name,
+                                variety: varName,
+                                bizType: bizType,
+                                regions: {}
+                            };
+                            // 根据品类和环节生成种子
+                            var seed = cat.name.length * 31 + sub.name.length * 17 + varName.length * 7 + REGION_BIZ_TYPES.indexOf(bizType) * 3;
+                            REGIONS.forEach(function(region, idx) {
+                                var rnd = ((seed + idx * 13) % 100) / 100;
+                                var base = 2;
+                                if (bizType === '生产') base = 8;
+                                else if (bizType === '经营') base = 15;
+                                else if (bizType === '餐饮') base = 12;
+                                var val = Math.floor(rnd * base * 3 + (rnd > 0.7 ? base : 0));
+                                row.regions[region] = val;
+                            });
+                            rows.push(row);
+                        });
+                    });
+                });
+            });
+            return rows;
+        }
+
+        function calcRegionDetailRowTotals(row) {
+            var total = 0;
+            REGIONS.forEach(function(r) { total += (row.regions[r] || 0); });
+            return total;
+        }
+
+        function initRegionDetailTable() {
+            var head = document.getElementById('regionDetailHead');
+            var body = document.getElementById('regionDetailBody');
+            if (!head || !body) return;
+
+            // 生成表头
+            var headHtml = '<tr><th style="text-align:left; min-width:140px;">食品细类</th><th style="min-width:60px;">环节</th>';
+            REGIONS.forEach(function(r) {
+                headHtml += '<th>' + r + '</th>';
+            });
+            headHtml += '<th style="background:#e8f5ee; min-width:60px;">合计</th>';
+            headHtml += '</tr>';
+            head.innerHTML = headHtml;
+
+            // 生成数据
+            regionDetailData = genRegionDetailData();
+            regionDetailTotalPages = Math.ceil(regionDetailData.length / regionDetailPageSize);
+            regionDetailCurrentPage = 1;
+            renderRegionDetailTable();
+            renderRegionDetailPagination();
+        }
+
+        function renderRegionDetailTable() {
+            var body = document.getElementById('regionDetailBody');
+            if (!body || !regionDetailData) return;
+
+            var start = (regionDetailCurrentPage - 1) * regionDetailPageSize;
+            var end = Math.min(start + regionDetailPageSize, regionDetailData.length);
+            var pageData = regionDetailData.slice(start, end);
+
+            var html = '';
+            var lastCategory = '', lastSubCategory = '', lastVariety = '';
+            var rowGroups = {}; // 用于跟踪每个组的起始行位置
+
+            // 计算所有组信息
+            var groups = [];
+            regionDetailData.forEach(function(row, idx) {
+                if (!rowGroups[row.category + '|' + row.subCategory]) {
+                    rowGroups[row.category + '|' + row.subCategory] = { start: idx, count: 0 };
+                }
+                rowGroups[row.category + '|' + row.subCategory].count++;
+            });
+
+            pageData.forEach(function(row, idx) {
+                var absIdx = start + idx;
+                var rowTotal = calcRegionDetailRowTotals(row);
+                var key = row.category + '|' + row.subCategory;
+                var groupInfo = rowGroups[key];
+
+                html += '<tr>';
+                // 食品细类（合并）
+                if (absIdx === groupInfo.start) {
+                    html += '<td rowspan="' + groupInfo.count + '" class="category-header">' + row.subCategory + '</td>';
+                }
+                // 环节
+                html += '<td class="level-cell">' + row.bizType + '</td>';
+                // 各区域数据
+                REGIONS.forEach(function(r) {
+                    var val = row.regions[r] || 0;
+                    var cls = val === 0 ? ' class="empty-cell"' : '';
+                    html += '<td' + cls + '>' + val + '</td>';
+                });
+                // 合计
+                html += '<td style="background:#f0f9f4; font-weight:600;">' + rowTotal + '</td>';
+                html += '</tr>';
+            });
+
+            // 如果是该页的最后一行或分页边界，添加小计行
+            html += generateSubtotalRows(pageData, start);
+
+            body.innerHTML = html;
+        }
+
+        function generateSubtotalRows(pageData, globalStart) {
+            var html = '';
+            // 按 subCategory 分组计算小计
+            var subGroups = {};
+            pageData.forEach(function(row, idx) {
+                var key = row.category + '|' + row.subCategory;
+                if (!subGroups[key]) subGroups[key] = { rows: [], startIdx: globalStart + idx };
+                subGroups[key].rows.push(row);
+            });
+
+            Object.keys(subGroups).forEach(function(key) {
+                var g = subGroups[key];
+                var cat = g.rows[0].category;
+                var sub = g.rows[0].subCategory;
+
+                // 判断是否为完整组（该组所有行都在当前页）
+                var allRows = regionDetailData.filter(function(r) { return r.category === cat && r.subCategory === sub; });
+                if (g.rows.length < allRows.length) return; // 不完整组，不显示小计
+
+                html += '<tr class="subtotal-row">';
+                html += '<td colspan="2" style="text-align:left; padding-left:18px;">' + sub + '小计</td>';
+                var subTotals = {};
+                REGIONS.forEach(function(r) {
+                    subTotals[r] = 0;
+                    g.rows.forEach(function(row) { subTotals[r] += (row.regions[r] || 0); });
+                    html += '<td>' + subTotals[r] + '</td>';
+                });
+                var subTotalSum = 0;
+                REGIONS.forEach(function(r) { subTotalSum += subTotals[r]; });
+                html += '<td style="background:#fff3cd; font-weight:700;">' + subTotalSum + '</td>';
+                html += '</tr>';
+            });
+
+            // 大类小计
+            var catGroups = {};
+            pageData.forEach(function(row, idx) {
+                if (!catGroups[row.category]) catGroups[row.category] = [];
+                catGroups[row.category].push(row);
+            });
+
+            Object.keys(catGroups).forEach(function(cat) {
+                var catRows = catGroups[cat];
+                var allCatRows = regionDetailData.filter(function(r) { return r.category === cat; });
+                if (catRows.length < allCatRows.length) return;
+
+                html += '<tr class="grand-subtotal-row">';
+                html += '<td colspan="2" style="text-align:left; padding-left:18px;">' + cat + '小计</td>';
+                var catTotals = {};
+                REGIONS.forEach(function(r) {
+                    catTotals[r] = 0;
+                    catRows.forEach(function(row) { catTotals[r] += (row.regions[r] || 0); });
+                    html += '<td>' + catTotals[r] + '</td>';
+                });
+                var catTotalSum = 0;
+                REGIONS.forEach(function(r) { catTotalSum += catTotals[r]; });
+                html += '<td style="background:#d4edda; font-weight:700;">' + catTotalSum + '</td>';
+                html += '</tr>';
+            });
+
+            return html;
+        }
+
+        function renderRegionDetailPagination() {
+            var info = document.getElementById('regionDetailPageInfo');
+            if (info) {
+                info.textContent = '共 ' + regionDetailData.length + ' 条记录，第 ' + regionDetailCurrentPage + '/' + regionDetailTotalPages + ' 页';
+            }
+            var nc = document.getElementById('regionDetailPageNumbers');
+            if (!nc) return;
+            var html = '';
+            var s = Math.max(1, regionDetailCurrentPage - 2);
+            var e = Math.min(regionDetailTotalPages, regionDetailCurrentPage + 2);
+            for (var i = s; i <= e; i++) {
+                html += '<span class="pagination-number' + (i === regionDetailCurrentPage ? ' active' : '') + '" onclick="goToRegionDetailPage(' + i + ')">' + i + '</span>';
+            }
+            nc.innerHTML = html;
+        }
+
+        function goToRegionDetailPage(page) {
+            if (page === -1) page = regionDetailTotalPages;
+            page = Math.max(1, Math.min(page, regionDetailTotalPages));
+            if (page === regionDetailCurrentPage) return;
+            regionDetailCurrentPage = page;
+            renderRegionDetailTable();
+            renderRegionDetailPagination();
+        }
+
+        function prevRegionDetailPage() {
+            if (regionDetailCurrentPage > 1) goToRegionDetailPage(regionDetailCurrentPage - 1);
+        }
+
+        function nextRegionDetailPage() {
+            if (regionDetailCurrentPage < regionDetailTotalPages) goToRegionDetailPage(regionDetailCurrentPage + 1);
+        }
+
+        // ============ 计划汇总表 ============
+        var planSummaryData = null;
+        var planSummaryCurrentPage = 1;
+        var planSummaryPageSize = 20;
+        var planSummaryTotalPages = 1;
+
+        var PLAN_SUMMARY_BIZ_TYPES = ['生产', '经营', '经营网络', '餐饮', '特食'];
+
+        function genPlanSummaryData() {
+            var rows = [];
+            var data = (typeof foodCategoryData !== 'undefined' && foodCategoryData) ? foodCategoryData : [];
+            
+            if (!data || data.length === 0) {
+                // 使用默认数据
+                data = [
+                    { level1: '粮食加工品', level2: '小麦粉', level3: '小麦粉', level4: '小麦粉', batches: 8 },
+                    { level1: '粮食加工品', level2: '大米', level3: '大米', level4: '大米', batches: 7 },
+                    { level1: '粮食加工品', level2: '挂面', level3: '挂面', level4: '挂面', batches: 4 },
+                    { level1: '粮食加工品', level2: '其他粮食加工品', level3: '谷物加工品', level4: '谷物加工品', batches: 6 },
+                    { level1: '粮食加工品', level2: '其他粮食加工品', level3: '谷物碾磨加工品', level4: '玉米粉(片、渣)', batches: 34 },
+                    { level1: '粮食加工品', level2: '其他粮食加工品', level3: '谷物碾磨加工品', level4: '米粉', batches: 4 },
+                    { level1: '粮食加工品', level2: '其他粮食加工品', level3: '谷物粉类制成品', level4: '生湿面制品', batches: 12 },
+                    { level1: '粮食加工品', level2: '其他粮食加工品', level3: '谷物粉类制成品', level4: '发酵面制品', batches: 14 },
+                    { level1: '茶叶及相关制品', level2: '茶叶', level3: '绿茶', level4: '绿茶', batches: 8 },
+                    { level1: '茶叶及相关制品', level2: '茶叶', level3: '红茶', level4: '红茶', batches: 8 },
+                    { level1: '茶叶及相关制品', level2: '茶叶', level3: '乌龙茶', level4: '乌龙茶', batches: 8 },
+                    { level1: '茶叶及相关制品', level2: '含茶制品和代用茶', level3: '代用茶', level4: '代用茶', batches: 10 }
+                ];
+            }
+
+            data.forEach(function(item, idx) {
+                var row = {
+                    level1: item.level1 || item.level_1 || '',
+                    level2: item.level2 || item.level_2 || '',
+                    level3: item.level3 || item.level_3 || '',
+                    level4: item.level4 || item.level_4 || '',
+                    bizData: {},
+                    subTotal: 0
+                };
+
+                // 生成各业态数据
+                var baseBatches = item.batches || 10;
+                var seed = (row.level1.length * 31 + row.level2.length * 17 + row.level3.length * 7 + idx * 3) % 100;
+                
+                PLAN_SUMMARY_BIZ_TYPES.forEach(function(biz, bizIdx) {
+                    var rnd = ((seed + bizIdx * 13) % 100) / 100;
+                    var val = Math.floor(rnd * baseBatches * 0.5 + (rnd > 0.6 ? baseBatches * 0.3 : 0));
+                    if (biz === '经营' || biz === '餐饮') {
+                        val = Math.floor(rnd * baseBatches * 0.4 + baseBatches * 0.1);
+                    }
+                    row.bizData[biz] = val;
+                    row.subTotal += val;
+                });
+
+                rows.push(row);
+            });
+
+            return rows;
+        }
+
+        function calcPlanSummaryCategoryTotals() {
+            var totals = {};
+            if (!planSummaryData) return totals;
+            
+            planSummaryData.forEach(function(row) {
+                if (!totals[row.level1]) {
+                    totals[row.level1] = { bizData: {}, total: 0 };
+                    PLAN_SUMMARY_BIZ_TYPES.forEach(function(biz) {
+                        totals[row.level1].bizData[biz] = 0;
+                    });
+                }
+                PLAN_SUMMARY_BIZ_TYPES.forEach(function(biz) {
+                    totals[row.level1].bizData[biz] += (row.bizData[biz] || 0);
+                });
+                totals[row.level1].total += row.subTotal;
+            });
+            
+            return totals;
+        }
+
+        function initPlanSummaryTable() {
+            var body = document.getElementById('planSummaryTableBody');
+            if (!body) return;
+
+            planSummaryData = genPlanSummaryData();
+            planSummaryTotalPages = Math.ceil(planSummaryData.length / planSummaryPageSize);
+            planSummaryCurrentPage = 1;
+            renderPlanSummaryTable();
+            renderPlanSummaryPagination();
+        }
+
+        function renderPlanSummaryTable() {
+            var body = document.getElementById('planSummaryTableBody');
+            if (!body || !planSummaryData) return;
+
+            var start = (planSummaryCurrentPage - 1) * planSummaryPageSize;
+            var end = Math.min(start + planSummaryPageSize, planSummaryData.length);
+            var pageData = planSummaryData.slice(start, end);
+
+            var catTotals = calcPlanSummaryCategoryTotals();
+            
+            // 计算大类在所有数据中的起始位置和结束位置
+            var catPositions = {};
+            planSummaryData.forEach(function(row, idx) {
+                if (!catPositions[row.level1]) {
+                    catPositions[row.level1] = { start: idx, end: idx };
+                } else {
+                    catPositions[row.level1].end = idx;
+                }
+            });
+
+            var html = '';
+            var currentCat = '';
+            var catRowCount = 0;
+
+            pageData.forEach(function(row, idx) {
+                var absIdx = start + idx;
+                var isCatStart = (absIdx === catPositions[row.level1].start);
+                var isCatEnd = (absIdx === catPositions[row.level1].end);
+                var catRowSpan = catPositions[row.level1].end - catPositions[row.level1].start + 1;
+
+                html += '<tr>';
+                html += '<td>' + (absIdx + 1) + '</td>';
+                
+                // 食品大类（合并单元格）
+                if (isCatStart) {
+                    html += '<td rowspan="' + catRowSpan + '" style="font-weight:600; background:#f0f7ff;">' + row.level1 + '</td>';
+                }
+                
+                html += '<td>' + row.level2 + '</td>';
+                html += '<td>' + row.level3 + '</td>';
+                html += '<td>' + row.level4 + '</td>';
+                
+                // 各业态数据
+                PLAN_SUMMARY_BIZ_TYPES.forEach(function(biz) {
+                    html += '<td>' + (row.bizData[biz] || 0) + '</td>';
+                });
+                
+                // 细类合计
+                html += '<td style="font-weight:600; color:#1e73be;">' + row.subTotal + '</td>';
+                
+                // 大类合计（合并单元格）
+                if (isCatStart) {
+                    html += '<td rowspan="' + catRowSpan + '" style="font-weight:700; background:#e8f5ee; color:#1e9a6c;">' + catTotals[row.level1].total + '</td>';
+                }
+                
+                html += '</tr>';
+            });
+
+            // 添加总计行
+            var grandTotal = { bizData: {}, total: 0 };
+            PLAN_SUMMARY_BIZ_TYPES.forEach(function(biz) {
+                grandTotal.bizData[biz] = 0;
+            });
+            planSummaryData.forEach(function(row) {
+                PLAN_SUMMARY_BIZ_TYPES.forEach(function(biz) {
+                    grandTotal.bizData[biz] += (row.bizData[biz] || 0);
+                });
+                grandTotal.total += row.subTotal;
+            });
+
+            html += '<tr style="background:#fff9e6; font-weight:700;">';
+            html += '<td colspan="5">总计</td>';
+            PLAN_SUMMARY_BIZ_TYPES.forEach(function(biz) {
+                html += '<td>' + grandTotal.bizData[biz] + '</td>';
+            });
+            html += '<td style="color:#1e73be;">' + grandTotal.total + '</td>';
+            html += '<td>-</td>';
+            html += '</tr>';
+
+            body.innerHTML = html;
+        }
+
+        function renderPlanSummaryPagination() {
+            var info = document.getElementById('planSummaryPageInfo');
+            if (info) {
+                info.textContent = '共 ' + planSummaryData.length + ' 条记录，第 ' + planSummaryCurrentPage + '/' + planSummaryTotalPages + ' 页';
+            }
+            var nc = document.getElementById('planSummaryPageNumbers');
+            if (!nc) return;
+            var html = '';
+            var s = Math.max(1, planSummaryCurrentPage - 2);
+            var e = Math.min(planSummaryTotalPages, planSummaryCurrentPage + 2);
+            for (var i = s; i <= e; i++) {
+                html += '<span class="pagination-number' + (i === planSummaryCurrentPage ? ' active' : '') + '" onclick="goToPlanSummaryPage(' + i + ')">' + i + '</span>';
+            }
+            nc.innerHTML = html;
+        }
+
+        function goToPlanSummaryPage(page) {
+            if (!planSummaryData) return;
+            if (page === -1) page = planSummaryTotalPages;
+            page = Math.max(1, Math.min(page, planSummaryTotalPages));
+            if (page === planSummaryCurrentPage) return;
+            planSummaryCurrentPage = page;
+            renderPlanSummaryTable();
+            renderPlanSummaryPagination();
+        }
+
+        function prevPlanSummaryPage() {
+            if (planSummaryCurrentPage > 1) goToPlanSummaryPage(planSummaryCurrentPage - 1);
+        }
+
+        function nextPlanSummaryPage() {
+            if (planSummaryCurrentPage < planSummaryTotalPages) goToPlanSummaryPage(planSummaryCurrentPage + 1);
         }
 
         function initModalCharts() {
@@ -2097,14 +3283,14 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="pagination-container" id="foodCategoryPagination">
-                    <div class="pagination-info" id="foodCategoryPageInfo">共 17 条记录，第 1/2 页</div>
+                <div class="pagination-container" id="modalFcPagination">
+                    <div class="pagination-info" id="modalFcPageInfo">共 17 条记录，第 1/2 页</div>
                     <div class="pagination">
-                        <button class="pagination-btn" onclick="goToFoodCategoryPage(1)" id="fcFirstBtn">首页</button>
-                        <button class="pagination-btn" onclick="prevFoodCategoryPage()" id="fcPrevBtn">上一页</button>
-                        <span class="pagination-numbers" id="fcPageNumbers"></span>
-                        <button class="pagination-btn" onclick="nextFoodCategoryPage()" id="fcNextBtn">下一页</button>
-                        <button class="pagination-btn" onclick="goToFoodCategoryPage(2)" id="fcLastBtn">末页</button>
+                        <button class="pagination-btn" onclick="goToModalFoodCategoryPage(1)" id="mfcFirstBtn">首页</button>
+                        <button class="pagination-btn" onclick="prevModalFoodCategoryPage()" id="mfcPrevBtn">上一页</button>
+                        <span class="pagination-numbers" id="mfcPageNumbers"></span>
+                        <button class="pagination-btn" onclick="nextModalFoodCategoryPage()" id="mfcNextBtn">下一页</button>
+                        <button class="pagination-btn" onclick="goToModalFoodCategoryPage(2)" id="mfcLastBtn">末页</button>
                     </div>
                 </div>
             </div>
@@ -2151,6 +3337,44 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeEnterpriseModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="regionModal" class="modal-overlay" onclick="closeRegionModal()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="width: 90%; max-width: 1100px;">
+            <div class="modal-header">
+                <div class="modal-title" id="regionModalTitle">区域分布</div>
+                <div class="modal-close" onclick="closeRegionModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="info-text" id="regionModalInfo" style="margin-bottom: 12px;"></div>
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>区域</th>
+                                <th>主体数量</th>
+                                <th>占比</th>
+                                <th>建议抽检批次</th>
+                            </tr>
+                        </thead>
+                        <tbody id="regionModalBody">
+                        </tbody>
+                        <tfoot>
+                            <tr class="summary-row">
+                                <td>合计</td>
+                                <td id="regionModalTotal">-</td>
+                                <td>100%</td>
+                                <td id="regionModalBatchTotal">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRegionModal()">关闭</button>
+                <button class="btn btn-primary" onclick="saveRegionBatches()">保存</button>
             </div>
         </div>
     </div>

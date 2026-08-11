@@ -161,13 +161,6 @@
         .region-detail-table .grand-subtotal-row td:first-child { background: #e8f5ee; }
         .region-detail-table .empty-cell { background: #fafbfc; }
         .region-detail-wrapper { overflow-x: auto; max-height: 500px; border: 1px solid #d0d7de; border-radius: 6px; }
-        /* 隐藏食品品类表格的抽检比率和抽检批次列 */
-        #foodCategoryTable th:nth-child(7),
-        #foodCategoryTable td:nth-child(7),
-        #foodCategoryTable th:nth-child(8),
-        #foodCategoryTable td:nth-child(8) {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -191,6 +184,7 @@
                 <div class="content-title" id="pageTitle">品类数量设定</div>
                 <div class="content-actions">
                     <button class="btn btn-primary" onclick="exportPlan()">保存</button>
+                    <button class="btn btn-primary" onclick="exportPlan()">导出</button>
                 </div>
             </div>
             
@@ -245,15 +239,12 @@
                             <div class="filter-actions">
                                 <button class="btn btn-primary" onclick="applyFcFilter()">筛选</button>
                                 <button class="btn btn-secondary" onclick="resetFcFilter()">重置</button>
-                                <button class="btn btn-primary" onclick="saveFcSelected()" style="background-color: #1e9a6c;">选中保存</button>
-                                <button class="btn btn-secondary" onclick="previewFcSaved()">结果预览 (<span id="fcSavedCount">0</span>)</button>
                             </div>
                         </div>
                         <div class="table-container">
                             <table class="data-table" id="foodCategoryTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 40px;"><input type="checkbox" id="fcSelectAll" onchange="toggleFcSelectAll(this)"></th>
                                         <th>食品大类(一级)</th>
                                         <th>食品亚类(二级)</th>
                                         <th>食品次亚类(三级)</th>
@@ -383,44 +374,55 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','生产',256)">256</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','小麦粉','小麦粉','小麦粉','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','经营',189)">189</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','小麦粉','小麦粉','小麦粉','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','餐饮',142)">142</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','小麦粉','小麦粉','小麦粉','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','生产',198)">198</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','大米','大米','大米','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','经营',156)">156</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','大米','大米','大米','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','餐饮',118)">118</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','大米','大米','大米','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','生产',134)">134</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','挂面','挂面','挂面','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','经营',98)">98</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','挂面','挂面','挂面','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','餐饮',76)">76</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','挂面','挂面','挂面','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','生产',89)">89</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物加工品','谷物加工品','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','经营',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物加工品','谷物加工品','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','餐饮',52)">52</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物加工品','谷物加工品','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','生产',112)">112</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','玉米粉(片、渣)','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','经营',85)">85</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','玉米粉(片、渣)','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','餐饮',64)">64</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','玉米粉(片、渣)','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','生产',167)">167</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','米粉','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','经营',123)">123</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','米粉','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','餐饮',95)">95</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','米粉','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','生产',76)">76</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','其他谷物碾磨加工品','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','经营',55)">55</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','其他谷物碾磨加工品','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','餐饮',42)">42</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','其他谷物碾磨加工品','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','生产',189)">189</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','生湿面制品','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','经营',142)">142</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','生湿面制品','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','餐饮',112)">112</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','生湿面制品','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','生产',156)">156</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','发酵面制品','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','经营',118)">118</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','发酵面制品','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','餐饮',92)">92</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','发酵面制品','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','生产',123)">123</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','米粉制品','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','经营',92)">92</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','米粉制品','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','餐饮',72)">72</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','米粉制品','餐饮')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','生产',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','其他谷物粉类制成品','生产')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','经营',48)">48</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','其他谷物粉类制成品','经营')">区域分布</a></td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','餐饮',36)">36</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','其他谷物粉类制成品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">小麦粉</td><td rowspan="4">小麦粉</td><td rowspan="4">小麦粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','生产',256)">256</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','小麦粉','小麦粉','小麦粉','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','经营',189)">189</span></td><td><a class="action-link" onclick="openRegionModal('小麦粉','小麦粉','小麦粉','小麦粉','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','餐饮',142)">142</span></td><td><a class="action-link" onclick="openRegionModal('小麦粉','小麦粉','小麦粉','小麦粉','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','特食',78)">78</span></td><td><a class="action-link" onclick="openRegionModal('小麦粉','小麦粉','小麦粉','小麦粉','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">大米</td><td rowspan="4">大米</td><td rowspan="4">大米</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','生产',198)">198</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','大米','大米','大米','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','经营',156)">156</span></td><td><a class="action-link" onclick="openRegionModal('大米','大米','大米','大米','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','餐饮',118)">118</span></td><td><a class="action-link" onclick="openRegionModal('大米','大米','大米','大米','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','特食',65)">65</span></td><td><a class="action-link" onclick="openRegionModal('大米','大米','大米','大米','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">挂面</td><td rowspan="4">挂面</td><td rowspan="4">挂面</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','生产',134)">134</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','挂面','挂面','挂面','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','经营',98)">98</span></td><td><a class="action-link" onclick="openRegionModal('挂面','挂面','挂面','挂面','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','餐饮',76)">76</span></td><td><a class="action-link" onclick="openRegionModal('挂面','挂面','挂面','挂面','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','特食',45)">45</span></td><td><a class="action-link" onclick="openRegionModal('挂面','挂面','挂面','挂面','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物加工品</td><td rowspan="4">谷物加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','生产',89)">89</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物加工品','谷物加工品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','经营',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('谷物加工品','谷物加工品','谷物加工品','谷物加工品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','餐饮',52)">52</span></td><td><a class="action-link" onclick="openRegionModal('谷物加工品','谷物加工品','谷物加工品','谷物加工品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','特食',32)">32</span></td><td><a class="action-link" onclick="openRegionModal('谷物加工品','谷物加工品','谷物加工品','谷物加工品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">玉米粉(片、渣)</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','生产',112)">112</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','玉米粉(片、渣)','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','经营',85)">85</span></td><td><a class="action-link" onclick="openRegionModal('玉米粉','玉米粉','玉米粉','玉米粉','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','餐饮',64)">64</span></td><td><a class="action-link" onclick="openRegionModal('玉米粉','玉米粉','玉米粉','玉米粉','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','特食',38)">38</span></td><td><a class="action-link" onclick="openRegionModal('玉米粉','玉米粉','玉米粉','玉米粉','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">米粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','生产',167)">167</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','米粉','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','经营',123)">123</span></td><td><a class="action-link" onclick="openRegionModal('米粉','米粉','米粉','米粉','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','餐饮',95)">95</span></td><td><a class="action-link" onclick="openRegionModal('米粉','米粉','米粉','米粉','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','特食',56)">56</span></td><td><a class="action-link" onclick="openRegionModal('米粉','米粉','米粉','米粉','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">其他谷物碾磨加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','生产',76)">76</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物碾磨加工品','其他谷物碾磨加工品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','经营',55)">55</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','餐饮',42)">42</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','特食',26)">26</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','其他谷物碾磨加工品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">生湿面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','生产',189)">189</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','生湿面制品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','经营',142)">142</span></td><td><a class="action-link" onclick="openRegionModal('生湿面制品','生湿面制品','生湿面制品','生湿面制品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','餐饮',112)">112</span></td><td><a class="action-link" onclick="openRegionModal('生湿面制品','生湿面制品','生湿面制品','生湿面制品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','特食',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('生湿面制品','生湿面制品','生湿面制品','生湿面制品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">发酵面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','生产',156)">156</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','发酵面制品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','经营',118)">118</span></td><td><a class="action-link" onclick="openRegionModal('发酵面制品','发酵面制品','发酵面制品','发酵面制品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','餐饮',92)">92</span></td><td><a class="action-link" onclick="openRegionModal('发酵面制品','发酵面制品','发酵面制品','发酵面制品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','特食',54)">54</span></td><td><a class="action-link" onclick="openRegionModal('发酵面制品','发酵面制品','发酵面制品','发酵面制品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">米粉制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','生产',123)">123</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','米粉制品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','经营',92)">92</span></td><td><a class="action-link" onclick="openRegionModal('米粉制品','米粉制品','米粉制品','米粉制品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','餐饮',72)">72</span></td><td><a class="action-link" onclick="openRegionModal('米粉制品','米粉制品','米粉制品','米粉制品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','特食',42)">42</span></td><td><a class="action-link" onclick="openRegionModal('米粉制品','米粉制品','米粉制品','米粉制品','特食')">区域分布</a></td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">其他谷物粉类制成品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','生产',67)">67</span></td><td><a class="action-link" onclick="openRegionModal('粮食加工品','其他粮食加工品','谷物粉类制成品','其他谷物粉类制成品','生产')">区域分布</a></td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','经营',48)">48</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','经营')">区域分布</a></td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','餐饮',36)">36</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','餐饮')">区域分布</a></td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','特食',24)">24</span></td><td><a class="action-link" onclick="openRegionModal('其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','其他谷物粉类制成品','特食')">区域分布</a></td></tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="pagination-container" id="bizRiskPagination">
-                            <div class="pagination-info" id="bizRiskPageInfo">共 33 条记录，第 1/3 页</div>
+                            <div class="pagination-info" id="bizRiskPageInfo">共 44 条记录，第 1/3 页</div>
                             <div class="pagination">
                                 <button class="pagination-btn" onclick="goToBizRiskPage(1)" id="brFirstBtn">首页</button>
                                 <button class="pagination-btn" onclick="prevBizRiskPage()" id="brPrevBtn">上一页</button>
@@ -526,50 +528,50 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','生产',256)">256</span></td><td><input type="number" class="risk-input" value="2.0" step="0.1"></td><td class="calc-cell">2000</td></tr>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','经营',189)">189</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','餐饮',142)">142</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
-                                    <tr><td>粮食加工品</td><td>小麦粉</td><td>小麦粉</td><td>小麦粉</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','特食',78)">78</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','生产',198)">198</span></td><td><input type="number" class="risk-input" value="2.0" step="0.1"></td><td class="calc-cell">2000</td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','经营',156)">156</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','餐饮',118)">118</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
-                                    <tr><td>粮食加工品</td><td>大米</td><td>大米</td><td>大米</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','特食',65)">65</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','生产',134)">134</span></td><td><input type="number" class="risk-input" value="1.8" step="0.1"></td><td class="calc-cell">1800</td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','经营',98)">98</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','餐饮',76)">76</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>挂面</td><td>挂面</td><td>挂面</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','特食',45)">45</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','生产',89)">89</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','经营',67)">67</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','餐饮',52)">52</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物加工品</td><td>谷物加工品</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','特食',32)">32</span></td><td><input type="number" class="risk-input" value="0.6" step="0.1"></td><td class="calc-cell">600</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','生产',112)">112</span></td><td><input type="number" class="risk-input" value="1.8" step="0.1"></td><td class="calc-cell">1800</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','经营',85)">85</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','餐饮',64)">64</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>玉米粉(片、渣)</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','特食',38)">38</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','生产',167)">167</span></td><td><input type="number" class="risk-input" value="2.2" step="0.1"></td><td class="calc-cell">2200</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','经营',123)">123</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','餐饮',95)">95</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>米粉</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','特食',56)">56</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','生产',76)">76</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','经营',55)">55</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','餐饮',42)">42</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物碾磨加工品</td><td>其他谷物碾磨加工品</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','特食',26)">26</span></td><td><input type="number" class="risk-input" value="0.6" step="0.1"></td><td class="calc-cell">600</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','生产',189)">189</span></td><td><input type="number" class="risk-input" value="2.5" step="0.1"></td><td class="calc-cell">2500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','经营',142)">142</span></td><td><input type="number" class="risk-input" value="1.8" step="0.1"></td><td class="calc-cell">1800</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','餐饮',112)">112</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>生湿面制品</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','特食',67)">67</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','生产',156)">156</span></td><td><input type="number" class="risk-input" value="2.3" step="0.1"></td><td class="calc-cell">2300</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','经营',118)">118</span></td><td><input type="number" class="risk-input" value="1.6" step="0.1"></td><td class="calc-cell">1600</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','餐饮',92)">92</span></td><td><input type="number" class="risk-input" value="1.3" step="0.1"></td><td class="calc-cell">1300</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>发酵面制品</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','特食',54)">54</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','生产',123)">123</span></td><td><input type="number" class="risk-input" value="2.0" step="0.1"></td><td class="calc-cell">2000</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','经营',92)">92</span></td><td><input type="number" class="risk-input" value="1.4" step="0.1"></td><td class="calc-cell">1400</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','餐饮',72)">72</span></td><td><input type="number" class="risk-input" value="1.1" step="0.1"></td><td class="calc-cell">1100</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>米粉制品</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','特食',42)">42</span></td><td><input type="number" class="risk-input" value="0.9" step="0.1"></td><td class="calc-cell">900</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','生产',67)">67</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','经营',48)">48</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','餐饮',36)">36</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
-                                    <tr><td>粮食加工品</td><td>其他粮食加工品</td><td>谷物粉类制成品</td><td>其他谷物粉类制成品</td><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','特食',24)">24</span></td><td><input type="number" class="risk-input" value="0.6" step="0.1"></td><td class="calc-cell">600</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">小麦粉</td><td rowspan="4">小麦粉</td><td rowspan="4">小麦粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','生产',256)">256</span></td><td><input type="number" class="risk-input" value="2.0" step="0.1"></td><td class="calc-cell">2000</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','经营',189)">189</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','餐饮',142)">142</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('小麦粉','特食',78)">78</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">大米</td><td rowspan="4">大米</td><td rowspan="4">大米</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','生产',198)">198</span></td><td><input type="number" class="risk-input" value="2.0" step="0.1"></td><td class="calc-cell">2000</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','经营',156)">156</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','餐饮',118)">118</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('大米','特食',65)">65</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">挂面</td><td rowspan="4">挂面</td><td rowspan="4">挂面</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','生产',134)">134</span></td><td><input type="number" class="risk-input" value="1.8" step="0.1"></td><td class="calc-cell">1800</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','经营',98)">98</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','餐饮',76)">76</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('挂面','特食',45)">45</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物加工品</td><td rowspan="4">谷物加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','生产',89)">89</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','经营',67)">67</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','餐饮',52)">52</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('谷物加工品','特食',32)">32</span></td><td><input type="number" class="risk-input" value="0.6" step="0.1"></td><td class="calc-cell">600</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">玉米粉(片、渣)</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','生产',112)">112</span></td><td><input type="number" class="risk-input" value="1.8" step="0.1"></td><td class="calc-cell">1800</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','经营',85)">85</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','餐饮',64)">64</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('玉米粉','特食',38)">38</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">米粉</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','生产',167)">167</span></td><td><input type="number" class="risk-input" value="2.2" step="0.1"></td><td class="calc-cell">2200</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','经营',123)">123</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','餐饮',95)">95</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉','特食',56)">56</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物碾磨加工品</td><td rowspan="4">其他谷物碾磨加工品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','生产',76)">76</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','经营',55)">55</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','餐饮',42)">42</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物碾磨加工品','特食',26)">26</span></td><td><input type="number" class="risk-input" value="0.6" step="0.1"></td><td class="calc-cell">600</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">生湿面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','生产',189)">189</span></td><td><input type="number" class="risk-input" value="2.5" step="0.1"></td><td class="calc-cell">2500</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','经营',142)">142</span></td><td><input type="number" class="risk-input" value="1.8" step="0.1"></td><td class="calc-cell">1800</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','餐饮',112)">112</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('生湿面制品','特食',67)">67</span></td><td><input type="number" class="risk-input" value="1.2" step="0.1"></td><td class="calc-cell">1200</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">发酵面制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','生产',156)">156</span></td><td><input type="number" class="risk-input" value="2.3" step="0.1"></td><td class="calc-cell">2300</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','经营',118)">118</span></td><td><input type="number" class="risk-input" value="1.6" step="0.1"></td><td class="calc-cell">1600</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','餐饮',92)">92</span></td><td><input type="number" class="risk-input" value="1.3" step="0.1"></td><td class="calc-cell">1300</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('发酵面制品','特食',54)">54</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">米粉制品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','生产',123)">123</span></td><td><input type="number" class="risk-input" value="2.0" step="0.1"></td><td class="calc-cell">2000</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','经营',92)">92</span></td><td><input type="number" class="risk-input" value="1.4" step="0.1"></td><td class="calc-cell">1400</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','餐饮',72)">72</span></td><td><input type="number" class="risk-input" value="1.1" step="0.1"></td><td class="calc-cell">1100</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('米粉制品','特食',42)">42</span></td><td><input type="number" class="risk-input" value="0.9" step="0.1"></td><td class="calc-cell">900</td></tr>
+                                    <tr><td rowspan="4">粮食加工品</td><td rowspan="4">其他粮食加工品</td><td rowspan="4">谷物粉类制成品</td><td rowspan="4">其他谷物粉类制成品</td><td>生产</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','生产',67)">67</span></td><td><input type="number" class="risk-input" value="1.5" step="0.1"></td><td class="calc-cell">1500</td></tr>
+                                    <tr><td>经营</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','经营',48)">48</span></td><td><input type="number" class="risk-input" value="1.0" step="0.1"></td><td class="calc-cell">1000</td></tr>
+                                    <tr><td>餐饮</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','餐饮',36)">36</span></td><td><input type="number" class="risk-input" value="0.8" step="0.1"></td><td class="calc-cell">800</td></tr>
+                                    <tr><td>特食</td><td><span class="clickable-num" onclick="openEnterpriseModal('其他谷物粉类制成品','特食',24)">24</span></td><td><input type="number" class="risk-input" value="0.6" step="0.1"></td><td class="calc-cell">600</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1007,20 +1009,11 @@
         var fcPageSize = 10;
         var fcTotalPages = 1;
         var fcFilteredData = null;
-        var fcSavedItems = [];
 
         function getFcData() {
             // 当 fcFilteredData 为 null 时表示未筛选（默认空），为数组时表示已筛选
-            var data = (fcFilteredData !== null) ? fcFilteredData : foodCategoryData;
-            // 过滤掉已保存的数据
-            if (fcSavedItems.length > 0) {
-                var savedIds = fcSavedItems.map(function(item) { return item._id; });
-                data = data.filter(function(item) {
-                    var itemId = item._id || (item.level1 + item.level2 + item.level3 + item.level4);
-                    return savedIds.indexOf(itemId) === -1;
-                });
-            }
-            return data;
+            if (fcFilteredData !== null) return fcFilteredData;
+            return [];
         }
 
         function initFoodCategoryTable() {
@@ -1028,10 +1021,14 @@
             if (!tbody) { console.error('找不到 foodCategoryTableBody'); return; }
             var data = (typeof foodCategoryData !== 'undefined' && foodCategoryData) ? foodCategoryData : [];
 
-            // 默认展示全部数据
-            fcFilteredData = data.slice();
+            // 默认表格为空，提示用户先筛选
+            fcFilteredData = [];
             fcCurrentPage = 1;
-            fcTotalPages = Math.ceil(fcFilteredData.length / fcPageSize);
+            fcTotalPages = 1;
+            renderEmptyState('请选择筛选条件后点击「筛选」按钮查询数据');
+
+            var info = document.getElementById('foodCategoryPageInfo');
+            if (info) info.textContent = '请先筛选';
 
             // Initialize multi-select dropdowns
             var l1Set = new Set();
@@ -1049,9 +1046,13 @@
             buildMultiSelect('msLevel3', [], [], null);
             buildMultiSelect('msLevel4', [], [], null);
 
-            // 渲染表格和分页
-            renderFoodCategoryTable();
-            renderFoodCategoryPagination();
+            // 重置分页按钮状态
+            document.getElementById('fcFirstBtn').disabled = true;
+            document.getElementById('fcPrevBtn').disabled = true;
+            document.getElementById('fcNextBtn').disabled = true;
+            document.getElementById('fcLastBtn').disabled = true;
+            var nc = document.getElementById('fcPageNumbers');
+            if (nc) nc.innerHTML = '';
         }
 
         function renderEmptyState(msg) {
@@ -1083,10 +1084,8 @@
                 totalBatches += (item.batches || 0);
             });
             var html = '';
-            pageData.forEach(function(item, index) {
-                var itemId = (start + index);
+            pageData.forEach(function(item) {
                 html += '<tr>';
-                html += '<td><input type="checkbox" class="fc-row-checkbox" data-id="' + itemId + '" onchange="updateFcSelectAll()"></td>';
                 html += '<td>' + (item.level1 || '') + '</td>';
                 html += '<td>' + (item.level2 || '') + '</td>';
                 html += '<td>' + (item.level3 || '') + '</td>';
@@ -1096,210 +1095,8 @@
                 html += '<td class="calc-cell">' + (item.batches || 0).toLocaleString() + '</td>';
                 html += '</tr>';
             });
+            html += '<tr class="summary-row"><td colspan="4">合计</td><td id="totalRatio">' + totalRatio.toFixed(1) + '%</td><td></td><td id="totalCalc">' + totalBatches.toLocaleString() + '</td></tr>';
             tbody.innerHTML = html;
-            updateFcSelectAll();
-        }
-
-        function toggleFcSelectAll(checkbox) {
-            var checkboxes = document.querySelectorAll('.fc-row-checkbox');
-            checkboxes.forEach(function(cb) { cb.checked = checkbox.checked; });
-        }
-
-        function updateFcSelectAll() {
-            var checkboxes = document.querySelectorAll('.fc-row-checkbox');
-            var selectAll = document.getElementById('fcSelectAll');
-            if (!selectAll) return;
-            if (checkboxes.length === 0) {
-                selectAll.checked = false;
-                selectAll.indeterminate = false;
-            } else {
-                var checkedCount = document.querySelectorAll('.fc-row-checkbox:checked').length;
-                selectAll.checked = checkedCount === checkboxes.length;
-                selectAll.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
-            }
-        }
-
-        function getSelectedFcItems() {
-            var selected = [];
-            var checkboxes = document.querySelectorAll('.fc-row-checkbox:checked');
-            checkboxes.forEach(function(cb) {
-                var id = parseInt(cb.getAttribute('data-id'));
-                var data = getFcData();
-                var start = (fcCurrentPage - 1) * fcPageSize;
-                if (data[start + id]) {
-                    var item = data[start + id];
-                    item._id = item._id || (item.level1 + item.level2 + item.level3 + item.level4);
-                    selected.push(item);
-                }
-            });
-            return selected;
-        }
-
-        function saveFcSelected() {
-            var selected = getSelectedFcItems();
-            if (selected.length === 0) {
-                alert('请先勾选要保存的数据');
-                return;
-            }
-            selected.forEach(function(item) {
-                if (!item._id) {
-                    item._id = item.level1 + item.level2 + item.level3 + item.level4;
-                }
-                // 检查是否已保存
-                var exists = fcSavedItems.some(function(saved) {
-                    return saved._id === item._id;
-                });
-                if (!exists) {
-                    fcSavedItems.push(item);
-                }
-            });
-            updateFcSavedCount();
-            // 重新渲染表格
-            fcCurrentPage = 1;
-            renderFoodCategoryTable();
-            renderFoodCategoryPagination();
-            alert('已保存 ' + selected.length + ' 条数据');
-        }
-
-        function updateFcSavedCount() {
-            var countEl = document.getElementById('fcSavedCount');
-            if (countEl) countEl.textContent = fcSavedItems.length;
-        }
-
-        var fcCalcMode = 'auto'; // 计算模式：auto(自动计算) 或 manual(手动计算)
-
-        function previewFcSaved() {
-            if (fcSavedItems.length === 0) {
-                alert('暂无已保存的数据');
-                return;
-            }
-            var modal = document.getElementById('fcPreviewModal');
-            var body = document.getElementById('fcPreviewBody');
-            var countEl = document.getElementById('fcPreviewCount');
-            if (countEl) countEl.textContent = fcSavedItems.length;
-            var html = '<table class="data-table"><thead><tr>' +
-                '<th>食品大类(一级)</th>' +
-                '<th>食品亚类(二级)</th>' +
-                '<th>食品次亚类(三级)</th>' +
-                '<th>食品细类(四级)</th>' +
-                '<th>问题发现率</th>' +
-                '<th>抽检比率(%)</th>' +
-                '<th>建议抽检批次</th>' +
-                '<th>操作</th>' +
-                '</tr></thead><tbody>';
-            var totalRatio = 0;
-            var totalBatches = 0;
-            fcSavedItems.forEach(function(item, index) {
-                var batchCell;
-                if (fcCalcMode === 'manual') {
-                    batchCell = '<td><input type="number" class="batch-input" id="fcBatchInput_' + index + '" value="' + (item.batches || 0) + '" min="0" onchange="updateFcBatch(' + index + ', this.value)" style="width: 100px;"></td>';
-                } else {
-                    batchCell = '<td class="calc-cell" id="fcBatch_' + index + '">' + (item.batches || 0).toLocaleString() + '</td>';
-                }
-                totalRatio += parseFloat(item.ratio || 0);
-                totalBatches += parseInt(item.batches || 0);
-                html += '<tr>' +
-                    '<td>' + (item.level1 || '') + '</td>' +
-                    '<td>' + (item.level2 || '') + '</td>' +
-                    '<td>' + (item.level3 || '') + '</td>' +
-                    '<td>' + (item.level4 || '') + '</td>' +
-                    '<td>' + (item.problemRate || 0) + '%</td>' +
-                    '<td><input type="number" class="ratio-input" value="' + (item.ratio || 0) + '" step="0.1" min="0" max="100" onchange="updateFcRatio(' + index + ', this.value)" style="width: 80px;"></td>' +
-                    batchCell +
-                    '<td><button class="btn btn-secondary" onclick="removeFcSaved(' + index + ')">移除</button></td>' +
-                    '</tr>';
-            });
-            // 添加合计行
-            html += '<tr class="summary-row" style="background: #f0f8f4; font-weight: 600;">' +
-                '<td colspan="5" style="text-align: right;">合计</td>' +
-                '<td id="fcTotalRatio">' + totalRatio.toFixed(1) + '</td>' +
-                '<td id="fcTotalBatches">' + totalBatches.toLocaleString() + '</td>' +
-                '<td></td>' +
-                '</tr>';
-            html += '</tbody></table>';
-            body.innerHTML = html;
-            modal.style.display = 'flex';
-        }
-
-        function changeFcCalcMode(mode) {
-            fcCalcMode = mode;
-            previewFcSaved();
-        }
-
-        function updateFcTotals() {
-            var totalRatio = 0;
-            var totalBatches = 0;
-            fcSavedItems.forEach(function(item) {
-                totalRatio += parseFloat(item.ratio || 0);
-                totalBatches += parseInt(item.batches || 0);
-            });
-            var totalRatioEl = document.getElementById('fcTotalRatio');
-            var totalBatchesEl = document.getElementById('fcTotalBatches');
-            if (totalRatioEl) totalRatioEl.textContent = totalRatio.toFixed(1);
-            if (totalBatchesEl) totalBatchesEl.textContent = totalBatches.toLocaleString();
-        }
-
-        function updateFcBatch(index, value) {
-            var item = fcSavedItems[index];
-            if (!item) return;
-            item.batches = parseInt(value) || 0;
-            updateFcTotals();
-        }
-
-        function updateFcRatio(index, value) {
-            var item = fcSavedItems[index];
-            if (!item) return;
-            var ratio = parseFloat(value) || 0;
-            item.ratio = ratio;
-            // 仅在自动计算模式下更新批次
-            if (fcCalcMode === 'auto') {
-                var total = parseInt(document.getElementById('totalSamples').value) || 50000;
-                item.batches = Math.round(total * ratio / 100);
-                var batchCell = document.getElementById('fcBatch_' + index);
-                if (batchCell) {
-                    batchCell.textContent = item.batches.toLocaleString();
-                }
-            }
-            updateFcTotals();
-        }
-
-        function removeFcSaved(index) {
-            fcSavedItems.splice(index, 1);
-            updateFcSavedCount();
-            previewFcSaved();
-            renderFoodCategoryTable();
-            renderFoodCategoryPagination();
-        }
-
-        function closeFcPreviewModal() {
-            var modal = document.getElementById('fcPreviewModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function clearFcSaved() {
-            if (fcSavedItems.length === 0) return;
-            if (!confirm('确定要清空所有已保存的数据吗？')) return;
-            fcSavedItems = [];
-            updateFcSavedCount();
-            closeFcPreviewModal();
-            renderFoodCategoryTable();
-            renderFoodCategoryPagination();
-        }
-
-        function confirmFcSaved() {
-            if (fcSavedItems.length === 0) {
-                alert('暂无已保存的数据');
-                return;
-            }
-            var totalBatches = fcSavedItems.reduce(function(sum, item) {
-                return sum + (item.batches || 0);
-            }, 0);
-            var msg = '确认保存以下数据？\n\n';
-            msg += '品类数量：' + fcSavedItems.length + ' 条\n';
-            msg += '抽检批次合计：' + totalBatches.toLocaleString() + ' 批次';
-            if (!confirm(msg)) return;
-            closeFcPreviewModal();
-            alert('数据已确认保存！共 ' + fcSavedItems.length + ' 条数据，' + totalBatches.toLocaleString() + ' 批次');
         }
 
         function renderFoodCategoryPagination() {
@@ -3610,32 +3407,5 @@
             </div>
         </div>
     </div>
-
-    <div id="fcPreviewModal" class="modal-overlay" onclick="closeFcPreviewModal()">
-        <div class="modal-content" onclick="event.stopPropagation()" style="width: 90%; max-width: 1100px; max-height: 80vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <div class="modal-title">已保存数据预览 (<span id="fcPreviewCount">0</span> 条)</div>
-                <div class="modal-actions" style="display: flex; align-items: center; gap: 12px; margin-right: 16px;">
-                    <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer;">
-                        <input type="radio" name="fcCalcMode" value="auto" checked onchange="changeFcCalcMode('auto')">
-                        <span>自动计算</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer;">
-                        <input type="radio" name="fcCalcMode" value="manual" onchange="changeFcCalcMode('manual')">
-                        <span>手动计算</span>
-                    </label>
-                </div>
-                <div class="modal-close" onclick="closeFcPreviewModal()">×</div>
-            </div>
-            <div class="modal-body" id="fcPreviewBody" style="flex: 1; overflow-y: auto; padding: 16px;">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="clearFcSaved()" style="background-color: #e74c3c; color: white;">清空全部</button>
-                <button class="btn btn-secondary" onclick="closeFcPreviewModal()">关闭</button>
-                <button class="btn btn-primary" onclick="confirmFcSaved()" style="background-color: #1e9a6c;">确认</button>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>

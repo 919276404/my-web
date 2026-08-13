@@ -199,22 +199,11 @@
                     <div class="section">
                         <div class="section-title">基本参数设定</div>
                         <div class="form-row">
-                            <label class="form-label">报送分类A：</label>
-                            <select class="form-input">
-                                <option value=""></option>
-                                <option value="抽检监测（省级本级）">抽检监测（省级本级）</option>
-                                <option value="抽检监测（省级专项）">抽检监测（省级专项）</option>
-                                <option value="抽检监测（市级本级）">抽检监测（市级本级）</option>
-                                <option value="抽检监测（市级专项）">抽检监测（市级专项）</option>
-                                <option value="抽检监测（中央转移）">抽检监测（中央转移）</option>
-                                <option value="市级食用农产品抽检">市级食用农产品抽检</option>
-                            </select>
-                            <label class="form-label">报送分类B：</label>
-                            <input type="text" name="" class="form-input" placeholder="请输入报送分类B">
-                            <label class="form-label" style="min-width: auto; margin-left: 16px;">抽样总数：</label>
+                            <label class="form-label">抽样总数：</label>
                             <input type="number" class="form-input" id="totalSamples" value="50000" onchange="calcTotalVariety()">
                             <span style="color: #999; font-size: 13px;">批次</span>
                         </div>
+                        <div class="info-text">数据来源：26年（近三年）食品四级分类问题发现率</div>
                     </div>
 
                     <!-- <div class="section">
@@ -1202,7 +1191,11 @@
             var totalBatches = 0;
             fcSavedItems.forEach(function(item, index) {
                 var batchCell;
-                batchCell = '<td><input type="number" class="batch-input" id="fcBatchInput_' + index + '" value="' + (item.batches || 0) + '" min="0" onchange="updateFcBatch(' + index + ', this.value)" style="width: 100px;"></td>';
+                if (fcCalcMode === 'manual') {
+                    batchCell = '<td><input type="number" class="batch-input" id="fcBatchInput_' + index + '" value="' + (item.batches || 0) + '" min="0" onchange="updateFcBatch(' + index + ', this.value)" style="width: 100px;"></td>';
+                } else {
+                    batchCell = '<td class="calc-cell" id="fcBatch_' + index + '">' + (item.batches || 0).toLocaleString() + '</td>';
+                }
                 totalRatio += parseFloat(item.ratio || 0);
                 totalBatches += parseInt(item.batches || 0);
                 html += '<tr>' +
@@ -1281,28 +1274,6 @@
         function closeFcPreviewModal() {
             var modal = document.getElementById('fcPreviewModal');
             if (modal) modal.style.display = 'none';
-        }
-
-        function smartCalcFc() {
-            if (fcSavedItems.length === 0) {
-                alert('请先在表格中选择并保存需要计算的数据');
-                return;
-            }
-            var totalSamples = parseInt(document.getElementById('totalSamples').value) || 50000;
-            var totalRatio = 0;
-            fcSavedItems.forEach(function(item) {
-                var ratio = parseFloat(item.ratio) || 0;
-                totalRatio += ratio;
-            });
-            if (totalRatio === 0) {
-                alert('抽检比率合计为0，无法智能计算');
-                return;
-            }
-            fcSavedItems.forEach(function(item) {
-                var ratio = parseFloat(item.ratio) || 0;
-                item.batches = Math.round(totalSamples * ratio / totalRatio);
-            });
-            previewFcSaved();
         }
 
         function clearFcSaved() {
@@ -3460,6 +3431,7 @@
                 <div class="modal-close" onclick="closeAnalysisModal()">×</div>
             </div>
             <div class="modal-body">
+                <div style="font-size: 13px; color: #666; margin-bottom: 16px;">数据来源：26年（近三年）食品四级分类问题发现率</div>
                 <div class="section">
                     <div class="section-title">各食品类别抽检批次数与问题发现率</div>
                     <div id="modalChartBar" class="modal-chart"></div>
@@ -3643,7 +3615,7 @@
         <div class="modal-content" onclick="event.stopPropagation()" style="width: 90%; max-width: 1100px; max-height: 80vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div class="modal-title">已保存数据预览 (<span id="fcPreviewCount">0</span> 条)</div>
-                <!-- <div class="modal-actions" style="display: flex; align-items: center; gap: 12px; margin-right: 16px;">
+                <div class="modal-actions" style="display: flex; align-items: center; gap: 12px; margin-right: 16px;">
                     <label style="display: flex; align-items: center; gap: 4px; font-size: 13px; cursor: pointer;">
                         <input type="radio" name="fcCalcMode" value="auto" checked onchange="changeFcCalcMode('auto')">
                         <span>自动计算</span>
@@ -3652,13 +3624,12 @@
                         <input type="radio" name="fcCalcMode" value="manual" onchange="changeFcCalcMode('manual')">
                         <span>手动计算</span>
                     </label>
-                </div> -->
+                </div>
                 <div class="modal-close" onclick="closeFcPreviewModal()">×</div>
             </div>
             <div class="modal-body" id="fcPreviewBody" style="flex: 1; overflow-y: auto; padding: 16px;">
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="smartCalcFc()" style="background-color: #1e73be; color: white;">智能计算</button>
                 <button class="btn btn-secondary" onclick="clearFcSaved()" style="background-color: #e74c3c; color: white;">清空全部</button>
                 <button class="btn btn-secondary" onclick="closeFcPreviewModal()">关闭</button>
                 <button class="btn btn-primary" onclick="confirmFcSaved()" style="background-color: #1e9a6c;">确认</button>

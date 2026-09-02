@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>规则历史管理与复用</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .page-size-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-running { background: #e8f5e9; color: #2e7d32; }
+        .badge-stopped { background: #f5f5f5; color: #999; }
+        .badge-history { background: #fff3e0; color: #e65100; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; }
+        .action-btn-copy { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-copy:hover { background: #f0f5ff; }
+        .action-btn-view { background: #fff; color: #f57c00; border: 1px solid #f57c00; }
+        .action-btn-view:hover { background: #fff3e0; }
+        .action-btn-rollback { background: #fff; color: #ab47bc; border: 1px solid #ab47bc; }
+        .action-btn-rollback:hover { background: #f3e5f5; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 700px; max-height: 85vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #e8e8e8; background: #fafafa; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 20px; color: #999; cursor: pointer; padding: 0 5px; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; max-height: calc(85vh - 120px); overflow-y: auto; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .form-item { display: flex; flex-direction: column; gap: 6px; min-width: 200px; }
+        .form-label { font-size: 13px; color: #666; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #ff4d4f; margin-left: 4px; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .form-input:focus { outline: none; border-color: #1e73be; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #e8e8e8; background: #fafafa; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .history-table th, .history-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .history-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 11px; }
+        .history-table tr:hover { background: #fafafa; }
+        .diff-content { padding: 10px; background: #fafafa; border-radius: 4px; font-size: 12px; white-space: pre-wrap; }
+        .diff-add { color: #2e7d32; background: #e8f5e9; padding: 2px 4px; border-radius: 2px; }
+        .diff-del { color: #c62828; background: #ffebee; padding: 2px 4px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">规则名称</span>
+                <input type="text" class="search-input" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">规则类型</span>
+                <select class="search-select">
+                    <option>请选择</option>
+                    <option>高频超标主体提醒规则</option>
+                    <option>季节周期风险提醒规则</option>
+                    <option>区域品类风险提醒规则</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">执行状态</span>
+                <select class="search-select">
+                    <option>请选择</option>
+                    <option>运行中</option>
+                    <option>已停用</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+            <div>
+                <button class="btn btn-secondary" onclick="openHistoryCopyModal()">从历史复制</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>规则名称</th>
+                    <th>规则类型</th>
+                    <th>创建人</th>
+                    <th>创建时间</th>
+                    <th>执行状态</th>
+                    <th>最近执行时间</th>
+                    <th>累计触发次数</th>
+                    <th>版本数</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>1</td>
+                    <td>高频超标主体提醒规则</td>
+                    <td><span class="badge badge-history">高频超标</span></td>
+                    <td>张三</td>
+                    <td>2026-01-15</td>
+                    <td><span class="badge badge-running">运行中</span></td>
+                    <td>2026-07-01</td>
+                    <td>125次</td>
+                    <td>3</td>
+                    <td>
+                        <button class="action-btn action-btn-copy" onclick="copyRule(1)">复制</button>
+                        <button class="action-btn action-btn-view" onclick="viewHistory(1)">历史版本</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>2</td>
+                    <td>季节周期风险提醒规则</td>
+                    <td><span class="badge badge-history">季节周期</span></td>
+                    <td>李四</td>
+                    <td>2026-02-20</td>
+                    <td><span class="badge badge-running">运行中</span></td>
+                    <td>2026-07-01</td>
+                    <td>48次</td>
+                    <td>2</td>
+                    <td>
+                        <button class="action-btn action-btn-copy" onclick="copyRule(2)">复制</button>
+                        <button class="action-btn action-btn-view" onclick="viewHistory(2)">历史版本</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>3</td>
+                    <td>区域品类风险提醒规则</td>
+                    <td><span class="badge badge-history">区域品类</span></td>
+                    <td>王五</td>
+                    <td>2026-03-10</td>
+                    <td><span class="badge badge-stopped">已停用</span></td>
+                    <td>2026-06-15</td>
+                    <td>32次</td>
+                    <td>4</td>
+                    <td>
+                        <button class="action-btn action-btn-copy" onclick="copyRule(3)">复制</button>
+                        <button class="action-btn action-btn-view" onclick="viewHistory(3)">历史版本</button>
+                        <button class="action-btn action-btn-rollback" onclick="rollbackRule(3)">回滚</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>4</td>
+                    <td>高频超标经营主体提醒规则</td>
+                    <td><span class="badge badge-history">高频超标</span></td>
+                    <td>张三</td>
+                    <td>2026-04-05</td>
+                    <td><span class="badge badge-running">运行中</span></td>
+                    <td>2026-07-01</td>
+                    <td>89次</td>
+                    <td>1</td>
+                    <td>
+                        <button class="action-btn action-btn-copy" onclick="copyRule(4)">复制</button>
+                        <button class="action-btn action-btn-view" onclick="viewHistory(4)">历史版本</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 4 条 共有 25 条</div>
+            <select class="page-size-select">
+                <option>10条/页</option>
+                <option>20条/页</option>
+                <option>50条/页</option>
+            </select>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="pagination-info">跳转到</span>
+                <input type="number" class="search-input" style="width: 50px; padding: 4px;" value="1" min="1" max="3">
+                <span class="pagination-info">页</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="copyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="copyModalTitle">从历史复制规则</div>
+                <div class="modal-close" onclick="closeCopyModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-item" style="margin-bottom: 15px;">
+                    <label class="form-label">选择规则名称</label>
+                    <select class="search-select" id="copyRuleSelect" style="width: 100%;">
+                        <option value="">请选择要复制的规则</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">新规则名称</label>
+                    <input type="text" class="form-input" id="newRuleName" placeholder="请输入新规则名称">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCopyModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmCopy()">确认复制</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="historyModalTitle">历史版本</div>
+                <div class="modal-close" onclick="closeHistoryModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div id="historyContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeHistoryModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var ruleData = [
+            { id: 1, name: '高频超标主体提醒规则', type: '高频超标', creator: '张三', createTime: '2026-01-15', status: 'running', lastRun: '2026-07-01', triggerCount: 125, versionCount: 3 },
+            { id: 2, name: '季节周期风险提醒规则', type: '季节周期', creator: '李四', createTime: '2026-02-20', status: 'running', lastRun: '2026-07-01', triggerCount: 48, versionCount: 2 },
+            { id: 3, name: '区域品类风险提醒规则', type: '区域品类', creator: '王五', createTime: '2026-03-10', status: 'stopped', lastRun: '2026-06-15', triggerCount: 32, versionCount: 4 },
+            { id: 4, name: '高频超标经营主体提醒规则', type: '高频超标', creator: '张三', createTime: '2026-04-05', status: 'running', lastRun: '2026-07-01', triggerCount: 89, versionCount: 1 }
+        ];
+
+        var versionData = {
+            1: [
+                { version: 'v1.0', time: '2026-01-15 10:00', operator: '张三', desc: '初始创建' },
+                { version: 'v1.1', time: '2026-03-20 14:30', operator: '张三', desc: '调整超标次数阈值从2次改为3次' },
+                { version: 'v1.2', time: '2026-06-10 09:15', operator: '李四', desc: '增加区域筛选条件' }
+            ],
+            2: [
+                { version: 'v1.0', time: '2026-02-20 11:00', operator: '李四', desc: '初始创建' },
+                { version: 'v1.1', time: '2026-05-15 16:45', operator: '李四', desc: '调整季节周期风险系数计算方式' }
+            ],
+            3: [
+                { version: 'v1.0', time: '2026-03-10 08:30', operator: '王五', desc: '初始创建' },
+                { version: 'v1.1', time: '2026-04-25 13:20', operator: '王五', desc: '增加品类排名权重' },
+                { version: 'v1.2', time: '2026-05-30 10:00', operator: '张三', desc: '调整区域代码匹配规则' },
+                { version: 'v1.3', time: '2026-06-20 15:30', operator: '王五', desc: '修改超标率阈值' }
+            ],
+            4: [
+                { version: 'v1.0', time: '2026-04-05 09:00', operator: '张三', desc: '初始创建' }
+            ]
+        };
+
+        function clearSearch() { console.log('清空搜索'); }
+        function doSearch() { console.log('执行搜索'); }
+
+        function openHistoryCopyModal() {
+            document.getElementById('copyModalTitle').textContent = '从历史复制规则';
+            var select = document.getElementById('copyRuleSelect');
+            select.innerHTML = '<option value="">请选择要复制的规则</option>';
+            ruleData.forEach(function(rule) {
+                select.innerHTML += '<option value="' + rule.id + '">' + rule.name + ' (' + rule.type + ')</option>';
+            });
+            document.getElementById('newRuleName').value = '';
+            document.getElementById('copyModal').classList.add('show');
+        }
+
+        function closeCopyModal() {
+            document.getElementById('copyModal').classList.remove('show');
+        }
+
+        function copyRule(id) {
+            var rule = ruleData.find(item => item.id === parseInt(id));
+            if (!rule) return;
+
+            document.getElementById('copyModalTitle').textContent = '复制规则';
+            var select = document.getElementById('copyRuleSelect');
+            select.innerHTML = '<option value="' + rule.id + '" selected>' + rule.name + ' (' + rule.type + ')</option>';
+            select.disabled = true;
+            document.getElementById('newRuleName').value = rule.name + ' (副本)';
+            document.getElementById('copyModal').classList.add('show');
+        }
+
+        function confirmCopy() {
+            var ruleId = parseInt(document.getElementById('copyRuleSelect').value);
+            var newName = document.getElementById('newRuleName').value.trim();
+
+            if (!ruleId) { alert('请选择要复制的规则'); return; }
+            if (!newName) { alert('请输入新规则名称'); return; }
+
+            var sourceRule = ruleData.find(item => item.id === ruleId);
+            if (!sourceRule) return;
+
+            var newRule = {
+                id: ruleData.length > 0 ? Math.max(...ruleData.map(r => r.id)) + 1 : 1,
+                name: newName,
+                type: sourceRule.type,
+                creator: '当前用户',
+                createTime: new Date().toISOString().split('T')[0],
+                status: 'stopped',
+                lastRun: '-',
+                triggerCount: 0,
+                versionCount: 1
+            };
+
+            ruleData.push(newRule);
+            versionData[newRule.id] = [{ version: 'v1.0', time: new Date().toLocaleString(), operator: '当前用户', desc: '从"' + sourceRule.name + '"复制创建' }];
+
+            alert('规则复制成功！\n\n新规则名称：' + newName);
+            closeCopyModal();
+            renderTable();
+        }
+
+        function viewHistory(id) {
+            var rule = ruleData.find(item => item.id === parseInt(id));
+            var versions = versionData[id] || [];
+
+            document.getElementById('historyModalTitle').textContent = '历史版本 - ' + rule.name;
+
+            var html = '<table class="history-table"><thead><tr><th>版本号</th><th>修改时间</th><th>修改人</th><th>修改内容</th><th>操作</th></tr></thead><tbody>';
+            versions.forEach(function(v) {
+                var rollbackBtn = v.version !== versions[versions.length - 1].version 
+                    ? '<button class="action-btn action-btn-rollback" onclick="rollbackToVersion(' + id + ', \'' + v.version + '\')">回滚至此版本</button>' 
+                    : '<span style="color: #999; font-size: 11px;">当前版本</span>';
+                html += '<tr><td>' + v.version + '</td><td>' + v.time + '</td><td>' + v.operator + '</td><td>' + v.desc + '</td><td>' + rollbackBtn + '</td></tr>';
+            });
+            html += '</tbody></table>';
+
+            document.getElementById('historyContent').innerHTML = html;
+            document.getElementById('historyModal').classList.add('show');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.remove('show');
+        }
+
+        function rollbackRule(id) {
+            var rule = ruleData.find(item => item.id === parseInt(id));
+            if (!rule) return;
+
+            viewHistory(id);
+        }
+
+        function rollbackToVersion(ruleId, version) {
+            if (confirm('确定要回滚到版本 ' + version + ' 吗？此操作将覆盖当前版本。')) {
+                var rule = ruleData.find(item => item.id === parseInt(ruleId));
+                if (!rule) return;
+
+                var versions = versionData[ruleId] || [];
+                var targetVersion = versions.find(v => v.version === version);
+                
+                var newVersion = {
+                    version: 'v' + (parseInt(versions[versions.length - 1].version.replace('v', '')) + 0.1).toFixed(1),
+                    time: new Date().toLocaleString(),
+                    operator: '当前用户',
+                    desc: '回滚至 ' + version
+                };
+                versions.push(newVersion);
+
+                alert('已成功回滚到版本 ' + version);
+                closeHistoryModal();
+                renderTable();
+            }
+        }
+
+        function renderTable() {
+            var tbody = document.querySelector('.data-table tbody');
+            var html = ruleData.map(function(item, index) {
+                var statusBadge = item.status === 'running' ? 'badge-running' : 'badge-stopped';
+                var statusText = item.status === 'running' ? '运行中' : '已停用';
+                var rollbackBtn = item.versionCount > 1 ? '<button class="action-btn action-btn-rollback" onclick="rollbackRule(' + item.id + ')">回滚</button>' : '';
+                
+                return '<tr><td><input type="checkbox"></td><td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td><span class="badge badge-history">' + item.type + '</span></td>' +
+                    '<td>' + item.creator + '</td>' +
+                    '<td>' + item.createTime + '</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + statusText + '</span></td>' +
+                    '<td>' + item.lastRun + '</td>' +
+                    '<td>' + item.triggerCount + '次</td>' +
+                    '<td>' + item.versionCount + '</td>' +
+                    '<td><button class="action-btn action-btn-copy" onclick="copyRule(' + item.id + ')">复制</button><button class="action-btn action-btn-view" onclick="viewHistory(' + item.id + ')">历史版本</button>' + rollbackBtn + '</td></tr>';
+            }).join('');
+            tbody.innerHTML = html;
+        }
+
+        document.getElementById('copyModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCopyModal();
+        });
+        document.getElementById('historyModal').addEventListener('click', function(e) {
+            if (e.target === this) closeHistoryModal();
+        });
+    </script>
+</body>
+</html>

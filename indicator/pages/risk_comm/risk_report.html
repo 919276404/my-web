@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>风险报告</title>
+    <link rel="stylesheet" href="risk_comm.css">
+    <style>
+        /* ============ 页面特有样式 ============ */
+
+        /* 蓝色下发按钮（与统一 .btn-blue 等效，本页沿用 .btn-export 命名） */
+        .btn-export { background: var(--blue); color: #fff; box-shadow: 0 2px 4px rgba(30,115,190,0.2); }
+        .btn-export:hover { background: var(--blue-hover); box-shadow: 0 4px 10px rgba(30,115,190,0.3); }
+
+        /* 筛选项纵向布局（标签在上、控件在下） */
+        .filter-row { align-items: flex-end; gap: 16px; }
+        .filter-item { flex-direction: column; align-items: flex-start; gap: 6px; }
+        .filter-input { min-width: 220px; cursor: text; }
+        .filter-date {
+            padding: 8px 12px;
+            border: 1px solid var(--border-base);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            background: var(--bg-card);
+            min-width: 150px;
+            outline: none;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+        .filter-date:hover { border-color: var(--green); }
+        .filter-date:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(30,154,108,0.12); }
+        .date-separator {
+            color: var(--text-placeholder);
+            font-size: 13px;
+            align-self: center;
+            margin-bottom: 9px;
+        }
+        .filter-actions { margin-left: 0; margin-bottom: 0; }
+
+        /* 渐变表头卡片 */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 18px;
+            color: #fff;
+            background: linear-gradient(90deg, var(--green) 0%, #2daf7f 100%);
+        }
+        .card-header.blue  { background: linear-gradient(90deg, var(--blue) 0%, #2a82d4 100%); }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.3px;
+        }
+        .card-title-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+        .card-header .stat-summary {
+            font-size: 12px;
+            color: rgba(255,255,255,0.95);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .card-header .stat-summary b { color: #fff; margin: 0 4px; font-weight: 700; }
+
+        /* 明细表容器 */
+        .detail-table-wrap { overflow-x: auto; }
+        .data-table { min-width: 1100px; }
+
+        /* 报告标题单元格 */
+        .report-title-cell {
+            text-align: left !important;
+            color: var(--green);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        .report-title-cell:hover { color: var(--green-hover); text-decoration: underline; }
+
+        /* 附件单元格 */
+        .attach-cell {
+            text-align: left !important;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        .attach-cell .file-icon {
+            color: var(--blue);
+            margin-right: 4px;
+        }
+
+        /* 来源标签 */
+        .src-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+        .src-city { background: var(--green-light); color: var(--green); border: 1px solid #b7e6d4; }
+        .src-gov  { background: var(--blue-light); color: var(--blue); border: 1px solid #b3d1f5; }
+        .src-dist { background: var(--orange-light); color: var(--orange); border: 1px solid #ffd591; }
+
+        /* 已读/未读标签 */
+        .read-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .read-new { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+        .read-done { background: #f5f5f5; color: #999; border: 1px solid #e0e0e0; }
+
+        /* 操作链接按钮 */
+        .link-btn {
+            background: none;
+            border: none;
+            color: var(--blue);
+            cursor: pointer;
+            font-size: 13px;
+            padding: 2px 6px;
+            transition: var(--transition);
+        }
+        .link-btn:hover { color: var(--green); text-decoration: underline; background: transparent; }
+        .link-btn.green { color: var(--green); }
+        .link-btn.green:hover { color: var(--green-hover); }
+        .link-btn + .link-btn { margin-left: 4px; }
+
+        /* 模版下载链接 */
+        .template-download-link {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 1px 8px;
+            font-size: 12px;
+            color: var(--blue);
+            background: var(--blue-light);
+            border: 1px solid #b3d1f5;
+            border-radius: 3px;
+            text-decoration: none;
+        }
+        .template-download-link:hover {
+            background: var(--blue);
+            color: #fff;
+        }
+
+        /* 分页（页面使用 .pagination 而非 .pagination-container，并支持左信息+右控件） */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 22px;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-soft);
+            flex-wrap: wrap;
+        }
+        .pagination-info { font-size: 12px; color: var(--text-secondary); }
+        .pagination-controls { display: flex; align-items: center; gap: 6px; }
+        .pagination button {
+            min-width: 32px;
+            padding: 6px 12px;
+            border: 1px solid var(--border-base);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-regular);
+            transition: var(--transition);
+            font-family: inherit;
+        }
+        .pagination button.active {
+            background: var(--green);
+            color: #fff;
+            border-color: var(--green);
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(30,154,108,0.2);
+        }
+        .pagination button:hover:not(.active):not(:disabled) {
+            border-color: var(--green);
+            color: var(--green);
+            background: var(--green-soft);
+        }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; background: var(--bg-soft); }
+
+        /* 统计表特殊着色 */
+        .stat-rate-good { color: var(--green); font-weight: 600; }
+        .stat-rate-mid  { color: var(--orange); font-weight: 600; }
+        .stat-rate-low  { color: var(--red); font-weight: 600; }
+        .stat-warn-num { color: var(--red); font-weight: 600; }
+
+        /* 模态框（页面特有：最大宽度 680px，与统一 .modal 兼容） */
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            width: 92%;
+            max-width: 680px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 8px 24px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header.blue { background: linear-gradient(90deg, var(--blue) 0%, #2a82d4 100%); }
+        .modal-title small { font-size: 13px; color: rgba(255,255,255,0.85); font-weight: normal; margin-left: 8px; }
+        .modal-body { padding: 20px 22px; max-height: calc(85vh - 130px); overflow-y: auto; }
+
+        /* 表单（页面使用 .form-item 命名） */
+        .form-item { margin-bottom: 16px; }
+        .form-label .required { color: var(--red); margin-left: 2px; }
+        .form-file {
+            display: block;
+            padding: 10px 12px;
+            border: 1px dashed var(--green);
+            border-radius: var(--radius-sm);
+            background: var(--green-soft);
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .form-file:hover {
+            background: var(--green-light);
+            border-color: var(--green-hover);
+        }
+
+        /* 复选框分组 */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 6px 0;
+        }
+        .checkbox-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: var(--text-regular);
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            cursor: pointer;
+            accent-color: var(--green);
+        }
+        .checkbox-group input[type="checkbox"] + span {
+            display: inline-block;
+            padding: 2px 10px;
+            border: 1px solid var(--border-base);
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--bg-soft);
+            transition: var(--transition);
+        }
+        .checkbox-group input[type="checkbox"]:checked + span {
+            background: var(--green-light);
+            border-color: var(--green);
+            color: var(--green);
+        }
+        .file-hint {
+            font-size: 12px;
+            color: var(--text-placeholder);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <div class="page-title">风险报告</div>
+            <div class="page-subtitle">市局风险报告上传下发、区局报送及查阅管理</div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openUploadModal()">↑ 上传报告</button>
+            <button class="btn btn-export" onclick="openDispatchModal()">↓ 下发文件</button>
+            <button class="btn btn-primary" onclick="openDistrictModal()">✎ 区局报送</button>
+        </div>
+    </div>
+
+    <!-- 筛选区域 -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="filter-item">
+                <span class="filter-label">关键词</span>
+                <input type="text" id="fKeyword" class="filter-input" placeholder="输入报告标题、关键词">
+            </div>
+            <div class="filter-item">
+                <span class="filter-label">来源</span>
+                <select id="fSource" class="filter-select">
+                    <option value="">全部</option>
+                    <option value="市局">市局</option>
+                    <option value="总局">总局</option>
+                    <option value="区局">区局</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <span class="filter-label">开始日期</span>
+                <input type="date" id="fDateStart" class="filter-date">
+            </div>
+            <span class="date-separator">至</span>
+            <div class="filter-item">
+                <span class="filter-label">结束日期</span>
+                <input type="date" id="fDateEnd" class="filter-date">
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="queryReports()">查询</button>
+                <button class="btn btn-secondary" onclick="resetFilter()">重置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 报告列表 -->
+    <div class="card">
+        <div class="card-header green">
+            <div class="card-title">
+                <span class="card-title-icon">📄</span>
+                风险报告列表
+            </div>
+            <div class="stat-summary">共 <b id="totalReports">18</b> 份报告，按上传时间倒序</div>
+        </div>
+        <div class="detail-table-wrap">
+            <table class="data-table" id="riskReportTable">
+                <thead>
+                    <tr>
+                        <th style="width:28%">报告标题</th>
+                        <th>来源</th>
+                        <th>上传人/单位</th>
+                        <th>上传时间</th>
+                        <th>是否已读</th>
+                        <th style="width:16%">附件</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTbody"></tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <div class="pagination-info">第 1-18 条 / 共 18 条</div>
+            <div class="pagination-controls">
+                <button disabled>‹</button>
+                <button class="active">1</button>
+                <button>2</button>
+                <button>3</button>
+                <button>›</button>
+                <select class="page-size-select">
+                    <option>10条/页</option>
+                    <option selected>20条/页</option>
+                    <option>50条/页</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 区局上报统计 -->
+    <div class="card">
+        <div class="card-header blue">
+            <div class="card-title">
+                <span class="card-title-icon">📊</span>
+                区局风险报告上报统计
+            </div>
+            <div class="stat-summary">累计上报 <b id="statReported">0</b> 份</div>
+        </div>
+        <div class="detail-table-wrap">
+            <table class="data-table" id="riskReportDistrictStatTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>区名</th>
+                        <th>上报数量</th>
+                    </tr>
+                </thead>
+                <tbody id="districtStatTbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 上传报告弹窗 -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">上传风险报告 <small>市局撰写报告上传</small></div>
+                <button class="modal-close" onclick="closeModal('uploadModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">报告标题<span class="required">*</span></label>
+                    <input type="text" class="form-input" id="uploadTitle" placeholder="请输入报告标题">
+                </div>
+                <div class="form-item">
+                    <label class="form-label">报告类型<span class="required">*</span></label>
+                    <select class="form-select" id="uploadType">
+                        <option value="">请选择报告类型</option>
+                        <option value="监测分析">监测分析报告</option>
+                        <option value="风险预警">风险预警通知</option>
+                        <option value="研判报告">风险研判报告</option>
+                        <option value="专项整治">专项整治报告</option>
+                        <option value="抽检分析">抽检情况分析</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">上传文件<span class="required">*</span></label>
+                    <input type="file" class="form-file" id="uploadFile">
+                    <div class="file-hint">支持 pdf、doc、docx 格式，单个文件不超过 50MB</div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">通知对象<span class="required">*</span></label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="notify" value="allDistricts" checked><span>各区局</span></label>
+                        <label><input type="checkbox" name="notify" value="inspection"><span>抽检处</span></label>
+                        <label><input type="checkbox" name="notify" value="supervision"><span>监管处</span></label>
+                        <label><input type="checkbox" name="notify" value="case"><span>执法大队</span></label>
+                        <label><input type="checkbox" name="notify" value="emergency"><span>应急处</span></label>
+                        <label><input type="checkbox" name="notify" value="standard"><span>标准处</span></label>
+                    </div>
+                    <div class="file-hint">通知将推送至所选区局及业务处室，含报告标题与查看入口</div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">报告摘要</label>
+                    <textarea class="form-textarea" id="uploadSummary" placeholder="请输入报告摘要（可选）"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('uploadModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmUpload()">确认上传</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下发文件弹窗（总局下发） -->
+    <div class="modal-overlay" id="dispatchModal">
+        <div class="modal">
+            <div class="modal-header blue">
+                <div class="modal-title">下发文件 <small>总局下发文件通知</small></div>
+                <button class="modal-close" onclick="closeModal('dispatchModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">文件标题<span class="required">*</span></label>
+                    <input type="text" class="form-input" id="dispatchTitle" placeholder="请输入总局下发文件标题">
+                </div>
+                <div class="form-item">
+                    <label class="form-label">文件文号</label>
+                    <input type="text" class="form-input" id="dispatchNo" placeholder="如：国市监食检〔2026〕XX号">
+                </div>
+                <div class="form-item">
+                    <label class="form-label">下发文件<span class="required">*</span></label>
+                    <input type="file" class="form-file" id="dispatchFile">
+                    <div class="file-hint">支持 pdf、doc、docx 格式，单个文件不超过 50MB</div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">通知对象<span class="required">*</span></label>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="dispatchNotify" value="allDistricts" checked><span>各区局</span></label>
+                        <label><input type="checkbox" name="dispatchNotify" value="city"><span>市局机关</span></label>
+                        <label><input type="checkbox" name="dispatchNotify" value="inspection"><span>相关业务处室</span></label>
+                    </div>
+                    <div class="file-hint">文件将通知全市各区局及相关业务处室查阅</div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">文件摘要</label>
+                    <textarea class="form-textarea" id="dispatchSummary" placeholder="请输入文件摘要（可选）"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('dispatchModal')">取消</button>
+                <button class="btn btn-export" onclick="confirmDispatch()">确认下发</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 区局报送弹窗 -->
+    <div class="modal-overlay" id="districtModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">区局风险报告报送 <small>按模版报送</small></div>
+                <button class="modal-close" onclick="closeModal('districtModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">报送单位<span class="required">*</span></label>
+                    <select class="form-select" id="districtName">
+                        <option value="">请选择报送区局</option>
+                        <option>东城区</option>
+                        <option>西城区</option>
+                        <option>朝阳区</option>
+                        <option>海淀区</option>
+                        <option>丰台区</option>
+                        <option>石景山区</option>
+                        <option>门头沟区</option>
+                        <option>房山区</option>
+                        <option>通州区</option>
+                        <option>顺义区</option>
+                        <option>昌平区</option>
+                        <option>大兴区</option>
+                        <option>怀柔区</option>
+                        <option>平谷区</option>
+                        <option>密云区</option>
+                        <option>延庆区</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">报告标题<span class="required">*</span></label>
+                    <input type="text" class="form-input" id="districtTitle" placeholder="如：XX区2026年第二季度食品安全风险监测报告">
+                </div>
+                <div class="form-item">
+                    <label class="form-label">报告模版</label>
+                    <div class="checkbox-group">
+                        <label><input type="radio" name="template" value="quarter" ><span>季度风险监测报告模版</span></label>
+                        <label><input type="radio" name="template" value="special"><span>专项风险排查报告模版</span></label>
+                        <label><input type="radio" name="template" value="alert" checked><span>风险预警报送模版</span> <a href="javascript:void(0)" onclick="downloadTemplate('alert')" class="template-download-link">⬇ 下载模版</a></label>
+                    </div>
+                    <div class="file-hint">请按所选模版填报后上传，模版文件可在选项右侧下载</div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">上报文件<span class="required">*</span></label>
+                    <input type="file" class="form-file" id="districtFile">
+                    <div class="file-hint">按所选模版填报后上传，支持 pdf、doc、docx 格式</div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">报告摘要</label>
+                    <textarea class="form-textarea" id="districtSummary" placeholder="请输入报告摘要（可选）"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('districtModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmDistrict()">确认报送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==================== 报告列表模拟数据（按上传时间倒序） ==================== */
+        var reportData = [
+            { title: "关于夏季餐饮服务食品安全风险预警的通知", source: "市局", uploader: "风险监测处·李建国", date: "2026-08-18", attach: "夏季餐饮风险预警通知.pdf", read: false },
+            { title: "2026年第二季度食品安全风险监测分析报告", source: "市局", uploader: "风险监测处·王秀英", date: "2026-08-15", attach: "2026Q2风险监测分析报告.pdf", read: false },
+            { title: "关于加强冷链食品风险研判的指导意见", source: "总局", uploader: "国家市场监管总局", date: "2026-08-12", attach: "冷链食品风险研判指导意见.pdf", read: false },
+            { title: "朝阳区校园及周边食品安全风险排查报告", source: "区局", uploader: "朝阳区市场监管局", date: "2026-08-10", attach: "朝阳区校园食品风险排查报告.docx", read: true },
+            { title: "网络餐饮服务食品安全风险监测专报", source: "市局", uploader: "网络监管处·张伟", date: "2026-08-08", attach: "网络餐饮风险监测专报.pdf", read: true },
+            { title: "海淀区食用农产品农残超标风险预警", source: "区局", uploader: "海淀区市场监管局", date: "2026-08-05", attach: "海淀区农产品农残预警报告.docx", read: true },
+            { title: "2026年上半年全国食品安全风险监测情况通报", source: "总局", uploader: "国家市场监管总局", date: "2026-08-02", attach: "2026上半年全国风险监测通报.pdf", read: true },
+            { title: "关于保健食品非法添加风险防控的通知", source: "市局", uploader: "特殊食品处·陈志强", date: "2026-07-30", attach: "保健食品非法添加防控通知.pdf", read: true },
+            { title: "丰台区集体聚餐食品安全风险提示函", source: "区局", uploader: "丰台区市场监管局", date: "2026-07-28", attach: "丰台区集体聚餐风险提示函.pdf", read: true },
+            { title: "进口冷链食品溯源风险研判报告", source: "市局", uploader: "风险监测处·刘芳", date: "2026-07-25", attach: "进口冷链食品溯源研判报告.pdf", read: true },
+            { title: "通州区食品小作坊风险隐患排查报告", source: "区局", uploader: "通州区市场监管局", date: "2026-07-22", attach: "通州区食品小作坊隐患排查报告.docx", read: true },
+            { title: "关于开展食品添加剂超范围使用专项整治的通知", source: "总局", uploader: "国家市场监管总局", date: "2026-07-20", attach: "食品添加剂专项整治通知.pdf", read: true },
+            { title: "餐饮具清洗消毒风险监测分析报告", source: "市局", uploader: "餐饮监管处·赵敏", date: "2026-07-18", attach: "餐饮具清洗消毒风险监测分析.pdf", read: true },
+            { title: "西城区食品摊贩监管风险报告", source: "区局", uploader: "西城区市场监管局", date: "2026-07-15", attach: "西城区食品摊贩监管风险报告.docx", read: true },
+            { title: "2026年食品监督抽检风险研判报告", source: "市局", uploader: "抽检管理处·孙立", date: "2026-07-12", attach: "2026监督抽检风险研判报告.pdf", read: true },
+            { title: "食品安全风险预警交流工作指引", source: "总局", uploader: "国家市场监管总局", date: "2026-07-10", attach: "风险预警交流工作指引.pdf", read: true },
+            { title: "顺义区畜禽肉兽药残留风险监测报告", source: "区局", uploader: "顺义区市场监管局", date: "2026-07-08", attach: "顺义区畜禽肉兽残风险监测报告.docx", read: true },
+            { title: "中小学生营养午餐食品安全风险评估报告", source: "市局", uploader: "风险监测处·周丽萍", date: "2026-07-05", attach: "中小学生营养午餐风险评估报告.pdf", read: true }
+        ];
+
+        var filteredData = reportData.slice();
+
+        /* 来源标签 HTML */
+        function srcTag(src) {
+            if (src === "市局") return '<span class="src-tag src-city">市局</span>';
+            if (src === "总局") return '<span class="src-tag src-gov">总局</span>';
+            return '<span class="src-tag src-dist">区局</span>';
+        }
+
+        /* 渲染报告列表 */
+        function renderReports(list) {
+            var tbody = document.getElementById("reportTbody");
+            if (!list.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="color:#999;padding:30px;">暂无匹配的报告数据</td></tr>';
+                updateUnreadBadge();
+                return;
+            }
+            tbody.innerHTML = list.map(function (item) {
+                var readHtml = item.read
+                    ? '<span class="read-tag read-done">已读</span>'
+                    : '<span class="read-tag read-new">未读</span>';
+                return '<tr>' +
+                    '<td class="report-title-cell" onclick="previewReport(\'' + encodeURIComponent(item.title) + '\')">' + item.title + '</td>' +
+                    '<td>' + srcTag(item.source) + '</td>' +
+                    '<td>' + item.uploader + '</td>' +
+                    '<td>' + item.date + '</td>' +
+                    '<td>' + readHtml + '</td>' +
+                    '<td class="attach-cell"><span class="file-icon">📎</span>' + item.attach + '</td>' +
+                    '<td>' +
+                        '<button class="link-btn green" onclick="previewReport(\'' + encodeURIComponent(item.title) + '\')">预览</button>' +
+                        '<button class="link-btn" onclick="downloadReport(\'' + encodeURIComponent(item.attach) + '\')">下载</button>' +
+                    '</td>' +
+                '</tr>';
+            }).join("");
+            document.getElementById("totalReports").textContent = list.length;
+            updateUnreadBadge();
+        }
+
+        /* 更新父窗口菜单未读徽标 */
+        function updateUnreadBadge() {
+            var unread = reportData.filter(function (item) { return !item.read; }).length;
+            try {
+                if (window.parent && typeof window.parent.updateRiskReportBadge === 'function') {
+                    window.parent.updateRiskReportBadge(unread);
+                }
+            } catch (e) {}
+        }
+
+        /* 查询 */
+        function queryReports() {
+            var kw = document.getElementById("fKeyword").value.trim();
+            var src = document.getElementById("fSource").value;
+            var ds = document.getElementById("fDateStart").value;
+            var de = document.getElementById("fDateEnd").value;
+
+            filteredData = reportData.filter(function (item) {
+                if (kw && item.title.indexOf(kw) === -1 && item.attach.indexOf(kw) === -1) return false;
+                if (src && item.source !== src) return false;
+                if (ds && item.date < ds) return false;
+                if (de && item.date > de) return false;
+                return true;
+            });
+            renderReports(filteredData);
+        }
+
+        /* 重置 */
+        function resetFilter() {
+            document.getElementById("fKeyword").value = "";
+            document.getElementById("fSource").value = "";
+            document.getElementById("fDateStart").value = "";
+            document.getElementById("fDateEnd").value = "";
+            filteredData = reportData.slice();
+            renderReports(filteredData);
+        }
+
+        /* 预览 */
+        function previewReport(title) {
+            var t = decodeURIComponent(title);
+            // 标记对应报告为已读
+            var found = reportData.find(function (item) { return item.title === t; });
+            if (found && !found.read) {
+                found.read = true;
+                // 同步更新当前筛选视图（若该项在当前列表中，重渲染）
+                renderReports(filteredData);
+            }
+            alert("在线预览：\n" + t + "\n（此处将打开文件在线预览窗口）");
+        }
+
+        /* 下载 */
+        function downloadReport(name) {
+            alert("开始下载附件：\n" + decodeURIComponent(name));
+        }
+
+        /* 下载报告模版 */
+        var templateMap = {
+            alert: '../../../../风险交流/报告模板----北京市食品安全风险预警报告（大葱噻虫嗪超标问题突出）.doc'
+        };
+        function downloadTemplate(type) {
+            var path = templateMap[type];
+            if (!path) { alert('该模版暂未提供下载，敬请期待'); return; }
+            var a = document.createElement('a');
+            a.href = encodeURI(path);
+            a.download = path.split('/').pop();
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        /* ==================== 区局上报统计模拟数据（16个区） ==================== */
+        var districtData = [
+            { name: "东城区",   reported: 4 },
+            { name: "西城区",   reported: 4 },
+            { name: "朝阳区",   reported: 3 },
+            { name: "海淀区",   reported: 4 },
+            { name: "丰台区",   reported: 3 },
+            { name: "石景山区", reported: 4 },
+            { name: "门头沟区", reported: 2 },
+            { name: "房山区",   reported: 3 },
+            { name: "通州区",   reported: 4 },
+            { name: "顺义区",   reported: 3 },
+            { name: "昌平区",   reported: 4 },
+            { name: "大兴区",   reported: 3 },
+            { name: "怀柔区",   reported: 2 },
+            { name: "平谷区",   reported: 3 },
+            { name: "密云区",   reported: 3 },
+            { name: "延庆区",   reported: 2 }
+        ];
+
+        /* 渲染区局上报统计 */
+        function renderDistrictStat() {
+            var tbody = document.getElementById("districtStatTbody");
+            var totalRep = 0;
+            tbody.innerHTML = districtData.map(function (d, i) {
+                totalRep += d.reported;
+                return '<tr>' +
+                    '<td>' + (i + 1) + '</td>' +
+                    '<td>' + d.name + '</td>' +
+                    '<td>' + d.reported + '</td>' +
+                '</tr>';
+            }).join("");
+            document.getElementById("statReported").textContent = totalRep;
+        }
+
+        /* ==================== 弹窗交互 ==================== */
+        function openUploadModal() { openModal("uploadModal"); }
+        function openDispatchModal() { openModal("dispatchModal"); }
+        function openDistrictModal() { openModal("districtModal"); }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add("active");
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove("active");
+        }
+
+        function confirmUpload() {
+            var title = document.getElementById("uploadTitle").value.trim();
+            var type = document.getElementById("uploadType").value;
+            var file = document.getElementById("uploadFile").value;
+            if (!title) { alert("请输入报告标题"); return; }
+            if (!type) { alert("请选择报告类型"); return; }
+            if (!file) { alert("请选择上传文件"); return; }
+            var checked = document.querySelectorAll('input[name="notify"]:checked');
+            if (!checked.length) { alert("请选择通知对象"); return; }
+            var fileName = file.replace(/^.*[\\/]/, "");
+            reportData.unshift({
+                title: title,
+                source: "市局",
+                uploader: "风险监测处·当前用户",
+                date: new Date().toISOString().slice(0, 10),
+                attach: fileName,
+                read: false
+            });
+            filteredData = reportData.slice();
+            renderReports(filteredData);
+            closeModal("uploadModal");
+            resetUploadForm();
+            alert("报告上传成功，已通知所选区局及业务处室查阅");
+        }
+
+        function resetUploadForm() {
+            document.getElementById("uploadTitle").value = "";
+            document.getElementById("uploadType").value = "";
+            document.getElementById("uploadFile").value = "";
+            document.getElementById("uploadSummary").value = "";
+            var cb = document.querySelectorAll('input[name="notify"]');
+            cb.forEach(function (c) { c.checked = (c.value === "allDistricts"); });
+        }
+
+        function confirmDispatch() {
+            var title = document.getElementById("dispatchTitle").value.trim();
+            var file = document.getElementById("dispatchFile").value;
+            if (!title) { alert("请输入文件标题"); return; }
+            if (!file) { alert("请选择下发文件"); return; }
+            var checked = document.querySelectorAll('input[name="dispatchNotify"]:checked');
+            if (!checked.length) { alert("请选择通知对象"); return; }
+            var fileName = file.replace(/^.*[\\/]/, "");
+            reportData.unshift({
+                title: title,
+                source: "总局",
+                uploader: "国家市场监管总局·下发",
+                date: new Date().toISOString().slice(0, 10),
+                attach: fileName,
+                read: false
+            });
+            filteredData = reportData.slice();
+            renderReports(filteredData);
+            closeModal("dispatchModal");
+            resetDispatchForm();
+            alert("文件下发成功，已通知全市各区局及相关业务处室查阅");
+        }
+
+        function resetDispatchForm() {
+            document.getElementById("dispatchTitle").value = "";
+            document.getElementById("dispatchNo").value = "";
+            document.getElementById("dispatchFile").value = "";
+            document.getElementById("dispatchSummary").value = "";
+            var cb = document.querySelectorAll('input[name="dispatchNotify"]');
+            cb.forEach(function (c) { c.checked = (c.value === "allDistricts"); });
+        }
+
+        function confirmDistrict() {
+            var name = document.getElementById("districtName").value;
+            var title = document.getElementById("districtTitle").value.trim();
+            var file = document.getElementById("districtFile").value;
+            if (!name) { alert("请选择报送区局"); return; }
+            if (!title) { alert("请输入报告标题"); return; }
+            if (!file) { alert("请选择上报文件"); return; }
+            var fileName = file.replace(/^.*[\\/]/, "");
+            reportData.unshift({
+                title: title,
+                source: "区局",
+                uploader: name + "市场监管局",
+                date: new Date().toISOString().slice(0, 10),
+                attach: fileName,
+                read: false
+            });
+            filteredData = reportData.slice();
+            renderReports(filteredData);
+            /* 同步更新区局统计 */
+            var dist = districtData.find(function (d) { return d.name === name; });
+            if (dist) {
+                dist.reported += 1;
+                renderDistrictStat();
+            }
+            closeModal("districtModal");
+            resetDistrictForm();
+            alert(name + " 风险报告报送成功");
+        }
+
+        function resetDistrictForm() {
+            document.getElementById("districtName").value = "";
+            document.getElementById("districtTitle").value = "";
+            document.getElementById("districtFile").value = "";
+            document.getElementById("districtSummary").value = "";
+            var radio = document.querySelectorAll('input[name="template"]');
+            radio.forEach(function (r) { r.checked = (r.value === "quarter"); });
+        }
+
+        /* 点击遮罩关闭弹窗 */
+        document.querySelectorAll(".modal-overlay").forEach(function (overlay) {
+            overlay.addEventListener("click", function (e) {
+                if (e.target === overlay) {
+                    overlay.classList.remove("active");
+                }
+            });
+        });
+
+        /* 初始化 */
+        renderReports(filteredData);
+        renderDistrictStat();
+    </script>
+</body>
+</html>

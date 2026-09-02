@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提醒推送与反馈跟踪</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .page-size-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-level1 { background: #ffebee; color: #c62828; }
+        .badge-level2 { background: #fff3e0; color: #e65100; }
+        .badge-processed { background: #e8f5e9; color: #2e7d32; }
+        .badge-pending { background: #fff3e0; color: #e65100; }
+        .badge-incorporated { background: #e3f2fd; color: #1e73be; }
+        .badge-deferred { background: #fff9c4; color: #f9a825; }
+        .badge-notneeded { background: #f5f5f5; color: #999; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-view { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-view:hover { background: #f0f5ff; }
+        .action-btn-feedback { background: #fff; color: #f57c00; border: 1px solid #f57c00; }
+        .action-btn-feedback:hover { background: #fff3e0; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 700px; max-height: 85vh; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; overflow-y: auto; max-height: calc(85vh - 110px); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #c62828; margin-left: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: #fff; cursor: pointer; }
+        .form-textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; min-height: 100px; resize: vertical; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-item { flex: 1; }
+        .channel-options { display: flex; flex-wrap: wrap; gap: 15px; }
+        .channel-option { display: flex; align-items: center; gap: 5px; }
+        .detail-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e0e0e0; }
+        .detail-section:last-child { border-bottom: none; }
+        .detail-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .detail-info { display: flex; flex-wrap: wrap; gap: 15px; }
+        .detail-item { display: flex; flex-direction: column; min-width: 150px; }
+        .detail-label { font-size: 12px; color: #999; margin-bottom: 2px; }
+        .detail-value { font-size: 13px; color: #333; }
+        .feedback-option { margin-bottom: 10px; }
+        .feedback-option label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: #333; }
+        .feedback-option input[type="radio"] { width: 16px; height: 16px; }
+        .feedback-note { margin-top: 15px; }
+        .feedback-note textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-height: 80px; }
+        .link-btn { color: #1e73be; cursor: pointer; text-decoration: underline; font-size: 13px; }
+        .link-btn:hover { color: #1a64a5; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">规则名称</span>
+                <input type="text" class="search-input" id="searchRuleName" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">提醒等级</span>
+                <select class="search-select" id="searchLevel">
+                    <option>请选择</option>
+                    <option>一级提醒</option>
+                    <option>二级提醒</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">反馈状态</span>
+                <select class="search-select" id="searchStatus">
+                    <option>请选择</option>
+                    <option>已处理</option>
+                    <option>待处理</option>
+                    <option>已纳入计划</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+            <div>
+                <button class="btn btn-primary" onclick="openSendModal()">+ 手动发送提醒</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>规则名称</th>
+                    <th>提醒等级</th>
+                    <th>提醒内容摘要</th>
+                    <th>推送对象</th>
+                    <th>推送渠道</th>
+                    <th>接收时间</th>
+                    <th>反馈状态</th>
+                    <th>纳入计划情况</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="alertTableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 5 条 共有 128 条</div>
+            <select class="page-size-select">
+                <option>10条/页</option>
+                <option>20条/页</option>
+                <option>50条/页</option>
+            </select>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="pagination-info">跳转到</span>
+                <input type="number" class="search-input" style="width: 50px; padding: 4px;" value="1" min="1" max="13">
+                <span class="pagination-info">页</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="sendModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="sendModalTitle">手动发送提醒</div>
+                <div class="modal-close" onclick="closeSendModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label required">规则名称</label>
+                    <input type="text" class="form-input" id="sendRuleName" placeholder="请输入规则名称">
+                </div>
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">提醒等级</label>
+                        <select class="form-select" id="sendLevel">
+                            <option value="">请选择</option>
+                            <option value="一级提醒">一级提醒</option>
+                            <option value="二级提醒">二级提醒</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">推送对象</label>
+                        <input type="text" class="form-input" id="sendTarget" placeholder="请输入推送对象">
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">推送渠道</label>
+                    <div class="channel-options">
+                        <div class="channel-option">
+                            <input type="checkbox" id="channelSystem" value="系统消息" checked>
+                            <label for="channelSystem">系统消息</label>
+                        </div>
+                        <div class="channel-option">
+                            <input type="checkbox" id="channelSms" value="短信">
+                            <label for="channelSms">短信</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">提醒内容</label>
+                    <textarea class="form-textarea" id="sendContent" placeholder="请输入提醒内容"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSendModal()">取消</button>
+                <button class="btn btn-primary" onclick="sendAlert()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">提醒详情</div>
+                <div class="modal-close" onclick="closeDetailModal()">×</div>
+            </div>
+            <div class="modal-body" id="detailContent">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedbackModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="feedbackModalTitle">反馈处理</div>
+                <div class="modal-close" onclick="closeFeedbackModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="feedbackId">
+                <div class="detail-section">
+                    <div class="detail-title">提醒信息</div>
+                    <div class="detail-info" id="feedbackAlertInfo">
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <div class="detail-title">反馈状态</div>
+                    <div class="feedback-option">
+                        <label><input type="radio" name="feedbackStatus" value="已纳入计划"> 已纳入计划</label>
+                    </div>
+                    <div class="feedback-option">
+                        <label><input type="radio" name="feedbackStatus" value="暂缓纳入"> 暂缓纳入</label>
+                    </div>
+                    <div class="feedback-option">
+                        <label><input type="radio" name="feedbackStatus" value="无需纳入"> 无需纳入</label>
+                    </div>
+                    <div class="feedback-note">
+                        <label class="form-label">说明</label>
+                        <textarea id="feedbackNote" placeholder="请填写处理说明"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeFeedbackModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitFeedback()">提交反馈</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var alertData = [
+            { id: 1, ruleName: '高频超标主体提醒规则', level: '一级提醒', summary: 'XX食品有限公司近12个月农残超标3次，建议纳入优先抽检名单', 
+              target: '李四（监管所抽检专员）', channels: '系统消息、短信', receiveTime: '2026-07-05 09:30', 
+              feedbackStatus: '已处理', planStatus: '已纳入计划', 
+              detail: { subjectName: 'XX食品有限公司', historyIndex: '农残超标', exceedCount: 3, suggest: '建议纳入优先抽检名单', dataLink: '查看历史数据' },
+              feedback: { status: '已纳入计划', note: '已纳入2026年度抽检计划，计划抽检频次增加至每季度1次', operator: '张三', time: '2026-07-05 14:30' } },
+            { id: 2, ruleName: '季节周期风险提醒规则', level: '二级提醒', summary: '夏季熟肉制品微生物专项抽检提醒，历史同期超标率8.5%', 
+              target: '王五（抽检科室联络员）', channels: '系统消息', receiveTime: '2026-07-05 10:00', 
+              feedbackStatus: '待处理', planStatus: '-', 
+              detail: { riskCategory: '熟肉制品', period: '夏季', historyRate: '8.5%', suggest: '建议增加抽检频次' },
+              feedback: null },
+            { id: 3, ruleName: '区域品类风险提醒规则', level: '一级提醒', summary: '朝阳区蔬菜农药残留超标率12.5%，高于全市平均4.3个百分点', 
+              target: '赵六（科室负责人）', channels: '系统消息、短信', receiveTime: '2026-07-05 10:30', 
+              feedbackStatus: '已处理', planStatus: '暂缓纳入', 
+              detail: { region: '朝阳区', category: '蔬菜', exceedRate: '12.5%', cityAvg: '8.2%', suggest: '建议增加抽样比例' },
+              feedback: { status: '暂缓纳入', note: '当前蔬菜市场供应紧张，暂缓纳入，待9月份重新评估', operator: '赵六', time: '2026-07-05 15:00' } },
+            { id: 4, ruleName: '高频超标经营主体提醒规则', level: '一级提醒', summary: 'XX超市近6个月抽检不合格率6.2%，建议增加抽检频次', 
+              target: '孙七（监管所抽检专员）', channels: '系统消息、短信', receiveTime: '2026-07-05 11:00', 
+              feedbackStatus: '待处理', planStatus: '-', 
+              detail: { subjectName: 'XX超市', unqualifiedRate: '6.2%', suggest: '建议增加抽检频次至每月1次' },
+              feedback: null },
+            { id: 5, ruleName: '季节周期风险提醒规则', level: '二级提醒', summary: '标准更新后第二年标准适配性抽检提醒', 
+              target: '王五（抽检科室联络员）', channels: '系统消息', receiveTime: '2026-07-05 11:30', 
+              feedbackStatus: '已处理', planStatus: '无需纳入', 
+              detail: { standardUpdate: 'GB 2760-2025', suggest: '建议开展标准适配性抽检' },
+              feedback: { status: '无需纳入', note: '该标准涉及品类较少，且现有抽检计划已覆盖相关品类', operator: '王五', time: '2026-07-05 16:00' } }
+        ];
+
+        function renderTable(data) {
+            var tbody = document.getElementById('alertTableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var levelBadge = item.level === '一级提醒' ? 'badge-level1' : 'badge-level2';
+                var statusBadge = item.feedbackStatus === '已处理' ? 'badge-processed' : 'badge-pending';
+                var planBadge = '';
+                if (item.planStatus === '已纳入计划') planBadge = 'badge-incorporated';
+                else if (item.planStatus === '暂缓纳入') planBadge = 'badge-deferred';
+                else if (item.planStatus === '无需纳入') planBadge = 'badge-notneeded';
+                
+                var planDisplay = planBadge ? '<span class="badge ' + planBadge + '">' + item.planStatus + '</span>' : item.planStatus;
+                var feedbackBtnText = item.feedbackStatus === '已处理' ? '查看反馈' : '反馈处理';
+                
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.ruleName + '</td>' +
+                    '<td><span class="badge ' + levelBadge + '">' + item.level + '</span></td>' +
+                    '<td>' + item.summary + '</td>' +
+                    '<td>' + item.target + '</td>' +
+                    '<td>' + item.channels + '</td>' +
+                    '<td>' + item.receiveTime + '</td>' +
+                    '<td><span class="badge ' + statusBadge + '">' + item.feedbackStatus + '</span></td>' +
+                    '<td>' + planDisplay + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-view" onclick="openDetailModal(' + item.id + ')">查看详情</button>' +
+                        '<button class="action-btn action-btn-feedback" onclick="openFeedbackModal(' + item.id + ')">' + feedbackBtnText + '</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function openSendModal() {
+            document.getElementById('sendRuleName').value = '';
+            document.getElementById('sendLevel').value = '';
+            document.getElementById('sendTarget').value = '';
+            document.getElementById('sendContent').value = '';
+            document.getElementById('channelSystem').checked = true;
+            document.getElementById('channelSms').checked = false;
+            document.getElementById('sendModal').classList.add('active');
+        }
+
+        function closeSendModal() {
+            document.getElementById('sendModal').classList.remove('active');
+        }
+
+        function sendAlert() {
+            var ruleName = document.getElementById('sendRuleName').value.trim();
+            var level = document.getElementById('sendLevel').value;
+            var target = document.getElementById('sendTarget').value.trim();
+            var content = document.getElementById('sendContent').value.trim();
+            
+            if (!ruleName) { alert('请输入规则名称'); return; }
+            if (!level) { alert('请选择提醒等级'); return; }
+            if (!target) { alert('请输入推送对象'); return; }
+            if (!content) { alert('请输入提醒内容'); return; }
+            
+            var channels = [];
+            if (document.getElementById('channelSystem').checked) channels.push('系统消息');
+            if (document.getElementById('channelSms').checked) channels.push('短信');
+            
+            var now = new Date();
+            var timeStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + 
+                         String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            
+            var newAlert = {
+                id: alertData.length + 1,
+                ruleName: ruleName,
+                level: level,
+                summary: content.length > 50 ? content.substring(0, 50) + '...' : content,
+                target: target,
+                channels: channels.join('、'),
+                receiveTime: timeStr,
+                feedbackStatus: '待处理',
+                planStatus: '-',
+                detail: { custom: true, content: content },
+                feedback: null
+            };
+            
+            alertData.unshift(newAlert);
+            renderTable(alertData);
+            closeSendModal();
+            alert('提醒发送成功');
+        }
+
+        function openDetailModal(id) {
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            var detailHtml = '';
+            if (item.detail.custom) {
+                detailHtml = '<div class="detail-section">' +
+                    '<div class="detail-title">提醒内容</div>' +
+                    '<div class="detail-info">' +
+                        '<div class="detail-item"><div class="detail-label">内容</div><div class="detail-value" style="white-space: pre-wrap;">' + item.detail.content + '</div></div>' +
+                    '</div>' +
+                    '</div>';
+            } else {
+                var infoItems = [];
+                if (item.detail.subjectName) infoItems.push('<div class="detail-item"><div class="detail-label">主体名称</div><div class="detail-value">' + item.detail.subjectName + '</div></div>');
+                if (item.detail.historyIndex) infoItems.push('<div class="detail-item"><div class="detail-label">历史超标指标</div><div class="detail-value">' + item.detail.historyIndex + '</div></div>');
+                if (item.detail.exceedCount) infoItems.push('<div class="detail-item"><div class="detail-label">超标次数</div><div class="detail-value">' + item.detail.exceedCount + '次</div></div>');
+                if (item.detail.riskCategory) infoItems.push('<div class="detail-item"><div class="detail-label">风险品类</div><div class="detail-value">' + item.detail.riskCategory + '</div></div>');
+                if (item.detail.period) infoItems.push('<div class="detail-item"><div class="detail-label">季节周期</div><div class="detail-value">' + item.detail.period + '</div></div>');
+                if (item.detail.historyRate) infoItems.push('<div class="detail-item"><div class="detail-label">历史同期超标率</div><div class="detail-value">' + item.detail.historyRate + '</div></div>');
+                if (item.detail.region) infoItems.push('<div class="detail-item"><div class="detail-label">区域名称</div><div class="detail-value">' + item.detail.region + '</div></div>');
+                if (item.detail.category) infoItems.push('<div class="detail-item"><div class="detail-label">品类名称</div><div class="detail-value">' + item.detail.category + '</div></div>');
+                if (item.detail.exceedRate) infoItems.push('<div class="detail-item"><div class="detail-label">超标率</div><div class="detail-value">' + item.detail.exceedRate + '</div></div>');
+                if (item.detail.cityAvg) infoItems.push('<div class="detail-item"><div class="detail-label">全市平均</div><div class="detail-value">' + item.detail.cityAvg + '</div></div>');
+                if (item.detail.unqualifiedRate) infoItems.push('<div class="detail-item"><div class="detail-label">抽检不合格率</div><div class="detail-value">' + item.detail.unqualifiedRate + '</div></div>');
+                if (item.detail.standardUpdate) infoItems.push('<div class="detail-item"><div class="detail-label">标准更新</div><div class="detail-value">' + item.detail.standardUpdate + '</div></div>');
+                if (item.detail.suggest) infoItems.push('<div class="detail-item"><div class="detail-label">建议</div><div class="detail-value">' + item.detail.suggest + '</div></div>');
+                
+                detailHtml = '<div class="detail-section">' +
+                    '<div class="detail-title">关联历史数据</div>' +
+                    '<div class="detail-info">' + infoItems.join('') + '</div>' +
+                    '</div>' +
+                    '<div class="detail-section">' +
+                    '<div class="detail-title">数据链接</div>' +
+                    '<div class="link-btn" onclick="alert(\'跳转到关联历史数据页面\')">📊 查看关联历史数据</div>' +
+                    '</div>';
+            }
+            
+            document.getElementById('detailContent').innerHTML = detailHtml;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function openFeedbackModal(id) {
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            document.getElementById('feedbackId').value = id;
+            
+            var alertInfoHtml = '<div class="detail-item"><div class="detail-label">规则名称</div><div class="detail-value">' + item.ruleName + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">提醒等级</div><div class="detail-value">' + item.level + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">提醒内容</div><div class="detail-value">' + item.summary + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">推送对象</div><div class="detail-value">' + item.target + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">接收时间</div><div class="detail-value">' + item.receiveTime + '</div></div>';
+            
+            document.getElementById('feedbackAlertInfo').innerHTML = alertInfoHtml;
+            
+            if (item.feedback) {
+                document.getElementById('feedbackModalTitle').textContent = '查看反馈';
+                document.getElementById('feedbackNote').value = item.feedback.note;
+                
+                var radios = document.getElementsByName('feedbackStatus');
+                radios.forEach(function(radio) {
+                    radio.checked = radio.value === item.feedback.status;
+                    radio.disabled = true;
+                });
+                document.getElementById('feedbackNote').readOnly = true;
+            } else {
+                document.getElementById('feedbackModalTitle').textContent = '反馈处理';
+                document.getElementById('feedbackNote').value = '';
+                
+                var radios = document.getElementsByName('feedbackStatus');
+                radios.forEach(function(radio) {
+                    radio.checked = false;
+                    radio.disabled = false;
+                });
+                document.getElementById('feedbackNote').readOnly = false;
+            }
+            
+            document.getElementById('feedbackModal').classList.add('active');
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').classList.remove('active');
+        }
+
+        function submitFeedback() {
+            var id = parseInt(document.getElementById('feedbackId').value);
+            var status = document.querySelector('input[name="feedbackStatus"]:checked');
+            var note = document.getElementById('feedbackNote').value.trim();
+            
+            if (!status) { alert('请选择反馈状态'); return; }
+            if (!note) { alert('请填写处理说明'); return; }
+            
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (item) {
+                var now = new Date();
+                var timeStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + ' ' + 
+                             String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                
+                item.feedbackStatus = '已处理';
+                item.planStatus = status.value;
+                item.feedback = {
+                    status: status.value,
+                    note: note,
+                    operator: '当前用户',
+                    time: timeStr
+                };
+                
+                renderTable(alertData);
+                closeFeedbackModal();
+                alert('反馈提交成功');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('searchRuleName').value = '';
+            document.getElementById('searchLevel').value = '请选择';
+            document.getElementById('searchStatus').value = '请选择';
+            renderTable(alertData);
+        }
+
+        function doSearch() {
+            var ruleName = document.getElementById('searchRuleName').value.trim().toLowerCase();
+            var level = document.getElementById('searchLevel').value;
+            var status = document.getElementById('searchStatus').value;
+            
+            var filtered = alertData.filter(function(item) {
+                var matchName = !ruleName || item.ruleName.toLowerCase().includes(ruleName);
+                var matchLevel = level === '请选择' || item.level === level;
+                var matchStatus = status === '请选择' || 
+                                 (status === '已处理' && item.feedbackStatus === '已处理') ||
+                                 (status === '待处理' && item.feedbackStatus === '待处理') ||
+                                 (status === '已纳入计划' && item.planStatus === '已纳入计划');
+                return matchName && matchLevel && matchStatus;
+            });
+            
+            renderTable(filtered);
+        }
+
+        renderTable(alertData);
+    </script>
+</body>
+</html>

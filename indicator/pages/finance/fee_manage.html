@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检验费管理</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #c62828; border: 1px solid #c62828; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 13px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #c62828; margin-left: 4px; }
+        .form-input { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        .form-select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: #fff; cursor: pointer; }
+        .form-textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; min-height: 80px; resize: vertical; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-item { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">报送分类</span>
+                <select class="search-select" id="searchCategory">
+                    <option>请选择</option>
+                    <option>国家食品安全监督抽检</option>
+                    <option>省级食品安全监督抽检</option>
+                    <option>市级食品安全监督抽检</option>
+                    <option>区级食品安全监督抽检</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">检验项目名称</span>
+                <input type="text" class="search-input" id="searchItem" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">年份</span>
+                <select class="search-select" id="searchYear">
+                    <option>请选择</option>
+                    <option>2024</option>
+                    <option>2025</option>
+                    <option>2026</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <div>
+                <button class="btn btn-primary" onclick="openAddModal()">+ 新增项目</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="downloadTemplate()">📥 下载模板</button>
+                <button class="btn btn-secondary">📤 数据导入</button>
+                <button class="btn btn-secondary">📤 数据导出</button>
+                <button class="btn btn-secondary">📤 批量导出</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>报送分类名称</th>
+                    <th>检验项目名称</th>
+                    <th>检验依据</th>
+                    <th>单价（元）</th>
+                    <th>年份</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 5 条 共有 256 条</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="feeModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增检验费项目</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalId" value="">
+                <div class="form-item">
+                    <label class="form-label required">报送分类名称</label>
+                    <select class="form-select" id="reportCategory">
+                        <option value="">请选择</option>
+                        <option value="国家食品安全监督抽检">国家食品安全监督抽检</option>
+                        <option value="省级食品安全监督抽检">省级食品安全监督抽检</option>
+                        <option value="市级食品安全监督抽检">市级食品安全监督抽检</option>
+                        <option value="区级食品安全监督抽检">区级食品安全监督抽检</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">检验项目名称</label>
+                    <input type="text" class="form-input" id="itemName" placeholder="请输入检验项目名称">
+                </div>
+                <div class="form-item">
+                    <label class="form-label required">检验依据</label>
+                    <input type="text" class="form-input" id="testStandard" placeholder="请输入检验依据">
+                </div>
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">单价（元）</label>
+                        <input type="number" class="form-input" id="unitPrice" placeholder="0.00">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">年份</label>
+                        <select class="form-select" id="itemYear">
+                            <option value="">请选择</option>
+                            <option>2024</option>
+                            <option>2025</option>
+                            <option>2026</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">备注</label>
+                    <textarea class="form-textarea" id="itemNote" placeholder="请输入备注"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveFee()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var feeData = [
+            { id: 1, reportCategory: '国家食品安全监督抽检', itemName: '农药残留检测', testStandard: 'GB 2763-2021', unitPrice: 150, year: '2026', note: '常规项目' },
+            { id: 2, reportCategory: '国家食品安全监督抽检', itemName: '兽药残留检测', testStandard: 'GB 31650-2019', unitPrice: 200, year: '2026', note: '常规项目' },
+            { id: 3, reportCategory: '省级食品安全监督抽检', itemName: '食品添加剂检测', testStandard: 'GB 2760-2021', unitPrice: 80, year: '2026', note: '' },
+            { id: 4, reportCategory: '市级食品安全监督抽检', itemName: '微生物检测', testStandard: 'GB 4789-2022', unitPrice: 50, year: '2026', note: '基础项目' },
+            { id: 5, reportCategory: '区级食品安全监督抽检', itemName: '重金属检测', testStandard: 'GB 2762-2022', unitPrice: 300, year: '2026', note: '特殊项目' }
+        ];
+
+        function renderTable(data) {
+            var tbody = document.getElementById('tableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.reportCategory + '</td>' +
+                    '<td>' + item.itemName + '</td>' +
+                    '<td>' + item.testStandard + '</td>' +
+                    '<td>' + item.unitPrice.toFixed(2) + '</td>' +
+                    '<td>' + item.year + '</td>' +
+                    '<td>' + (item.note || '-') + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-edit" onclick="openEditModal(' + item.id + ')">编辑</button>' +
+                        '<button class="action-btn action-btn-delete" onclick="deleteFee(' + item.id + ')">删除</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '新增检验费项目';
+            document.getElementById('modalMode').value = 'add';
+            document.getElementById('modalId').value = '';
+            document.getElementById('reportCategory').value = '';
+            document.getElementById('itemName').value = '';
+            document.getElementById('testStandard').value = '';
+            document.getElementById('unitPrice').value = '';
+            document.getElementById('itemYear').value = '';
+            document.getElementById('itemNote').value = '';
+            document.getElementById('feeModal').classList.add('active');
+        }
+
+        function openEditModal(id) {
+            var item = feeData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            document.getElementById('modalTitle').textContent = '编辑检验费项目';
+            document.getElementById('modalMode').value = 'edit';
+            document.getElementById('modalId').value = id;
+            document.getElementById('reportCategory').value = item.reportCategory;
+            document.getElementById('itemName').value = item.itemName;
+            document.getElementById('testStandard').value = item.testStandard;
+            document.getElementById('unitPrice').value = item.unitPrice;
+            document.getElementById('itemYear').value = item.year;
+            document.getElementById('itemNote').value = item.note;
+            document.getElementById('feeModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('feeModal').classList.remove('active');
+        }
+
+        function saveFee() {
+            var mode = document.getElementById('modalMode').value;
+            var id = parseInt(document.getElementById('modalId').value);
+            var reportCategory = document.getElementById('reportCategory').value;
+            var itemName = document.getElementById('itemName').value.trim();
+            var testStandard = document.getElementById('testStandard').value.trim();
+            var unitPrice = document.getElementById('unitPrice').value;
+            var year = document.getElementById('itemYear').value;
+            var note = document.getElementById('itemNote').value.trim();
+            
+            if (!reportCategory) { alert('请选择报送分类名称'); return; }
+            if (!itemName) { alert('请输入检验项目名称'); return; }
+            if (!testStandard) { alert('请输入检验依据'); return; }
+            if (!unitPrice) { alert('请输入单价'); return; }
+            if (!year) { alert('请选择年份'); return; }
+            
+            if (mode === 'add') {
+                feeData.unshift({
+                    id: feeData.length + 1,
+                    reportCategory: reportCategory,
+                    itemName: itemName,
+                    testStandard: testStandard,
+                    unitPrice: parseFloat(unitPrice),
+                    year: year,
+                    note: note
+                });
+            } else {
+                var item = feeData.find(function(d) { return d.id === id; });
+                if (item) {
+                    item.reportCategory = reportCategory;
+                    item.itemName = itemName;
+                    item.testStandard = testStandard;
+                    item.unitPrice = parseFloat(unitPrice);
+                    item.year = year;
+                    item.note = note;
+                }
+            }
+            
+            renderTable(feeData);
+            closeModal();
+            alert('保存成功');
+        }
+
+        function deleteFee(id) {
+            if (confirm('确定要删除该检验费项目吗？')) {
+                feeData = feeData.filter(function(d) { return d.id !== id; });
+                renderTable(feeData);
+                alert('删除成功');
+            }
+        }
+
+        function downloadTemplate() {
+            alert('模板下载成功');
+        }
+
+        function clearSearch() {
+            document.getElementById('searchCategory').value = '请选择';
+            document.getElementById('searchItem').value = '';
+            document.getElementById('searchYear').value = '请选择';
+            renderTable(feeData);
+        }
+
+        function doSearch() {
+            var category = document.getElementById('searchCategory').value;
+            var item = document.getElementById('searchItem').value.trim().toLowerCase();
+            var year = document.getElementById('searchYear').value;
+            
+            var filtered = feeData.filter(function(d) {
+                var matchCategory = category === '请选择' || d.reportCategory === category;
+                var matchItem = !item || d.itemName.toLowerCase().includes(item);
+                var matchYear = year === '请选择' || d.year === year;
+                return matchCategory && matchItem && matchYear;
+            });
+            
+            renderTable(filtered);
+        }
+
+        renderTable(feeData);
+    </script>
+</body>
+</html>

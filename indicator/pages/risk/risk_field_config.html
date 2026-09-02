@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>警示判定字段与运算关系自定义</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .page-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        .layout-container { display: flex; gap: 15px; height: calc(100vh - 80px); }
+        .panel { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .panel-header { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; background: #fafafa; font-size: 14px; font-weight: 600; color: #333; }
+        .panel-body { flex: 1; padding: 15px; overflow-y: auto; }
+        .field-category { margin-bottom: 15px; }
+        .category-title { font-size: 13px; font-weight: 600; color: #666; margin-bottom: 8px; padding-left: 10px; border-left: 3px solid #1e9a6c; }
+        .field-item { padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 6px; cursor: pointer; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center; }
+        .field-item:hover { border-color: #1e73be; background: #f0f5ff; }
+        .field-item.dragging { opacity: 0.5; }
+        .field-name { font-size: 13px; color: #333; }
+        .field-type { font-size: 11px; color: #999; padding: 2px 6px; background: #f8fafc; border-radius: 3px; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; }
+        .btn-danger:hover { background: #fff2f0; }
+        .condition-container { min-height: 300px; border: 2px dashed #d9d9d9; border-radius: 6px; padding: 15px; }
+        .condition-container.has-data { border-style: solid; border-color: #1e9a6c; background: #fafdfb; }
+        .condition-item { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 10px; }
+        .condition-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .condition-title { font-size: 14px; font-weight: 500; color: #333; }
+        .logic-operator { display: flex; gap: 10px; margin-bottom: 15px; }
+        .logic-btn { padding: 4px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; cursor: pointer; background: #fff; }
+        .logic-btn.active { background: #1e9a6c; color: #fff; border-color: #1e9a6c; }
+        .operation-panel { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .op-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff; cursor: pointer; min-width: 120px; }
+        .op-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .priority-control { display: flex; gap: 5px; }
+        .priority-btn { width: 28px; height: 28px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 14px; }
+        .priority-btn:hover { border-color: #1e73be; color: #1e73be; }
+        .priority-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { font-size: 13px; color: #666; margin-bottom: 5px; display: block; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; background: #fff; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="page-title">警示判定字段与运算关系自定义</div>
+    
+    <div class="layout-container">
+        <div class="panel" style="width: 35%;">
+            <div class="panel-header">可用字段列表</div>
+            <div class="panel-body">
+                <div class="field-category">
+                    <div class="category-title">数值型字段</div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'numeric', '检测值')">
+                        <span class="field-name">检测值</span>
+                        <span class="field-type">数值</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'numeric', '限值')">
+                        <span class="field-name">限值</span>
+                        <span class="field-type">数值</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'numeric', '超标倍数')">
+                        <span class="field-name">超标倍数</span>
+                        <span class="field-type">数值</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'numeric', '历史超标次数')">
+                        <span class="field-name">历史超标次数</span>
+                        <span class="field-type">数值</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'numeric', '超标率')">
+                        <span class="field-name">超标率</span>
+                        <span class="field-type">数值</span>
+                    </div>
+                </div>
+                
+                <div class="field-category">
+                    <div class="category-title">文本型字段</div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'text', '检测结果')">
+                        <span class="field-name">检测结果</span>
+                        <span class="field-type">文本</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'text', '检出物质名称')">
+                        <span class="field-name">检出物质名称</span>
+                        <span class="field-type">文本</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'text', '企业信用等级')">
+                        <span class="field-name">企业信用等级</span>
+                        <span class="field-type">文本</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'text', '判定结论')">
+                        <span class="field-name">判定结论</span>
+                        <span class="field-type">文本</span>
+                    </div>
+                </div>
+                
+                <div class="field-category">
+                    <div class="category-title">时间型字段</div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'date', '抽样时间')">
+                        <span class="field-name">抽样时间</span>
+                        <span class="field-type">时间</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'date', '生产日期')">
+                        <span class="field-name">生产日期</span>
+                        <span class="field-type">时间</span>
+                    </div>
+                    <div class="field-item" draggable="true" ondragstart="dragField(event, 'date', '最近超标时间')">
+                        <span class="field-name">最近超标时间</span>
+                        <span class="field-type">时间</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="width: 65%;">
+            <div class="panel-header">判定条件配置区</div>
+            <div class="panel-body">
+                <div class="condition-container" id="conditionContainer" ondragover="allowDrop(event)" ondrop="dropField(event)">
+                    <div style="text-align: center; color: #999; padding: 40px 0;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">📋</div>
+                        <div>将左侧字段拖拽到此处添加判定条件</div>
+                        <div style="font-size: 12px; margin-top: 5px;">或点击下方按钮添加条件</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="priority-control">
+                        <button class="priority-btn" onclick="moveConditionUp()">↑</button>
+                        <button class="priority-btn" onclick="moveConditionDown()">↓</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="addCondition()">+ 添加判定条件</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="conditionModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="conditionModalTitle">添加判定条件</div>
+                <div class="modal-close" onclick="closeConditionModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="conditionIndex" value="-1">
+                <div class="form-item">
+                    <label class="form-label">字段类型</label>
+                    <select class="form-select" id="fieldType" onchange="updateFieldOptions()">
+                        <option value="numeric">数值型</option>
+                        <option value="text">文本型</option>
+                        <option value="date">时间型</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">判定字段</label>
+                    <select class="form-select" id="conditionField">
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">运算符</label>
+                    <select class="form-select" id="conditionOperator">
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">对比值</label>
+                    <input type="text" class="form-input" id="conditionValue" placeholder="输入对比值或选择字段">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeConditionModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveCondition()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var conditions = [];
+        var fieldOptions = {
+            numeric: ['检测值', '限值', '超标倍数', '历史超标次数', '超标率'],
+            text: ['检测结果', '检出物质名称', '企业信用等级', '判定结论'],
+            date: ['抽样时间', '生产日期', '最近超标时间']
+        };
+        
+        var operatorOptions = {
+            numeric: ['>=', '>', '=', '<=', '<', '≠'],
+            text: ['=', '包含', '不包含', '≠'],
+            date: ['距现在', '在区间内', '早于', '晚于', '等于']
+        };
+
+        function dragField(event, type, name) {
+            event.dataTransfer.setData('type', type);
+            event.dataTransfer.setData('name', name);
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function dropField(event) {
+            event.preventDefault();
+            var type = event.dataTransfer.getData('type');
+            var name = event.dataTransfer.getData('name');
+            
+            addCondition(type, name);
+        }
+
+        function updateFieldOptions() {
+            var type = document.getElementById('fieldType').value;
+            var select = document.getElementById('conditionField');
+            var html = fieldOptions[type].map(function(f) {
+                return '<option value="' + f + '">' + f + '</option>';
+            }).join('');
+            select.innerHTML = html;
+            updateOperatorOptions(type);
+        }
+
+        function updateOperatorOptions(type) {
+            var select = document.getElementById('conditionOperator');
+            var html = operatorOptions[type].map(function(o) {
+                return '<option value="' + o + '">' + o + '</option>';
+            }).join('');
+            select.innerHTML = html;
+        }
+
+        function addCondition(type, name) {
+            document.getElementById('conditionModalTitle').innerText = '添加判定条件';
+            document.getElementById('conditionIndex').value = '-1';
+            document.getElementById('fieldType').value = type || 'numeric';
+            updateFieldOptions();
+            
+            if (name) {
+                document.getElementById('conditionField').value = name;
+            }
+            document.getElementById('conditionValue').value = '';
+            
+            document.getElementById('conditionModal').classList.add('active');
+        }
+
+        function closeConditionModal() {
+            document.getElementById('conditionModal').classList.remove('active');
+        }
+
+        function saveCondition() {
+            var index = parseInt(document.getElementById('conditionIndex').value);
+            var type = document.getElementById('fieldType').value;
+            var field = document.getElementById('conditionField').value;
+            var operator = document.getElementById('conditionOperator').value;
+            var value = document.getElementById('conditionValue').value;
+            
+            if (!field || !operator || !value) {
+                alert('请填写完整条件信息');
+                return;
+            }
+            
+            var condition = {
+                id: Date.now(),
+                type: type,
+                field: field,
+                operator: operator,
+                value: value,
+                logic: conditions.length > 0 ? '且' : '',
+                priority: conditions.length + 1
+            };
+            
+            if (index >= 0) {
+                conditions[index] = condition;
+            } else {
+                conditions.push(condition);
+            }
+            
+            renderConditions();
+            closeConditionModal();
+        }
+
+        function renderConditions() {
+            var container = document.getElementById('conditionContainer');
+            
+            if (conditions.length === 0) {
+                container.className = 'condition-container';
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px 0;"><div style="font-size: 24px; margin-bottom: 10px;">📋</div><div>将左侧字段拖拽到此处添加判定条件</div><div style="font-size: 12px; margin-top: 5px;">或点击下方按钮添加条件</div></div>';
+                return;
+            }
+            
+            container.className = 'condition-container has-data';
+            var html = conditions.map(function(c, index) {
+                var typeLabel = c.type === 'numeric' ? '数值' : (c.type === 'text' ? '文本' : '时间');
+                return '<div class="condition-item">' +
+                    '<div class="condition-header">' +
+                        '<span class="condition-title">条件 ' + (index + 1) + '</span>' +
+                        '<div style="display: flex; gap: 5px;">' +
+                            '<button class="btn btn-danger" style="padding: 2px 8px; font-size: 12px;" onclick="deleteCondition(' + index + ')">删除</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="logic-operator">' +
+                        '<span style="font-size: 12px; color: #999;">逻辑关系：</span>' +
+                        '<button class="logic-btn' + (c.logic === '且' ? ' active' : '') + '" onclick="setLogic(' + index + ', \'且\')">且</button>' +
+                        '<button class="logic-btn' + (c.logic === '或' ? ' active' : '') + '" onclick="setLogic(' + index + ', \'或\')">或</button>' +
+                    '</div>' +
+                    '<div class="operation-panel">' +
+                        '<select class="op-select" value="' + c.type + '" onchange="updateConditionType(' + index + ', this.value)">' +
+                            '<option value="numeric"' + (c.type === 'numeric' ? ' selected' : '') + '>数值型</option>' +
+                            '<option value="text"' + (c.type === 'text' ? ' selected' : '') + '>文本型</option>' +
+                            '<option value="date"' + (c.type === 'date' ? ' selected' : '') + '>时间型</option>' +
+                        '</select>' +
+                        '<select class="op-select" value="' + c.field + '">' +
+                            fieldOptions[c.type].map(function(f) { return '<option value="' + f + '"' + (f === c.field ? ' selected' : '') + '>' + f + '</option>'; }).join('') +
+                        '</select>' +
+                        '<select class="op-select" value="' + c.operator + '">' +
+                            operatorOptions[c.type].map(function(o) { return '<option value="' + o + '"' + (o === c.operator ? ' selected' : '') + '>' + o + '</option>'; }).join('') +
+                        '</select>' +
+                        '<input type="text" class="op-input" value="' + c.value + '" onchange="updateConditionValue(' + index + ', this.value)">' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function deleteCondition(index) {
+            conditions.splice(index, 1);
+            renderConditions();
+        }
+
+        function setLogic(index, logic) {
+            if (index > 0) {
+                conditions[index].logic = logic;
+                renderConditions();
+            }
+        }
+
+        function updateConditionType(index, type) {
+            conditions[index].type = type;
+            conditions[index].field = fieldOptions[type][0];
+            conditions[index].operator = operatorOptions[type][0];
+            renderConditions();
+        }
+
+        function updateConditionValue(index, value) {
+            conditions[index].value = value;
+        }
+
+        function moveConditionUp() {
+            var selectedIndex = -1;
+            var items = document.querySelectorAll('.condition-item');
+            items.forEach(function(item, index) {
+                if (item.classList.contains('selected')) {
+                    selectedIndex = index;
+                }
+            });
+            
+            if (selectedIndex > 0) {
+                var temp = conditions[selectedIndex];
+                conditions[selectedIndex] = conditions[selectedIndex - 1];
+                conditions[selectedIndex - 1] = temp;
+                renderConditions();
+            }
+        }
+
+        function moveConditionDown() {
+            var selectedIndex = -1;
+            var items = document.querySelectorAll('.condition-item');
+            items.forEach(function(item, index) {
+                if (item.classList.contains('selected')) {
+                    selectedIndex = index;
+                }
+            });
+            
+            if (selectedIndex < conditions.length - 1) {
+                var temp = conditions[selectedIndex];
+                conditions[selectedIndex] = conditions[selectedIndex + 1];
+                conditions[selectedIndex + 1] = temp;
+                renderConditions();
+            }
+        }
+
+        updateFieldOptions();
+    </script>
+</body>
+</html>

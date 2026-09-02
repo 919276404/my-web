@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目风险</title>
+    <link rel="stylesheet" href="risk_comm.css">
+    <style>
+        /* ==================== 页面特有样式 ==================== */
+
+        /* 概览卡片 - 简洁数字展示 */
+        .stat-card {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 22px 20px;
+        }
+        .stat-card .stat-card-value { margin: 0 0 8px 0; }
+        .stat-card .stat-card-item { font-size: 13px; color: var(--text-secondary); }
+
+        /* 双表并排布局 */
+        .rank-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .rank-card {
+            flex: 1;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 渐变卡片头（页面特有） */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 18px;
+            background: linear-gradient(90deg, var(--green) 0%, #2daf7f 100%);
+            color: #fff;
+        }
+        .card-header.blue {
+            background: linear-gradient(90deg, var(--blue) 0%, #2a82d4 100%);
+        }
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.3px;
+        }
+        .card-title-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+
+        /* 明细表容器 */
+        .detail-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .detail-table-wrap {
+            overflow-x: auto;
+        }
+
+        /* 排名序号 */
+        .rank-no {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+            background: var(--green-light);
+            color: var(--green);
+            font-family: ' DIN', 'Roboto', sans-serif;
+        }
+        .rank-no.top1 { background: var(--red); color: #fff; box-shadow: 0 2px 6px rgba(255,77,79,0.35); }
+        .rank-no.top2 { background: var(--orange); color: #fff; box-shadow: 0 2px 6px rgba(250,140,22,0.35); }
+        .rank-no.top3 { background: #faad14; color: #fff; box-shadow: 0 2px 6px rgba(250,173,20,0.35); }
+
+        /* 比率颜色 */
+        .rate-high { color: var(--red); font-weight: 600; }
+        .rate-mid { color: var(--orange); font-weight: 600; }
+        .rate-low { color: #52c41a; }
+
+        /* 表格项目名称列 */
+        .data-table td.item-name {
+            text-align: left;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* 类别标签 */
+        .category-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid #b7e6d4;
+        }
+
+        /* 食品列表 */
+        .data-table th.text-left { text-align: left; }
+        .data-table td.food-list {
+            text-align: left;
+            color: var(--text-secondary);
+            font-size: 12px;
+            line-height: 1.8;
+            max-width: 320px;
+        }
+        .food-tag {
+            display: inline-block;
+            margin: 2px 4px 2px 0;
+            padding: 2px 8px;
+            background: var(--bg-soft);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+        .food-rate-info {
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 400;
+        }
+
+        /* 概览卡片：红色边框 */
+        .stat-card.border-red { border-left-color: var(--red); }
+        .stat-card.border-red::after { background: radial-gradient(circle, rgba(255,77,79,0.08) 0%, transparent 70%); }
+        .stat-card.border-blue .stat-card-value { color: var(--blue); }
+        .stat-card.border-orange .stat-card-value { color: var(--orange); }
+        .stat-card.border-red .stat-card-value { color: var(--red); }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <div class="page-title">项目风险</div>
+            <div class="page-subtitle">检验项目风险监测 · 问题发现率与影响规模分析</div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-blue" onclick="exportAll()">⬇ 导出全部分析结果</button>
+        </div>
+    </div>
+
+    <!-- 概览指标 -->
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-value" id="totalItems">25</div>
+            <div class="stat-card-item">涉及检验项目数</div>
+        </div>
+        <div class="stat-card border-blue">
+            <div class="stat-card-value" id="totalInspections">21430</div>
+            <div class="stat-card-item">检验总项次</div>
+        </div>
+        <div class="stat-card border-orange">
+            <div class="stat-card-value warning" id="totalUnqualified">672</div>
+            <div class="stat-card-item">不合格项次</div>
+        </div>
+        <div class="stat-card border-red">
+            <div class="stat-card-value danger" id="avgRate">3.14%</div>
+            <div class="stat-card-item">平均问题发现率</div>
+        </div>
+    </div>
+
+    <!-- 筛选区 -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="filter-item">
+                <label class="filter-label">任务年度：</label>
+                <select class="filter-select" id="taskYear">
+                    <option value="2026">2026年</option>
+                    <option value="2025">2025年</option>
+                    <option value="2024">2024年</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label class="filter-label">食品大类：</label>
+                <select class="filter-select" id="foodCategory">
+                    <option value="">全部</option>
+                    <option value="粮食加工品">粮食加工品</option>
+                    <option value="食用油">食用油</option>
+                    <option value="调味品">调味品</option>
+                    <option value="肉制品">肉制品</option>
+                    <option value="乳制品">乳制品</option>
+                    <option value="饮料">饮料</option>
+                    <option value="蔬菜制品">蔬菜制品</option>
+                    <option value="水果制品">水果制品</option>
+                    <option value="水产制品">水产制品</option>
+                    <option value="蛋制品">蛋制品</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label class="filter-label">检验项目：</label>
+                <input type="text" class="filter-input" id="keyword" placeholder="输入项目名称">
+            </div>
+            <button class="btn btn-primary" onclick="searchData()">🔍 查询</button>
+            <button class="btn btn-secondary" onclick="resetFilter()">↻ 重置</button>
+        </div>
+    </div>
+
+    <!-- 两个排行表格并排 -->
+    <div class="rank-row">
+        <!-- 左表：检验项目问题发现率排行 -->
+        <div class="rank-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="card-title-icon">📈</span>
+                    检验项目问题发现率排行
+                </div>
+                <button class="btn btn-blue btn-sm" onclick="exportTable('rate')">⬇ 导出</button>
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="riskItemRateTable">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>检验项目名称</th>
+                            <th>检验项次数</th>
+                            <th>不合格项次数</th>
+                            <th>问题发现率(%)</th>
+                            <th>涉及食品细类数</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 右表：检验项目数量排行 -->
+        <div class="rank-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="card-title-icon">📊</span>
+                    检验项目数量排行
+                </div>
+                <button class="btn btn-blue btn-sm" onclick="exportTable('count')">⬇ 导出</button>
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="riskItemCountTable">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>检验项目名称</th>
+                            <th>不合格项次(去重)</th>
+                            <th>影响规模</th>
+                            <th>涉及食品细类数</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 各类别不合格占比饼图 -->
+    <div class="chart-container">
+        <div class="chart-title">
+            🥧 各类别不合格占比
+            <div class="chart-toolbar">
+                <button class="btn btn-blue btn-sm" onclick="exportChart()">⬇ 导出图表</button>
+            </div>
+        </div>
+        <div id="riskItemPieChart" style="width:100%;height:350px;"></div>
+    </div>
+
+    <!-- 检验项目明细表 -->
+    <div class="detail-card">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="card-title-icon">📋</span>
+                检验项目明细表
+            </div>
+            <button class="btn btn-blue btn-sm" onclick="exportTable('detail')">⬇ 导出明细</button>
+        </div>
+        <div class="detail-table-wrap">
+            <table class="data-table" id="riskItemDetailTable" style="min-width: 800px;">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>检验项次</th>
+                        <th>所属类别</th>
+                        <th>检验项次数</th>
+                        <th>不合格项次数</th>
+                        <th>问题发现率(%)</th>
+                        <th>涉及食品细类</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="detailPagination"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        // ============ 模拟数据 ============
+        // 检验项目明细数据（25条）
+        var detailData = [
+            { id: 1, name: '铅', category: '重金属等元素污染物', inspections: 1280, unqualified: 38, foods: '粮食加工品,食用油,蔬菜制品,水产制品,蛋制品,肉制品' },
+            { id: 2, name: '镉', category: '重金属等元素污染物', inspections: 1150, unqualified: 42, foods: '粮食加工品,蔬菜制品,水产制品,肉制品' },
+            { id: 3, name: '黄曲霉毒素B1', category: '生物毒素', inspections: 860, unqualified: 25, foods: '粮食加工品,食用油,调味品,炒货食品' },
+            { id: 4, name: '克伦特罗', category: '非食用物质', inspections: 420, unqualified: 18, foods: '肉制品' },
+            { id: 5, name: '恩诺沙星', category: '兽药', inspections: 980, unqualified: 35, foods: '肉制品,水产制品,乳制品' },
+            { id: 6, name: '苯甲酸', category: '食品添加剂', inspections: 1320, unqualified: 56, foods: '调味品,饮料,肉制品,蔬菜制品' },
+            { id: 7, name: '山梨酸', category: '食品添加剂', inspections: 1280, unqualified: 48, foods: '调味品,饮料,肉制品,蔬菜制品,水果制品' },
+            { id: 8, name: '脱氢乙酸', category: '食品添加剂', inspections: 760, unqualified: 22, foods: '调味品,肉制品,蔬菜制品' },
+            { id: 9, name: '过氧化值', category: '质量指标', inspections: 920, unqualified: 31, foods: '食用油,方便食品,饼干,炒货食品' },
+            { id: 10, name: '酸价', category: '质量指标', inspections: 950, unqualified: 28, foods: '食用油,方便食品,饼干,炒货食品,薯类' },
+            { id: 11, name: '菌落总数', category: '微生物', inspections: 1100, unqualified: 45, foods: '乳制品,肉制品,饮料,蛋制品' },
+            { id: 12, name: '大肠菌群', category: '微生物', inspections: 1050, unqualified: 38, foods: '乳制品,肉制品,饮料,蛋制品' },
+            { id: 13, name: '沙门氏菌', category: '微生物', inspections: 980, unqualified: 15, foods: '肉制品,水产制品,蛋制品,乳制品' },
+            { id: 14, name: '金黄色葡萄球菌', category: '微生物', inspections: 870, unqualified: 12, foods: '肉制品,乳制品,水产制品' },
+            { id: 15, name: '副溶血性弧菌', category: '微生物', inspections: 380, unqualified: 9, foods: '水产制品' },
+            { id: 16, name: '毒死蜱', category: '农药', inspections: 1450, unqualified: 52, foods: '蔬菜制品,水果制品,茶叶' },
+            { id: 17, name: '克百威', category: '农药', inspections: 1180, unqualified: 35, foods: '蔬菜制品,水果制品,茶叶' },
+            { id: 18, name: '氯霉素', category: '兽药', inspections: 520, unqualified: 14, foods: '水产制品,肉制品' },
+            { id: 19, name: '氧氟沙星', category: '兽药', inspections: 680, unqualified: 19, foods: '水产制品,肉制品' },
+            { id: 20, name: '三聚氰胺', category: '非食用物质', inspections: 360, unqualified: 6, foods: '乳制品' },
+            { id: 21, name: '苏丹红', category: '非食用物质', inspections: 280, unqualified: 4, foods: '调味品' },
+            { id: 22, name: '糖精钠', category: '食品添加剂', inspections: 890, unqualified: 24, foods: '饮料,糖果制品,水果制品' },
+            { id: 23, name: '甜蜜素', category: '食品添加剂', inspections: 920, unqualified: 27, foods: '饮料,糖果制品,水果制品,酒类' },
+            { id: 24, name: '安赛蜜', category: '食品添加剂', inspections: 850, unqualified: 21, foods: '饮料,糖果制品,水果制品' },
+            { id: 25, name: '黄曲霉毒素M1', category: '生物毒素', inspections: 420, unqualified: 8, foods: '乳制品' }
+        ];
+
+        // 计算辅助字段
+        detailData.forEach(function(item) {
+            item.rate = (item.unqualified / item.inspections * 100).toFixed(2);
+            // 将 foods 字符串转为对象数组，为每个食品细类生成独立的检测数/不合格数/发现率
+            var foodNames = item.foods.split('，').join(',').split(',').filter(Boolean);
+            var n = foodNames.length;
+            var baseIns = Math.floor(item.inspections / n);
+            var remIns = item.inspections - baseIns * n;
+            var baseUnq = Math.floor(item.unqualified / n);
+            var remUnq = item.unqualified - baseUnq * n;
+            item.foodDetails = foodNames.map(function(name, idx) {
+                var unqualified = baseUnq + (idx < remUnq ? 1 : 0);
+                var inspections = baseIns + (idx < remIns ? 1 : 0);
+                // 基于 id+idx 的确定性波动调整检测数（分母），让各食品细类发现率有差异
+                var wave = ((parseInt(item.id) + idx * 3) % 5) - 2; // -2 ~ +2
+                inspections = Math.max(unqualified + 10, inspections + wave * 15);
+                var rate = inspections > 0 ? (unqualified / inspections * 100) : 0;
+                return { name: name, rate: parseFloat(rate.toFixed(2)), unqualified: unqualified, inspections: inspections };
+            });
+            item.foodCount = n;
+            item.impactScale = item.unqualified * item.foodCount; // 影响规模 = 不合格项次 × 涉及食品细类数
+        });
+
+        var currentPage = 1;
+        var pageSize = 15;
+        var currentDataSource = detailData; // 当前明细表数据源（筛选后更新）
+        var pieChart = null;
+
+        // 构建涉及食品细类HTML：按问题发现率倒序，每个细类名后跟(发现率% 不合格X次/总次数)
+        function buildFoodListHtml(foodDetails) {
+            if (!foodDetails || !foodDetails.length) return '';
+            var sorted = foodDetails.slice().sort(function(a, b) { return b.rate - a.rate; });
+            return sorted.map(function(f) {
+                return '<span class="food-tag">' + f.name + ' <span class="food-rate-info">(' + f.rate.toFixed(2) + '% ,' + f.unqualified + '/' + f.inspections + '  )</span></span>';
+            }).join('，');
+        }
+
+        // ============ 渲染左表：问题发现率排行 ============
+        function renderRateTable() {
+            var sorted = detailData.slice().sort(function(a, b) {
+                return parseFloat(b.rate) - parseFloat(a.rate);
+            });
+            var top10 = sorted.slice(0, 10);
+            var tbody = document.querySelector('#riskItemRateTable tbody');
+            tbody.innerHTML = '';
+            top10.forEach(function(item, index) {
+                var rank = index + 1;
+                var rankClass = rank === 1 ? 'top1' : (rank === 2 ? 'top2' : (rank === 3 ? 'top3' : ''));
+                var rate = parseFloat(item.rate);
+                var rateClass = rate >= 4 ? 'rate-high' : (rate >= 3 ? 'rate-mid' : 'rate-low');
+                var row = '<tr>' +
+                    '<td><span class="rank-no ' + rankClass + '">' + rank + '</span></td>' +
+                    '<td class="item-name">' + item.name + '</td>' +
+                    '<td>' + item.inspections.toLocaleString() + '</td>' +
+                    '<td>' + item.unqualified + '</td>' +
+                    '<td><span class="' + rateClass + '">' + item.rate + '</span></td>' +
+                    '<td>' + item.foodCount + '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        // ============ 渲染右表：数量排行 ============
+        function renderCountTable() {
+            var sorted = detailData.slice().sort(function(a, b) {
+                return b.unqualified - a.unqualified;
+            });
+            var top10 = sorted.slice(0, 10);
+            var tbody = document.querySelector('#riskItemCountTable tbody');
+            tbody.innerHTML = '';
+            top10.forEach(function(item, index) {
+                var rank = index + 1;
+                var rankClass = rank === 1 ? 'top1' : (rank === 2 ? 'top2' : (rank === 3 ? 'top3' : ''));
+                // 影响规模等级
+                var scale = item.impactScale;
+                var scaleText = '';
+                var scaleClass = '';
+                if (scale >= 150) { scaleText = '★★★ 高'; scaleClass = 'rate-high'; }
+                else if (scale >= 80) { scaleText = '★★ 中'; scaleClass = 'rate-mid'; }
+                else { scaleText = '★ 低'; scaleClass = 'rate-low'; }
+                var row = '<tr>' +
+                    '<td><span class="rank-no ' + rankClass + '">' + rank + '</span></td>' +
+                    '<td class="item-name">' + item.name + '</td>' +
+                    '<td>' + item.unqualified + '</td>' +
+                    '<td><span class="' + scaleClass + '">' + scaleText + ' (' + scale + ')</span></td>' +
+                    '<td>' + item.foodCount + '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        // ============ 渲染饼图：各类别不合格占比 ============
+        function renderPieChart() {
+            pieChart = echarts.init(document.getElementById('riskItemPieChart'));
+            // 按类别聚合不合格项次
+            var categoryMap = {};
+            detailData.forEach(function(item) {
+                if (!categoryMap[item.category]) {
+                    categoryMap[item.category] = 0;
+                }
+                categoryMap[item.category] += item.unqualified;
+            });
+            var pieData = [];
+            for (var cat in categoryMap) {
+                pieData.push({ value: categoryMap[cat], name: cat + ' (' + categoryMap[cat] + ')' });
+            }
+            pieData.sort(function(a, b) { return b.value - a.value; });
+
+            var option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return params.name + '<br/>不合格项次：' + params.value + ' (' + params.percent.toFixed(1) + '%)';
+                    }
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: '5%',
+                    top: 'center',
+                    textStyle: {
+                        fontSize: 13,
+                        color: '#333'
+                    },
+                    itemWidth: 16,
+                    itemHeight: 16,
+                    itemGap: 12
+                },
+                series: [
+                    {
+                        name: '不合格占比',
+                        type: 'pie',
+                        radius: ['40%', '65%'],
+                        center: ['35%', '50%'],
+                        avoidLabelOverlap: true,
+                        data: pieData,
+                        itemStyle: {
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{d}%',
+                            fontSize: 13,
+                            color: '#333',
+                            fontWeight: 500
+                        },
+                        labelLine: {
+                            show: true,
+                            length: 15,
+                            length2: 10,
+                            lineStyle: {
+                                color: '#999'
+                            }
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }
+                ],
+                color: [
+                    '#1e9a6c',
+                    '#1e73be',
+                    '#fa8c16',
+                    '#faad14',
+                    '#ed5565',
+                    '#2ec4b6',
+                    '#a0522d',
+                    '#808000',
+                    '#2f5597'
+                ]
+            };
+            pieChart.setOption(option);
+        }
+
+        // ============ 渲染明细表 ============
+        function renderDetailTable() {
+            var sorted = detailData.slice().sort(function(a, b) {
+                return parseFloat(b.rate) - parseFloat(a.rate);
+            });
+            var start = (currentPage - 1) * pageSize;
+            var pageData = sorted.slice(start, start + pageSize);
+            var tbody = document.querySelector('#riskItemDetailTable tbody');
+            tbody.innerHTML = '';
+            pageData.forEach(function(item, idx) {
+                var rate = parseFloat(item.rate);
+                var rateClass = rate >= 4 ? 'rate-high' : (rate >= 3 ? 'rate-mid' : 'rate-low');
+                var row = '<tr>' +
+                    '<td>' + (start + idx + 1) + '</td>' +
+                    '<td class="item-name">' + item.name + ' (' + item.inspections.toLocaleString() + '项次)</td>' +
+                    '<td><span class="category-tag">' + item.category + '</span></td>' +
+                    '<td>' + item.inspections.toLocaleString() + '</td>' +
+                    '<td>' + item.unqualified + '</td>' +
+                    '<td><span class="' + rateClass + '">' + item.rate + '</span></td>' +
+                    '<td class="food-list">' + buildFoodListHtml(item.foodDetails) + '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+            renderPagination(sorted.length);
+        }
+
+        // 动态渲染分页组件
+        function renderPagination(total) {
+            var totalPages = Math.max(1, Math.ceil(total / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            var start = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            var end = Math.min(currentPage * pageSize, total);
+
+            var html = '';
+            // 左侧：数据信息
+            html += '<span class="page-info">共 ' + total + ' 条，显示 ' + start + '-' + end + ' 条</span>';
+
+            // 右侧：按钮组
+            html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+            // 首页/上一页
+            html += '<button class="pagination-btn" onclick="changePage(1)" ' + (currentPage <= 1 ? 'disabled' : '') + '>首页</button>';
+            html += '<button class="pagination-btn" onclick="changePage(currentPage - 1)" ' + (currentPage <= 1 ? 'disabled' : '') + '>上一页</button>';
+
+            // 页码窗口（最多5个，超出显示省略号）
+            var showPages = [];
+            if (totalPages <= 5) {
+                for (var i = 1; i <= totalPages; i++) showPages.push(i);
+            } else {
+                if (currentPage <= 3) {
+                    showPages = [1, 2, 3, 4, '...', totalPages];
+                } else if (currentPage >= totalPages - 2) {
+                    showPages = [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+                } else {
+                    showPages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+                }
+            }
+            showPages.forEach(function(p) {
+                if (p === '...') {
+                    html += '<span style="padding:0 4px;color:var(--text-secondary);">…</span>';
+                } else {
+                    html += '<button class="pagination-btn' + (p === currentPage ? ' active' : '') + '" onclick="changePage(' + p + ')">' + p + '</button>';
+                }
+            });
+
+            // 下一页/末页
+            html += '<button class="pagination-btn" onclick="changePage(currentPage + 1)" ' + (currentPage >= totalPages ? 'disabled' : '') + '>下一页</button>';
+            html += '<button class="pagination-btn" onclick="changePage(totalPages)" ' + (currentPage >= totalPages ? 'disabled' : '') + '>末页</button>';
+
+            // 每页条数选择
+            html += '<select class="page-size-select" onchange="changePageSize(this.value)" style="margin-left:8px;">';
+            [10, 15, 20, 50].forEach(function(s) {
+                html += '<option value="' + s + '" ' + (s === pageSize ? 'selected' : '') + '>' + s + '条/页</option>';
+            });
+            html += '</select>';
+
+            html += '</div>';
+            document.getElementById('detailPagination').innerHTML = html;
+        }
+
+        function changePage(page) {
+            var totalPages = Math.ceil(currentDataSource.length / pageSize);
+            if (page < 1) page = 1;
+            if (page > totalPages) page = totalPages;
+            currentPage = page;
+            renderDetailTable();
+        }
+
+        function changePageSize(newSize) {
+            pageSize = parseInt(newSize);
+            currentPage = 1;
+            renderDetailTable();
+        }
+
+        // ============ 概览指标 ============
+        function renderSummary() {
+            var totalItems = detailData.length;
+            var totalInspections = 0;
+            var totalUnqualified = 0;
+            detailData.forEach(function(item) {
+                totalInspections += item.inspections;
+                totalUnqualified += item.unqualified;
+            });
+            var avgRate = (totalUnqualified / totalInspections * 100).toFixed(2);
+            document.getElementById('totalItems').innerText = totalItems;
+            document.getElementById('totalInspections').innerText = totalInspections.toLocaleString();
+            document.getElementById('totalUnqualified').innerText = totalUnqualified.toLocaleString();
+            document.getElementById('avgRate').innerText = avgRate + '%';
+        }
+
+        // ============ 筛选查询 ============
+        function searchData() {
+            var keyword = document.getElementById('keyword').value.trim();
+            var year = document.getElementById('taskYear').value;
+            var foodCat = document.getElementById('foodCategory').value;
+            // 演示筛选效果：仅按关键字和食品细类筛选
+            var filtered = detailData.filter(function(item) {
+                var match = true;
+                if (keyword && item.name.indexOf(keyword) === -1) match = false;
+                if (foodCat && !item.foodDetails.some(function(f) { return f.name === foodCat; })) match = false;
+                return match;
+            });
+            currentPage = 1;
+            // 渲染筛选结果（影响排行与明细）
+            renderRateTableWithData(filtered);
+            renderCountTableWithData(filtered);
+            renderDetailTableWithData(filtered);
+            renderPieChartWithData(filtered);
+            renderSummaryWithData(filtered);
+        }
+
+        function renderRateTableWithData(data) {
+            var sorted = data.slice().sort(function(a, b) {
+                return parseFloat(b.rate) - parseFloat(a.rate);
+            });
+            var top10 = sorted.slice(0, 10);
+            var tbody = document.querySelector('#riskItemRateTable tbody');
+            tbody.innerHTML = '';
+            if (top10.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="color:#999;padding:20px;">无匹配数据</td></tr>';
+                return;
+            }
+            top10.forEach(function(item, index) {
+                var rank = index + 1;
+                var rankClass = rank === 1 ? 'top1' : (rank === 2 ? 'top2' : (rank === 3 ? 'top3' : ''));
+                var rate = parseFloat(item.rate);
+                var rateClass = rate >= 4 ? 'rate-high' : (rate >= 3 ? 'rate-mid' : 'rate-low');
+                var row = '<tr>' +
+                    '<td><span class="rank-no ' + rankClass + '">' + rank + '</span></td>' +
+                    '<td class="item-name">' + item.name + '</td>' +
+                    '<td>' + item.inspections.toLocaleString() + '</td>' +
+                    '<td>' + item.unqualified + '</td>' +
+                    '<td><span class="' + rateClass + '">' + item.rate + '</span></td>' +
+                    '<td>' + item.foodCount + '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        function renderCountTableWithData(data) {
+            var sorted = data.slice().sort(function(a, b) {
+                return b.unqualified - a.unqualified;
+            });
+            var top10 = sorted.slice(0, 10);
+            var tbody = document.querySelector('#riskItemCountTable tbody');
+            tbody.innerHTML = '';
+            if (top10.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="color:#999;padding:20px;">无匹配数据</td></tr>';
+                return;
+            }
+            top10.forEach(function(item, index) {
+                var rank = index + 1;
+                var rankClass = rank === 1 ? 'top1' : (rank === 2 ? 'top2' : (rank === 3 ? 'top3' : ''));
+                var scale = item.impactScale;
+                var scaleText = '';
+                var scaleClass = '';
+                if (scale >= 150) { scaleText = '★★★ 高'; scaleClass = 'rate-high'; }
+                else if (scale >= 80) { scaleText = '★★ 中'; scaleClass = 'rate-mid'; }
+                else { scaleText = '★ 低'; scaleClass = 'rate-low'; }
+                var row = '<tr>' +
+                    '<td><span class="rank-no ' + rankClass + '">' + rank + '</span></td>' +
+                    '<td class="item-name">' + item.name + '</td>' +
+                    '<td>' + item.unqualified + '</td>' +
+                    '<td><span class="' + scaleClass + '">' + scaleText + ' (' + scale + ')</span></td>' +
+                    '<td>' + item.foodCount + '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+        }
+
+        function renderDetailTableWithData(data) {
+            currentDataSource = data; // 更新当前数据源
+            var sorted = data.slice().sort(function(a, b) {
+                return parseFloat(b.rate) - parseFloat(a.rate);
+            });
+            var start = (currentPage - 1) * pageSize;
+            var pageData = sorted.slice(start, start + pageSize);
+            var tbody = document.querySelector('#riskItemDetailTable tbody');
+            tbody.innerHTML = '';
+            if (pageData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="color:#999;padding:20px;">无匹配数据</td></tr>';
+                renderPagination(0);
+                return;
+            }
+            pageData.forEach(function(item, idx) {
+                var rate = parseFloat(item.rate);
+                var rateClass = rate >= 4 ? 'rate-high' : (rate >= 3 ? 'rate-mid' : 'rate-low');
+                var row = '<tr>' +
+                    '<td>' + (start + idx + 1) + '</td>' +
+                    '<td class="item-name">' + item.name + ' (' + item.inspections.toLocaleString() + '项次)</td>' +
+                    '<td><span class="category-tag">' + item.category + '</span></td>' +
+                    '<td>' + item.inspections.toLocaleString() + '</td>' +
+                    '<td>' + item.unqualified + '</td>' +
+                    '<td><span class="' + rateClass + '">' + item.rate + '</span></td>' +
+                    '<td class="food-list">' + buildFoodListHtml(item.foodDetails) + '</td>' +
+                    '</tr>';
+                tbody.innerHTML += row;
+            });
+            renderPagination(sorted.length);
+        }
+
+        function renderPieChartWithData(data) {
+            var categoryMap = {};
+            data.forEach(function(item) {
+                if (!categoryMap[item.category]) {
+                    categoryMap[item.category] = 0;
+                }
+                categoryMap[item.category] += item.unqualified;
+            });
+            var pieData = [];
+            for (var cat in categoryMap) {
+                pieData.push({ value: categoryMap[cat], name: cat + ' (' + categoryMap[cat] + ')' });
+            }
+            pieData.sort(function(a, b) { return b.value - a.value; });
+            pieChart.setOption({ series: [{ data: pieData }] });
+        }
+
+        function renderSummaryWithData(data) {
+            var totalItems = data.length;
+            var totalInspections = 0;
+            var totalUnqualified = 0;
+            data.forEach(function(item) {
+                totalInspections += item.inspections;
+                totalUnqualified += item.unqualified;
+            });
+            var avgRate = totalInspections > 0 ? (totalUnqualified / totalInspections * 100).toFixed(2) : '0.00';
+            document.getElementById('totalItems').innerText = totalItems;
+            document.getElementById('totalInspections').innerText = totalInspections.toLocaleString();
+            document.getElementById('totalUnqualified').innerText = totalUnqualified.toLocaleString();
+            document.getElementById('avgRate').innerText = avgRate + '%';
+        }
+
+        function resetFilter() {
+            document.getElementById('taskYear').value = '2026';
+            document.getElementById('foodCategory').value = '';
+            document.getElementById('keyword').value = '';
+            currentPage = 1;
+            currentDataSource = detailData;
+            renderRateTable();
+            renderCountTable();
+            renderDetailTable();
+            renderPieChart();
+            renderSummary();
+        }
+
+        // ============ 导出功能 ============
+        function exportTable(type) {
+            var names = { rate: '检验项目问题发现率排行', count: '检验项目数量排行', detail: '检验项目明细表' };
+            alert('正在导出【' + names[type] + '】，共导出 ' + (type === 'detail' ? detailData.length : 10) + ' 条数据…');
+        }
+        function exportSingle(id) {
+            var item = detailData.find(function(i) { return i.id === id; });
+            if (item) {
+                alert('正在导出检验项目【' + item.name + '】的明细数据…');
+            }
+        }
+        function exportChart() {
+            alert('正在导出【各类别不合格占比】饼图…');
+        }
+        function exportAll() {
+            alert('正在导出全部分析结果（排行表+图表+明细表）…');
+        }
+
+        // ============ 窗口自适应 ============
+        window.addEventListener('resize', function() {
+            if (pieChart) pieChart.resize();
+        });
+
+        // ============ 初始化 ============
+        function init() {
+            renderSummary();
+            renderRateTable();
+            renderCountTable();
+            renderPieChart();
+            renderDetailTable();
+        }
+        init();
+    </script>
+</body>
+</html>

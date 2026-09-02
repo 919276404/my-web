@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>判定字段选取与运算关系可视化定义</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .page-size-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-number { background: #e3f2fd; color: #1e73be; }
+        .badge-text { background: #fff3e0; color: #e65100; }
+        .badge-date { background: #e8f5e9; color: #2e7d32; }
+        .badge-active { background: #e8f5e9; color: #2e7d32; }
+        .badge-inactive { background: #f5f5f5; color: #999; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #ef5350; border: 1px solid #ef5350; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 650px; max-height: 90vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #e8e8e8; background: #fafafa; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 20px; color: #999; cursor: pointer; padding: 0 5px; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; max-height: calc(90vh - 120px); overflow-y: auto; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .form-item { display: flex; flex-direction: column; gap: 6px; min-width: 180px; }
+        .form-label { font-size: 13px; color: #666; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #ff4d4f; margin-left: 4px; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .form-input:focus { outline: none; border-color: #1e73be; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff; cursor: pointer; }
+        .form-textarea { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; resize: vertical; min-height: 80px; }
+        .form-textarea:focus { outline: none; border-color: #1e73be; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #e8e8e8; background: #fafafa; }
+        .conditions-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e0e0e0; }
+        .conditions-section-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .condition-row { display: flex; gap: 10px; align-items: center; padding: 12px; background: #fafafa; border-radius: 4px; margin-bottom: 10px; }
+        .condition-field { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .condition-operator { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; min-width: 80px; }
+        .condition-value { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .btn-add-condition { padding: 4px 12px; font-size: 12px; background: #f5f5f5; color: #1e73be; border: 1px solid #1e73be; border-radius: 4px; cursor: pointer; }
+        .btn-add-condition:hover { background: #f0f5ff; }
+        .btn-remove-condition { padding: 4px 8px; font-size: 12px; background: #fff; color: #ef5350; border: 1px solid #ef5350; border-radius: 4px; cursor: pointer; }
+        .btn-remove-condition:hover { background: #ffebee; }
+        .priority-controls { display: flex; gap: 10px; align-items: center; }
+        .priority-btn { padding: 4px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: #fff; }
+        .priority-btn:hover { border-color: #1e73be; color: #1e73be; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">字段名称</span>
+                <input type="text" class="search-input" placeholder="请输入">
+            </div>
+            <div class="search-item">
+                <span class="search-label">字段类型</span>
+                <select class="search-select">
+                    <option>请选择</option>
+                    <option>数值型</option>
+                    <option>文本型</option>
+                    <option>时间型</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">所属数据表</span>
+                <select class="search-select">
+                    <option>请选择</option>
+                    <option>历史抽检结果表</option>
+                    <option>风险趋势分析表</option>
+                    <option>区域品类风险统计表</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+            <div>
+                <button class="btn btn-primary" onclick="openModal('add')">+ 新增判定字段</button>
+                <button class="btn btn-secondary">⊗ 批量删除</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>字段名称</th>
+                    <th>字段类型</th>
+                    <th>所属数据表</th>
+                    <th>运算关系</th>
+                    <th>对比值</th>
+                    <th>逻辑关系</th>
+                    <th>优先级</th>
+                    <th>是否启用</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>1</td>
+                    <td>历史超标次数</td>
+                    <td><span class="badge badge-number">数值型</span></td>
+                    <td>历史抽检结果表</td>
+                    <td>≥</td>
+                    <td>3</td>
+                    <td>且</td>
+                    <td>1</td>
+                    <td><span class="badge badge-active">启用</span></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="openModal('edit', 1)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(1)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>2</td>
+                    <td>抽检不合格率</td>
+                    <td><span class="badge badge-number">数值型</span></td>
+                    <td>历史抽检结果表</td>
+                    <td>≥</td>
+                    <td>5%</td>
+                    <td>或</td>
+                    <td>2</td>
+                    <td><span class="badge badge-active">启用</span></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="openModal('edit', 2)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(2)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>3</td>
+                    <td>区域超标率差值</td>
+                    <td><span class="badge badge-number">数值型</span></td>
+                    <td>区域品类风险统计表</td>
+                    <td>≥</td>
+                    <td>3%</td>
+                    <td>且</td>
+                    <td>3</td>
+                    <td><span class="badge badge-active">启用</span></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="openModal('edit', 3)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(3)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>4</td>
+                    <td>企业生产状态</td>
+                    <td><span class="badge badge-text">文本型</span></td>
+                    <td>当前在产企业清单</td>
+                    <td>=</td>
+                    <td>正常生产</td>
+                    <td>且</td>
+                    <td>4</td>
+                    <td><span class="badge badge-active">启用</span></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="openModal('edit', 4)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(4)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>5</td>
+                    <td>食品风险等级</td>
+                    <td><span class="badge badge-text">文本型</span></td>
+                    <td>在售食品品类清单</td>
+                    <td>包含</td>
+                    <td>高风险</td>
+                    <td>或</td>
+                    <td>5</td>
+                    <td><span class="badge badge-active">启用</span></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="openModal('edit', 5)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(5)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>6</td>
+                    <td>上次抽检时间</td>
+                    <td><span class="badge badge-date">时间型</span></td>
+                    <td>历史抽检结果表</td>
+                    <td>距现在</td>
+                    <td>≥6个月</td>
+                    <td>且</td>
+                    <td>6</td>
+                    <td><span class="badge badge-inactive">停用</span></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="openModal('edit', 6)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(6)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>7</td>
+                    <td>历史超标集中月份</td>
+                    <td><span class="badge badge-date">时间型</span></td>
+                    <td>风险趋势分析表</td>
+                    <td>在区间内</td>
+                    <td>6-8月</td>
+                    <td>且</td>
+                    <td>7</td>
+                    <td><span class="badge badge-active">启用</span></td>
+                    <td>
+                        <button class="action-btn action-btn-edit" onclick="openModal('edit', 7)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(7)">删除</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 7 条 共有 24 条</div>
+            <select class="page-size-select">
+                <option>10条/页</option>
+                <option>20条/页</option>
+                <option>50条/页</option>
+            </select>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="pagination-info">跳转到</span>
+                <input type="number" class="search-input" style="width: 50px; padding: 4px;" value="1" min="1" max="3">
+                <span class="pagination-info">页</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="judgeModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增判定字段</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalId" value="">
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">字段名称</label>
+                        <input type="text" class="form-input" id="fieldName" placeholder="请输入字段名称">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">字段类型</label>
+                        <select class="form-select" id="fieldType" onchange="updateOperators()">
+                            <option value="">请选择</option>
+                            <option value="number">数值型</option>
+                            <option value="text">文本型</option>
+                            <option value="date">时间型</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">所属数据表</label>
+                        <select class="form-select" id="dataTable" onchange="updateFields()">
+                            <option value="">请选择</option>
+                            <option value="history_result">历史抽检结果表</option>
+                            <option value="risk_trend">风险趋势分析表</option>
+                            <option value="region_risk">区域品类风险统计表</option>
+                            <option value="current_enterprise">当前在产企业清单</option>
+                            <option value="food_category">在售食品品类清单</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">逻辑关系</label>
+                        <select class="form-select" id="logicRelation">
+                            <option value="and">且</option>
+                            <option value="or">或</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label">优先级</label>
+                        <div class="priority-controls">
+                            <button class="priority-btn" onclick="changePriority(-1)">▲</button>
+                            <input type="number" class="form-input" id="priority" value="1" min="1" style="width: 60px; text-align: center;">
+                            <button class="priority-btn" onclick="changePriority(1)">▼</button>
+                        </div>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">是否启用</label>
+                        <select class="form-select" id="isEnabled">
+                            <option value="1">是</option>
+                            <option value="0">否</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="conditions-section">
+                    <div class="conditions-section-title">判定条件</div>
+                    <div id="conditionsList">
+                        <div class="condition-row">
+                            <select class="condition-field" id="condField">
+                                <option value="">请选择字段</option>
+                            </select>
+                            <select class="condition-operator" id="condOperator">
+                                <option value="">请选择运算符</option>
+                            </select>
+                            <input type="text" class="condition-value" placeholder="对比值">
+                            <button class="btn-remove-condition" onclick="removeCondition(this)">-</button>
+                        </div>
+                    </div>
+                    <button class="btn-add-condition" onclick="addCondition()">+ 添加条件</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveJudgeField()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var judgeData = [
+            { id: 1, fieldName: '历史超标次数', fieldType: 'number', dataTable: 'history_result', operator: '≥', compareValue: '3', logicRelation: 'and', priority: 1, isEnabled: 1 },
+            { id: 2, fieldName: '抽检不合格率', fieldType: 'number', dataTable: 'history_result', operator: '≥', compareValue: '5%', logicRelation: 'or', priority: 2, isEnabled: 1 },
+            { id: 3, fieldName: '区域超标率差值', fieldType: 'number', dataTable: 'region_risk', operator: '≥', compareValue: '3%', logicRelation: 'and', priority: 3, isEnabled: 1 },
+            { id: 4, fieldName: '企业生产状态', fieldType: 'text', dataTable: 'current_enterprise', operator: '=', compareValue: '正常生产', logicRelation: 'and', priority: 4, isEnabled: 1 },
+            { id: 5, fieldName: '食品风险等级', fieldType: 'text', dataTable: 'food_category', operator: '包含', compareValue: '高风险', logicRelation: 'or', priority: 5, isEnabled: 1 },
+            { id: 6, fieldName: '上次抽检时间', fieldType: 'date', dataTable: 'history_result', operator: '距现在', compareValue: '≥6个月', logicRelation: 'and', priority: 6, isEnabled: 0 },
+            { id: 7, fieldName: '历史超标集中月份', fieldType: 'date', dataTable: 'risk_trend', operator: '在区间内', compareValue: '6-8月', logicRelation: 'and', priority: 7, isEnabled: 1 }
+        ];
+
+        var operators = {
+            number: ['≥', '>', '=', '≤', '<', '≠'],
+            text: ['=', '包含', '不包含', '≠'],
+            date: ['距现在', '在区间内', '早于', '晚于', '等于']
+        };
+
+        var tableNames = {
+            history_result: '历史抽检结果表',
+            risk_trend: '风险趋势分析表',
+            region_risk: '区域品类风险统计表',
+            current_enterprise: '当前在产企业清单',
+            food_category: '在售食品品类清单'
+        };
+
+        var tableFields = {
+            history_result: ['企业名称', '企业统一社会信用代码', '抽检时间', '食品名称', '食品类别', '检验项目', '检验结果', '是否合格', '超标指标', '超标次数', '抽检不合格率', '上次抽检时间'],
+            risk_trend: ['风险品类', '季节周期风险系数', '历史同期超标率', '历史超标集中月份'],
+            region_risk: ['区域代码', '品类名称', '区域品类超标率', '区域超标率差值'],
+            current_enterprise: ['企业名称', '企业统一社会信用代码', '生产地址', '生产状态', '主营品类'],
+            food_category: ['品类名称', '品类编码', '所属类别', '在售数量', '风险等级']
+        };
+
+        function clearSearch() { console.log('清空搜索'); }
+        function doSearch() { console.log('执行搜索'); }
+
+        function updateOperators() {
+            var fieldType = document.getElementById('fieldType').value;
+            var ops = operators[fieldType] || [];
+            document.querySelectorAll('.condition-operator').forEach(function(select) {
+                select.innerHTML = '<option value="">请选择运算符</option>';
+                ops.forEach(function(op) {
+                    select.innerHTML += '<option value="' + op + '">' + op + '</option>';
+                });
+            });
+        }
+
+        function updateFields() {
+            var dataTable = document.getElementById('dataTable').value;
+            var fields = tableFields[dataTable] || [];
+            document.querySelectorAll('.condition-field').forEach(function(select) {
+                select.innerHTML = '<option value="">请选择字段</option>';
+                fields.forEach(function(field) {
+                    select.innerHTML += '<option value="' + field + '">' + field + '</option>';
+                });
+            });
+        }
+
+        function openModal(mode, id) {
+            document.getElementById('modalMode').value = mode;
+            document.getElementById('modalId').value = id || '';
+
+            if (mode === 'add') {
+                document.getElementById('modalTitle').textContent = '新增判定字段';
+                document.getElementById('fieldName').value = '';
+                document.getElementById('fieldType').value = '';
+                document.getElementById('dataTable').value = '';
+                document.getElementById('logicRelation').value = 'and';
+                document.getElementById('priority').value = judgeData.length + 1;
+                document.getElementById('isEnabled').value = '1';
+                document.getElementById('conditionsList').innerHTML = '<div class="condition-row"><select class="condition-field"><option value="">请选择字段</option></select><select class="condition-operator"><option value="">请选择运算符</option></select><input type="text" class="condition-value" placeholder="对比值"><button class="btn-remove-condition" onclick="removeCondition(this)">-</button></div>';
+            } else {
+                document.getElementById('modalTitle').textContent = '编辑判定字段';
+                var data = judgeData.find(item => item.id === parseInt(id));
+                if (!data) return;
+
+                document.getElementById('fieldName').value = data.fieldName;
+                document.getElementById('fieldType').value = data.fieldType;
+                document.getElementById('dataTable').value = data.dataTable;
+                document.getElementById('logicRelation').value = data.logicRelation;
+                document.getElementById('priority').value = data.priority;
+                document.getElementById('isEnabled').value = data.isEnabled ? '1' : '0';
+
+                document.getElementById('conditionsList').innerHTML = '<div class="condition-row"><select class="condition-field"><option value="">请选择字段</option></select><select class="condition-operator"><option value="">请选择运算符</option></select><input type="text" class="condition-value" value="' + data.compareValue + '"><button class="btn-remove-condition" onclick="removeCondition(this)">-</button></div>';
+
+                updateFields();
+                updateOperators();
+
+                var fieldSelect = document.querySelector('.condition-field');
+                fieldSelect.value = data.fieldName;
+
+                var operatorSelect = document.querySelector('.condition-operator');
+                operatorSelect.value = data.operator;
+            }
+
+            document.getElementById('judgeModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('judgeModal').classList.remove('show');
+        }
+
+        function changePriority(delta) {
+            var priorityInput = document.getElementById('priority');
+            var current = parseInt(priorityInput.value) || 1;
+            var newVal = current + delta;
+            if (newVal < 1) newVal = 1;
+            priorityInput.value = newVal;
+        }
+
+        function addCondition() {
+            var container = document.getElementById('conditionsList');
+            var dataTable = document.getElementById('dataTable').value;
+            var fieldType = document.getElementById('fieldType').value;
+            var fields = tableFields[dataTable] || [];
+            var ops = operators[fieldType] || [];
+
+            var fieldOptions = '<option value="">请选择字段</option>';
+            fields.forEach(function(field) {
+                fieldOptions += '<option value="' + field + '">' + field + '</option>';
+            });
+
+            var opOptions = '<option value="">请选择运算符</option>';
+            ops.forEach(function(op) {
+                opOptions += '<option value="' + op + '">' + op + '</option>';
+            });
+
+            container.insertAdjacentHTML('beforeend', '<div class="condition-row"><select class="condition-field">' + fieldOptions + '</select><select class="condition-operator">' + opOptions + '</select><input type="text" class="condition-value" placeholder="对比值"><button class="btn-remove-condition" onclick="removeCondition(this)">-</button></div>');
+        }
+
+        function removeCondition(btn) {
+            var container = btn.parentElement.parentElement;
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert('至少保留一个条件');
+            }
+        }
+
+        function saveJudgeField() {
+            var mode = document.getElementById('modalMode').value;
+            var id = parseInt(document.getElementById('modalId').value);
+
+            var fieldName = document.getElementById('fieldName').value;
+            var fieldType = document.getElementById('fieldType').value;
+            var dataTable = document.getElementById('dataTable').value;
+
+            if (!fieldName.trim()) { alert('请输入字段名称'); return; }
+            if (!fieldType) { alert('请选择字段类型'); return; }
+            if (!dataTable) { alert('请选择所属数据表'); return; }
+
+            var operator = document.querySelector('.condition-operator').value;
+            var compareValue = document.querySelector('.condition-value').value;
+
+            if (!operator) { alert('请选择运算关系'); return; }
+            if (!compareValue.trim()) { alert('请输入对比值'); return; }
+
+            var formData = {
+                fieldName: fieldName,
+                fieldType: fieldType,
+                dataTable: dataTable,
+                operator: operator,
+                compareValue: compareValue,
+                logicRelation: document.getElementById('logicRelation').value,
+                priority: parseInt(document.getElementById('priority').value) || 1,
+                isEnabled: parseInt(document.getElementById('isEnabled').value)
+            };
+
+            if (mode === 'add') {
+                formData.id = judgeData.length > 0 ? Math.max(...judgeData.map(r => r.id)) + 1 : 1;
+                judgeData.push(formData);
+                alert('判定字段添加成功');
+            } else {
+                var index = judgeData.findIndex(item => item.id === id);
+                if (index !== -1) {
+                    judgeData[index] = {...judgeData[index], ...formData};
+                    alert('判定字段修改成功');
+                }
+            }
+
+            renderTable();
+            closeModal();
+        }
+
+        function confirmDelete(id) {
+            if (confirm('确定要删除该判定字段吗？')) {
+                judgeData = judgeData.filter(item => item.id !== parseInt(id));
+                renderTable();
+                alert('删除成功');
+            }
+        }
+
+        function renderTable() {
+            var tbody = document.querySelector('.data-table tbody');
+            var html = judgeData.map(function(item, index) {
+                var typeBadge = item.fieldType === 'number' ? 'badge-number' : (item.fieldType === 'text' ? 'badge-text' : 'badge-date');
+                var typeText = item.fieldType === 'number' ? '数值型' : (item.fieldType === 'text' ? '文本型' : '时间型');
+                var logicText = item.logicRelation === 'and' ? '且' : '或';
+                return '<tr><td><input type="checkbox"></td><td>' + (index + 1) + '</td>' +
+                    '<td>' + item.fieldName + '</td>' +
+                    '<td><span class="badge ' + typeBadge + '">' + typeText + '</span></td>' +
+                    '<td>' + (tableNames[item.dataTable] || item.dataTable) + '</td>' +
+                    '<td>' + item.operator + '</td>' +
+                    '<td>' + item.compareValue + '</td>' +
+                    '<td>' + logicText + '</td>' +
+                    '<td>' + item.priority + '</td>' +
+                    '<td><span class="badge ' + (item.isEnabled ? 'badge-active' : 'badge-inactive') + '">' + (item.isEnabled ? '启用' : '停用') + '</span></td>' +
+                    '<td><button class="action-btn action-btn-edit" onclick="openModal(\'edit\', ' + item.id + ')">编辑</button><button class="action-btn action-btn-delete" onclick="confirmDelete(' + item.id + ')">删除</button></td></tr>';
+            }).join('');
+            tbody.innerHTML = html;
+        }
+
+        document.getElementById('judgeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

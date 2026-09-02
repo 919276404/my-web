@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>风险警示推送与接收反馈</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .page-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .btn-success { background: #2e7d32; color: #fff; }
+        .btn-success:hover { background: #1b5e20; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .data-table td.right { text-align: right; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-detail { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-detail:hover { background: #f0f5ff; }
+        .action-btn-feedback { background: #fff; color: #f57c00; border: 1px solid #f57c00; }
+        .action-btn-feedback:hover { background: #fffbf5; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 700px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { font-size: 13px; color: #666; margin-bottom: 5px; display: block; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; background: #fff; cursor: pointer; }
+        .form-textarea { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; min-height: 100px; resize: vertical; }
+        .status { padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+        .status.red { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+        .status.orange { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        .status.yellow { background: #fffbe6; color: #faad14; border: 1px solid #ffe58f; }
+        .status.processed { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .status.pending { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+        .feedback-btn { padding: 6px 16px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; cursor: pointer; margin-right: 8px; margin-bottom: 8px; }
+        .feedback-btn.pending { background: #e6f7ff; border-color: #1890ff; color: #1890ff; }
+        .feedback-btn.pending:hover { background: #bae7ff; }
+        .feedback-btn.viewed { background: #fff7e6; border-color: #fa8c16; color: #fa8c16; }
+        .feedback-btn.viewed:hover { background: #ffe5b3; }
+        .feedback-btn.dispatched { background: #f6ffed; border-color: #52c41a; color: #52c41a; }
+        .feedback-btn.dispatched:hover { background: #d9f7be; }
+        .feedback-btn.handled { background: #f5f5f5; border-color: #ddd; color: #666; }
+        .detail-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px dashed #e0e0e0; }
+        .detail-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .detail-info { display: flex; flex-wrap: wrap; gap: 15px; }
+        .detail-item { display: flex; flex-direction: column; min-width: 150px; }
+        .detail-label { font-size: 12px; color: #999; margin-bottom: 2px; }
+        .detail-value { font-size: 13px; color: #333; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="page-title">风险警示推送与接收反馈</div>
+    
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">警示等级</span>
+                <select class="search-select" id="alertLevelSearch">
+                    <option>全部</option>
+                    <option>红色警示</option>
+                    <option>橙色警示</option>
+                    <option>黄色警示</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">反馈状态</span>
+                <select class="search-select" id="feedbackStatusSearch">
+                    <option>全部</option>
+                    <option>待处理</option>
+                    <option>已查看</option>
+                    <option>已派单</option>
+                    <option>已处置</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">规则名称</span>
+                <input type="text" class="search-input" id="ruleNameSearch" placeholder="请输入">
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-header">
+            <div>警示信息列表</div>
+            <button class="btn btn-success" onclick="openSendAlertModal()">+ 手动发送警示</button>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>警示编号</th>
+                    <th>规则名称</th>
+                    <th>警示等级</th>
+                    <th>警示内容摘要</th>
+                    <th>推送对象</th>
+                    <th>接收时间</th>
+                    <th>反馈状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 10 条 共有 80 条</div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sendModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">手动发送警示</div>
+                <div class="modal-close" onclick="closeSendModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-item">
+                    <label class="form-label">规则名称</label>
+                    <select class="form-select" id="sendRuleName">
+                        <option>请选择</option>
+                        <option>农药残留超标监测</option>
+                        <option>微生物超标预警</option>
+                        <option>区域风险实时监控</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">警示等级</label>
+                    <select class="form-select" id="sendAlertLevel">
+                        <option value="red">红色警示</option>
+                        <option value="orange">橙色警示</option>
+                        <option value="yellow">黄色警示</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">推送对象</label>
+                    <input type="text" class="form-input" id="sendRecipients" placeholder="输入推送对象，逗号分隔">
+                </div>
+                <div class="form-item">
+                    <label class="form-label">推送渠道</label>
+                    <label><input type="checkbox" name="channel" value="system" checked> 系统消息</label>
+                    <label><input type="checkbox" name="channel" value="jingban"> 京办助手</label>
+                    <label><input type="checkbox" name="channel" value="sms"> 短信通知</label>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">警示内容</label>
+                    <textarea class="form-textarea" id="sendContent" placeholder="请输入警示内容"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSendModal()">取消</button>
+                <button class="btn btn-success" onclick="sendAlert()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">警示详情</div>
+                <div class="modal-close" onclick="closeDetailModal()">×</div>
+            </div>
+            <div class="modal-body" id="detailContent">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedbackModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">反馈处理</div>
+                <div class="modal-close" onclick="closeFeedbackModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="feedbackId" value="">
+                <div class="detail-section">
+                    <div class="detail-title">警示信息</div>
+                    <div id="feedbackAlertInfo"></div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">反馈状态</label>
+                    <div>
+                        <button class="feedback-btn pending" onclick="setFeedbackStatus('pending')">待处理</button>
+                        <button class="feedback-btn viewed" onclick="setFeedbackStatus('viewed')">已查看</button>
+                        <button class="feedback-btn dispatched" onclick="setFeedbackStatus('dispatched')">已派单</button>
+                        <button class="feedback-btn handled" onclick="setFeedbackStatus('handled')">已处置</button>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">处理说明</label>
+                    <textarea class="form-textarea" id="feedbackNote" placeholder="请输入处理说明"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeFeedbackModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitFeedback()">提交反馈</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var alertData = [
+            { id: 1, code: 'ALERT-2026-001', ruleName: '农药残留超标监测', level: 'red', content: '某批次蔬菜农药残留检测值超过限值2倍，涉及XX品牌', recipients: '张三,李四', receiveTime: '2026-07-05 14:30', status: 'pending' },
+            { id: 2, code: 'ALERT-2026-002', ruleName: '微生物超标预警', level: 'orange', content: '某批次熟肉制品微生物指标不合格', recipients: '王五', receiveTime: '2026-07-05 14:20', status: 'viewed' },
+            { id: 3, code: 'ALERT-2026-003', ruleName: '区域风险实时监控', level: 'yellow', content: '某区域食品抽检不合格率上升明显', recipients: '赵六,孙七', receiveTime: '2026-07-05 14:00', status: 'dispatched' },
+            { id: 4, code: 'ALERT-2026-004', ruleName: '农药残留超标监测', level: 'red', content: '某批次水果农药残留超标', recipients: '张三', receiveTime: '2026-07-05 13:30', status: 'handled' },
+            { id: 5, code: 'ALERT-2026-005', ruleName: '微生物超标预警', level: 'orange', content: '某批次乳制品菌落总数超标', recipients: '李四,王五', receiveTime: '2026-07-05 13:00', status: 'pending' },
+            { id: 6, code: 'ALERT-2026-006', ruleName: '区域风险实时监控', level: 'yellow', content: '某新上市品类不合格率偏高', recipients: '赵六', receiveTime: '2026-07-05 12:30', status: 'viewed' }
+        ];
+
+        function renderTable(data) {
+            var tbody = document.getElementById('tableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var levelClass = item.level === 'red' ? 'red' : (item.level === 'orange' ? 'orange' : 'yellow');
+                var levelText = item.level === 'red' ? '红色警示' : (item.level === 'orange' ? '橙色警示' : '黄色警示');
+                
+                var statusClass = item.status === 'pending' ? 'pending' : (item.status === 'viewed' ? 'orange' : (item.status === 'dispatched' ? 'processed' : 'processed'));
+                var statusText = item.status === 'pending' ? '待处理' : (item.status === 'viewed' ? '已查看' : (item.status === 'dispatched' ? '已派单' : '已处置'));
+                
+                return '<tr>' +
+                    '<td><input type="checkbox"></td>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.code + '</td>' +
+                    '<td>' + item.ruleName + '</td>' +
+                    '<td><span class="status ' + levelClass + '">' + levelText + '</span></td>' +
+                    '<td>' + item.content + '</td>' +
+                    '<td>' + item.recipients + '</td>' +
+                    '<td>' + item.receiveTime + '</td>' +
+                    '<td><span class="status ' + statusClass + '">' + statusText + '</span></td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-detail" onclick="openDetailModal(' + item.id + ')">查看详情</button>' +
+                        '<button class="action-btn action-btn-feedback" onclick="openFeedbackModal(' + item.id + ')">反馈处理</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function doSearch() {
+            var level = document.getElementById('alertLevelSearch').value;
+            var status = document.getElementById('feedbackStatusSearch').value;
+            var name = document.getElementById('ruleNameSearch').value.trim().toLowerCase();
+            
+            var filtered = alertData.filter(function(item) {
+                var matchLevel = level === '全部' || (level === '红色警示' ? item.level === 'red' : (level === '橙色警示' ? item.level === 'orange' : item.level === 'yellow'));
+                var matchStatus = status === '全部' || (status === '待处理' ? item.status === 'pending' : (status === '已查看' ? item.status === 'viewed' : (status === '已派单' ? item.status === 'dispatched' : item.status === 'handled')));
+                var matchName = !name || item.ruleName.toLowerCase().includes(name);
+                return matchLevel && matchStatus && matchName;
+            });
+            
+            renderTable(filtered);
+        }
+
+        function clearSearch() {
+            document.getElementById('alertLevelSearch').value = '全部';
+            document.getElementById('feedbackStatusSearch').value = '全部';
+            document.getElementById('ruleNameSearch').value = '';
+            renderTable(alertData);
+        }
+
+        function openSendAlertModal() {
+            document.getElementById('sendRuleName').value = '请选择';
+            document.getElementById('sendAlertLevel').value = 'red';
+            document.getElementById('sendRecipients').value = '';
+            document.getElementById('sendContent').value = '';
+            document.getElementById('sendModal').classList.add('active');
+        }
+
+        function closeSendModal() {
+            document.getElementById('sendModal').classList.remove('active');
+        }
+
+        function sendAlert() {
+            var ruleName = document.getElementById('sendRuleName').value;
+            var level = document.getElementById('sendAlertLevel').value;
+            var recipients = document.getElementById('sendRecipients').value.trim();
+            var content = document.getElementById('sendContent').value.trim();
+            
+            if (ruleName === '请选择' || !recipients || !content) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            alertData.push({
+                id: Date.now(),
+                code: 'ALERT-2026-' + String(alertData.length + 1).padStart(3, '0'),
+                ruleName: ruleName,
+                level: level,
+                content: content,
+                recipients: recipients,
+                receiveTime: new Date().toLocaleString('zh-CN'),
+                status: 'pending'
+            });
+            
+            renderTable(alertData);
+            closeSendModal();
+            alert('警示信息发送成功！');
+        }
+
+        function openDetailModal(id) {
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            var levelText = item.level === 'red' ? '红色警示' : (item.level === 'orange' ? '橙色警示' : '黄色警示');
+            var statusText = item.status === 'pending' ? '待处理' : (item.status === 'viewed' ? '已查看' : (item.status === 'dispatched' ? '已派单' : '已处置'));
+            
+            var html = '<div class="detail-section">' +
+                '<div class="detail-title">基本信息</div>' +
+                '<div class="detail-info">' +
+                    '<div class="detail-item"><div class="detail-label">警示编号</div><div class="detail-value">' + item.code + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">规则名称</div><div class="detail-value">' + item.ruleName + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">警示等级</div><div class="detail-value"><span class="status ' + (item.level === 'red' ? 'red' : (item.level === 'orange' ? 'orange' : 'yellow')) + '">' + levelText + '</span></div></div>' +
+                    '<div class="detail-item"><div class="detail-label">反馈状态</div><div class="detail-value">' + statusText + '</div></div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="detail-section">' +
+                '<div class="detail-title">警示内容</div>' +
+                '<div style="font-size: 14px; color: #333; line-height: 1.6;">' + item.content + '</div>' +
+                '</div>' +
+                '<div class="detail-section">' +
+                '<div class="detail-title">推送信息</div>' +
+                '<div class="detail-info">' +
+                    '<div class="detail-item"><div class="detail-label">推送对象</div><div class="detail-value">' + item.recipients + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">接收时间</div><div class="detail-value">' + item.receiveTime + '</div></div>' +
+                '</div>' +
+                '</div>' +
+                '<div style="text-align: center;">' +
+                    '<button class="btn btn-secondary" onclick="closeDetailModal(); openFeedbackModal(' + id + ')">处理此警示</button>' +
+                '</div>';
+            
+            document.getElementById('detailContent').innerHTML = html;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        function openFeedbackModal(id) {
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            document.getElementById('feedbackId').value = id;
+            document.getElementById('feedbackNote').value = '';
+            
+            var levelText = item.level === 'red' ? '红色警示' : (item.level === 'orange' ? '橙色警示' : '黄色警示');
+            
+            document.getElementById('feedbackAlertInfo').innerHTML = '<div class="detail-info">' +
+                '<div class="detail-item"><div class="detail-label">警示编号</div><div class="detail-value">' + item.code + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">规则名称</div><div class="detail-value">' + item.ruleName + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">警示等级</div><div class="detail-value">' + levelText + '</div></div>' +
+                '<div class="detail-item"><div class="detail-label">警示内容</div><div class="detail-value" style="color: #666;">' + item.content + '</div></div>' +
+            '</div>';
+            
+            document.getElementById('feedbackModal').classList.add('active');
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').classList.remove('active');
+        }
+
+        var currentFeedbackStatus = 'pending';
+        
+        function setFeedbackStatus(status) {
+            currentFeedbackStatus = status;
+            document.querySelectorAll('.feedback-btn').forEach(function(btn) {
+                btn.style.backgroundColor = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            });
+            
+            var btn = document.querySelector('.feedback-btn.' + status);
+            if (status === 'pending') {
+                btn.style.backgroundColor = '#e6f7ff';
+                btn.style.borderColor = '#1890ff';
+                btn.style.color = '#1890ff';
+            } else if (status === 'viewed') {
+                btn.style.backgroundColor = '#fff7e6';
+                btn.style.borderColor = '#fa8c16';
+                btn.style.color = '#fa8c16';
+            } else if (status === 'dispatched') {
+                btn.style.backgroundColor = '#f6ffed';
+                btn.style.borderColor = '#52c41a';
+                btn.style.color = '#52c41a';
+            } else if (status === 'handled') {
+                btn.style.backgroundColor = '#f5f5f5';
+                btn.style.borderColor = '#ddd';
+                btn.style.color = '#666';
+            }
+        }
+
+        function submitFeedback() {
+            var id = parseInt(document.getElementById('feedbackId').value);
+            var note = document.getElementById('feedbackNote').value.trim();
+            
+            if (!note) {
+                alert('请输入处理说明');
+                return;
+            }
+            
+            var item = alertData.find(function(d) { return d.id === id; });
+            if (item) {
+                item.status = currentFeedbackStatus;
+                renderTable(alertData);
+            }
+            
+            closeFeedbackModal();
+            alert('反馈提交成功！');
+        }
+
+        renderTable(alertData);
+    </script>
+</body>
+</html>

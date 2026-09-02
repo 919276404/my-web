@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审批流程可视化设置</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 80px);
+        }
+        .sidebar {
+            width: 250px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 20px;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .main {
+            flex: 1;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #1890ff;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #40a9ff;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .btn-success {
+            background: #52c41a;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #73d13d;
+        }
+        .btn-danger {
+            background: #ff4d4f;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #ff7875;
+        }
+        .sidebar-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .node-item {
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            cursor: grab;
+            text-align: center;
+            transition: all 0.3s;
+            border: 1px dashed #ddd;
+        }
+        .node-item:hover {
+            background: #e6f7ff;
+            border-color: #1890ff;
+        }
+        .node-item:active {
+            cursor: grabbing;
+        }
+        .node-type {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .flow-canvas {
+            min-height: 500px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            position: relative;
+            background: #fafafa;
+        }
+        .flow-canvas.drag-over {
+            border-color: #1890ff;
+            background: #e6f7ff;
+        }
+        .flow-node {
+            position: absolute;
+            width: 180px;
+            padding: 15px;
+            background: #fff;
+            border: 2px solid #1890ff;
+            border-radius: 8px;
+            cursor: move;
+            box-shadow: 0 4px 12px rgba(24,144,255,0.15);
+            transition: all 0.3s;
+        }
+        .flow-node:hover {
+            box-shadow: 0 6px 20px rgba(24,144,255,0.25);
+            transform: translateY(-2px);
+        }
+        .flow-node.selected {
+            border-color: #ff4d4f;
+            box-shadow: 0 4px 12px rgba(255,77,79,0.2);
+        }
+        .flow-node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .flow-node-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .flow-node-delete {
+            font-size: 16px;
+            color: #999;
+            cursor: pointer;
+        }
+        .flow-node-delete:hover {
+            color: #ff4d4f;
+        }
+        .flow-node-body {
+            font-size: 12px;
+            color: #666;
+        }
+        .flow-node-role {
+            margin-top: 5px;
+            color: #1890ff;
+        }
+        .flow-arrow {
+            position: absolute;
+            height: 2px;
+            background: #1890ff;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 8px solid #1890ff;
+        }
+        .flow-start-node {
+            border-color: #52c41a;
+        }
+        .flow-end-node {
+            border-color: #ff4d4f;
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .property-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .property-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 0 0 auto;
+        }
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-close:hover {
+            color: #666;
+        }
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1 1 auto;
+        }
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex: 0 0 auto;
+        }
+        .role-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .role-item {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .role-item:hover {
+            background: #e6f7ff;
+            color: #1890ff;
+        }
+        .role-item.selected {
+            background: #1890ff;
+            color: #fff;
+        }
+        .flow-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        .preview-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .preview-node {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 13px;
+        }
+        .preview-arrow {
+            display: inline-block;
+            margin-right: 10px;
+            color: #1890ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-title">流程节点库</div>
+            <div class="node-item" draggable="true" ondragstart="dragStart(event, 'start')">
+                <div>开始节点</div>
+                <div class="node-type">流程起点</div>
+            </div>
+            <div class="node-item" draggable="true" ondragstart="dragStart(event, 'department')">
+                <div>处室审核</div>
+                <div class="node-type">业务审核</div>
+            </div>
+            <div class="node-item" draggable="true" ondragstart="dragStart(event, 'institution')">
+                <div>机构审核</div>
+                <div class="node-type">技术审核</div>
+            </div>
+            <div class="node-item" draggable="true" ondragstart="dragStart(event, 'leader')">
+                <div>领导审批</div>
+                <div class="node-type">决策审批</div>
+            </div>
+            <div class="node-item" draggable="true" ondragstart="dragStart(event, 'end')">
+                <div>结束节点</div>
+                <div class="node-type">流程终点</div>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="saveFlow()">保存流程</button>
+                <button class="btn btn-secondary" onclick="resetFlow()">重置流程</button>
+                <button class="btn btn-success" onclick="previewFlow()">预览流程</button>
+                <button class="btn btn-danger" onclick="deleteSelected()">删除选中</button>
+            </div>
+
+            <div class="flow-canvas" id="flowCanvas" ondragover="dragOver(event)" ondrop="drop(event)">
+                <div style="text-align: center; color: #999; padding-top: 100px;" id="canvasHint">
+                    从左侧拖拽节点到此处创建审批流程
+                </div>
+            </div>
+
+            <div class="property-panel" id="propertyPanel" style="display: none;">
+                <div class="property-title">节点属性配置</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>节点名称</label>
+                        <input type="text" id="nodeName" placeholder="请输入节点名称">
+                    </div>
+                    <div class="form-group">
+                        <label>节点类型</label>
+                        <select id="nodeType">
+                            <option value="department">处室审核</option>
+                            <option value="institution">机构审核</option>
+                            <option value="leader">领导审批</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>审批角色</label>
+                    <div class="role-list" id="roleList">
+                        <div class="role-item" onclick="toggleRole(this)">食品生产处</div>
+                        <div class="role-item" onclick="toggleRole(this)">食品流通处</div>
+                        <div class="role-item" onclick="toggleRole(this)">餐饮服务处</div>
+                        <div class="role-item" onclick="toggleRole(this)">综合处</div>
+                        <div class="role-item" onclick="toggleRole(this)">北京市质检院</div>
+                        <div class="role-item" onclick="toggleRole(this)">北京市疾控中心</div>
+                        <div class="role-item" onclick="toggleRole(this)">分管领导</div>
+                        <div class="role-item" onclick="toggleRole(this)">主要领导</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="nodeDesc" placeholder="请输入节点描述"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveNodeProperty()">保存属性</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="previewModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">流程预览</div>
+                <div class="modal-close" onclick="closePreviewModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closePreviewModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var flowNodes = [];
+        var selectedNodeId = null;
+        var draggedNodeType = '';
+
+        function dragStart(event, type) {
+            draggedNodeType = type;
+            event.dataTransfer.effectAllowed = 'copy';
+        }
+
+        function dragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+            document.getElementById('flowCanvas').classList.add('drag-over');
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            document.getElementById('flowCanvas').classList.remove('drag-over');
+            document.getElementById('canvasHint').style.display = 'none';
+
+            var canvas = document.getElementById('flowCanvas');
+            var rect = canvas.getBoundingClientRect();
+            var x = event.clientX - rect.left;
+            var y = event.clientY - rect.top;
+
+            addNode(x, y, draggedNodeType);
+        }
+
+        function addNode(x, y, type) {
+            var id = 'node_' + Date.now();
+            var names = {
+                'start': '开始',
+                'department': '处室审核',
+                'institution': '机构审核',
+                'leader': '领导审批',
+                'end': '结束'
+            };
+
+            var node = {
+                id: id,
+                type: type,
+                name: names[type],
+                x: Math.max(20, Math.min(x - 90, 600)),
+                y: Math.max(20, y - 40),
+                roles: [],
+                desc: ''
+            };
+
+            flowNodes.push(node);
+            renderFlow();
+            selectNode(id);
+        }
+
+        function renderFlow() {
+            var canvas = document.getElementById('flowCanvas');
+            canvas.innerHTML = '';
+
+            if (flowNodes.length === 0) {
+                canvas.innerHTML = '<div style="text-align: center; color: #999; padding-top: 100px;" id="canvasHint">从左侧拖拽节点到此处创建审批流程</div>';
+                return;
+            }
+
+            flowNodes.sort(function(a, b) {
+                return a.x - b.x;
+            });
+
+            flowNodes.forEach(function(node, index) {
+                var nodeElement = document.createElement('div');
+                nodeElement.className = 'flow-node';
+                if (node.type === 'start') nodeElement.classList.add('flow-start-node');
+                if (node.type === 'end') nodeElement.classList.add('flow-end-node');
+                if (selectedNodeId === node.id) nodeElement.classList.add('selected');
+                nodeElement.style.left = node.x + 'px';
+                nodeElement.style.top = node.y + 'px';
+                nodeElement.setAttribute('data-id', node.id);
+                nodeElement.onclick = function() { selectNode(node.id); };
+
+                var rolesText = node.roles.length > 0 ? node.roles.join('、') : '未配置';
+
+                nodeElement.innerHTML = '<div class="flow-node-header">' +
+                    '<span class="flow-node-title">' + node.name + '</span>' +
+                    '<span class="flow-node-delete" onclick="event.stopPropagation(); deleteNode(\'' + node.id + '\')">×</span>' +
+                    '</div>' +
+                    '<div class="flow-node-body">类型：' + node.type + '</div>' +
+                    '<div class="flow-node-role">角色：' + rolesText + '</div>';
+
+                nodeElement.onmousedown = function(e) {
+                    if (e.target.classList.contains('flow-node-delete')) return;
+                    startDrag(e, node);
+                };
+
+                canvas.appendChild(nodeElement);
+
+                if (index < flowNodes.length - 1) {
+                    var arrow = document.createElement('div');
+                    arrow.className = 'flow-arrow';
+                    arrow.style.left = (node.x + 180) + 'px';
+                    arrow.style.top = (node.y + 40) + 'px';
+                    arrow.style.width = (flowNodes[index + 1].x - node.x - 180 - 20) + 'px';
+                    canvas.appendChild(arrow);
+                }
+            });
+        }
+
+        var dragState = null;
+
+        function startDrag(e, node) {
+            dragState = {
+                node: node,
+                startX: e.clientX,
+                startY: e.clientY,
+                nodeStartX: node.x,
+                nodeStartY: node.y
+            };
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!dragState) return;
+
+            var dx = e.clientX - dragState.startX;
+            var dy = e.clientY - dragState.startY;
+
+            dragState.node.x = Math.max(20, Math.min(dragState.nodeStartX + dx, 600));
+            dragState.node.y = Math.max(20, dragState.nodeStartY + dy);
+
+            renderFlow();
+        }
+
+        function stopDrag() {
+            dragState = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        function selectNode(id) {
+            selectedNodeId = id;
+            renderFlow();
+
+            var node = flowNodes.find(function(n) { return n.id === id; });
+            if (node) {
+                document.getElementById('nodeName').value = node.name;
+                document.getElementById('nodeType').value = node.type;
+                document.getElementById('nodeDesc').value = node.desc;
+
+                document.querySelectorAll('.role-item').forEach(function(item) {
+                    item.classList.remove('selected');
+                    if (node.roles.includes(item.innerText)) {
+                        item.classList.add('selected');
+                    }
+                });
+
+                document.getElementById('propertyPanel').style.display = 'block';
+            }
+        }
+
+        function toggleRole(item) {
+            item.classList.toggle('selected');
+        }
+
+        function saveNodeProperty() {
+            var node = flowNodes.find(function(n) { return n.id === selectedNodeId; });
+            if (node) {
+                node.name = document.getElementById('nodeName').value;
+                node.type = document.getElementById('nodeType').value;
+                node.desc = document.getElementById('nodeDesc').value;
+                node.roles = [];
+                document.querySelectorAll('.role-item.selected').forEach(function(item) {
+                    node.roles.push(item.innerText);
+                });
+                renderFlow();
+                alert('属性保存成功');
+            }
+        }
+
+        function deleteNode(id) {
+            if (confirm('确定删除该节点吗？')) {
+                flowNodes = flowNodes.filter(function(n) { return n.id !== id; });
+                selectedNodeId = null;
+                document.getElementById('propertyPanel').style.display = 'none';
+                renderFlow();
+            }
+        }
+
+        function deleteSelected() {
+            if (selectedNodeId) {
+                deleteNode(selectedNodeId);
+            } else {
+                alert('请先选中一个节点');
+            }
+        }
+
+        function saveFlow() {
+            if (flowNodes.length < 2) {
+                alert('请至少添加开始和结束两个节点');
+                return;
+            }
+
+            var hasStart = flowNodes.some(function(n) { return n.type === 'start'; });
+            var hasEnd = flowNodes.some(function(n) { return n.type === 'end'; });
+
+            if (!hasStart) {
+                alert('流程必须包含开始节点');
+                return;
+            }
+            if (!hasEnd) {
+                alert('流程必须包含结束节点');
+                return;
+            }
+
+            var flowData = JSON.stringify(flowNodes, null, 2);
+            console.log('流程数据:', flowData);
+            alert('流程保存成功');
+        }
+
+        function resetFlow() {
+            if (confirm('确定重置流程吗？所有节点将被清空')) {
+                flowNodes = [];
+                selectedNodeId = null;
+                document.getElementById('propertyPanel').style.display = 'none';
+                renderFlow();
+            }
+        }
+
+        function previewFlow() {
+            if (flowNodes.length === 0) {
+                alert('请先创建流程');
+                return;
+            }
+
+            var html = '<div style="padding: 20px;">';
+            flowNodes.sort(function(a, b) { return a.x - b.x; });
+            flowNodes.forEach(function(node, index) {
+                html += '<div class="preview-node">' + node.name + '</div>';
+                if (index < flowNodes.length - 1) {
+                    html += '<span class="preview-arrow">→</span>';
+                }
+            });
+            html += '</div>';
+
+            document.getElementById('previewContent').innerHTML = html;
+            document.getElementById('previewModal').classList.add('show');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.remove('show');
+        }
+
+        renderFlow();
+    </script>
+</body>
+</html>

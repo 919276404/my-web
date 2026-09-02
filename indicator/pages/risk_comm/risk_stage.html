@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>环节风险</title>
+    <link rel="stylesheet" href="risk_comm.css">
+    <style>
+        /* ============ 环节统计卡片（在统一 .stat-card 基础上的页面特有布局） ============ */
+
+        /* 卡片名称行：左侧环节名，右侧数据来源徽标 */
+        .stat-card-name {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        /* 数据来源徽标样式（覆盖统一 .stat-card-source 的下边距） */
+        .stat-card-source {
+            font-size: 11px;
+            color: var(--text-placeholder);
+            font-weight: 400;
+            background: var(--bg-soft);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 0;
+            border: 1px solid var(--border-light);
+        }
+
+        /* 卡片内三栏统计：左/中/右等宽 */
+        .stat-card-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 14px;
+            gap: 8px;
+            margin-bottom: 0;
+        }
+
+        .stat-card-item {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-placeholder);
+        }
+
+        .stat-card-item-label {
+            margin-top: 5px;
+        }
+
+        /* 数值覆盖：块级显示，更大字号 */
+        .stat-card-value {
+            display: block;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--green);
+            line-height: 1.2;
+            margin-left: 0;
+            font-family: ' DIN', 'Roboto', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card.border-blue .stat-card-value { color: var(--blue); }
+        .stat-card.border-orange .stat-card-value { color: var(--orange); }
+        .stat-card.border-purple .stat-card-value { color: var(--purple); }
+
+        /* ============ 重点企业表格 ============ */
+        /* 表头区域说明文字 */
+        .table-tip {
+            font-size: 12px;
+            color: var(--orange);
+            margin-top: 4px;
+        }
+
+        /* 可点击企业名称 */
+        .enterprise-name {
+            color: var(--blue);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .enterprise-name:hover {
+            color: var(--green);
+            text-decoration: underline;
+        }
+
+        /* 可点击不合格批次数 */
+        .fail-count {
+            color: var(--red);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .fail-count:hover {
+            color: #ff7875;
+            text-decoration: underline;
+        }
+
+        /* 环节标签（页面特有：四类环节配色） */
+        .tag-produce { background: var(--green-light); color: var(--green); border: 1px solid #b7e6d4; }
+        .tag-business { background: var(--blue-light); color: var(--blue); border: 1px solid #b3d1f5; }
+        .tag-catering { background: var(--orange-light); color: var(--orange); border: 1px solid #ffd591; }
+        .tag-special { background: var(--purple-light); color: var(--purple); border: 1px solid #d3adf7; }
+
+        /* 问题发现率着色 */
+        .rate-high { color: var(--red); font-weight: 600; }
+        .rate-mid { color: var(--orange); font-weight: 600; }
+        .rate-low { color: var(--green); }
+
+        /* 操作按钮（蓝边白底小按钮） */
+        .action-btn {
+            padding: 4px 12px;
+            font-size: 12px;
+            border: 1px solid var(--blue);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: var(--bg-card);
+            color: var(--blue);
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .action-btn:hover {
+            background: var(--blue-light);
+            color: var(--blue-hover);
+        }
+
+        /* ============ 分页（页面采用左信息+右控件的布局） ============ */
+        .pagination-container {
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pagination-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ============ 弹窗（在统一 .modal-overlay/.modal-content 基础上的页面特有尺寸） ============ */
+        .modal-content {
+            width: 92%;
+            max-width: 1000px;
+            max-height: 88vh;
+        }
+
+        .modal-content.small {
+            max-width: 760px;
+        }
+
+        .modal-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+        }
+
+        /* ============ 企业详情 / 问题批次详情 ============ */
+        .detail-section {
+            margin-bottom: 22px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            padding-left: 10px;
+            border-left: 3px solid var(--green);
+            letter-spacing: 0.3px;
+        }
+
+        .detail-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px 28px;
+            background: var(--bg-soft);
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-placeholder);
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .detail-table th,
+        .detail-table td {
+            padding: 9px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+            white-space: nowrap;
+        }
+
+        .detail-table th {
+            background: linear-gradient(180deg, #f5faf7 0%, #edf5f0 100%);
+            font-weight: 600;
+            color: var(--green);
+            letter-spacing: 0.3px;
+        }
+
+        .detail-table tbody tr:hover {
+            background: var(--green-soft);
+        }
+
+        .status {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status.pass {
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+
+        .status.fail {
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid #ffccc7;
+        }
+
+        .problem-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--red-light);
+            border-left: 3px solid var(--red);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .problem-item-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 160px;
+        }
+
+        .problem-item-desc {
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <div class="page-title">环节风险</div>
+            <div class="page-subtitle">分别统计生产、经营、餐饮、特食四大环节问题发现率，识别重点场所与重点企业</div>
+        </div>
+    </div>
+
+    <!-- 四大环节统计卡片 -->
+    <div class="stat-cards" id="stageCards">
+        <div class="stat-card active" data-stage="produce" onclick="selectStage('produce')">
+            <div class="stat-card-name">
+                <span>生产环节</span>
+                <span class="stat-card-source">全国抽检数据</span>
+            </div>
+            <div class="stat-card-row">
+                <div class="stat-card-item">
+                    <span class="stat-card-value" id="produceTotal">1256</span>
+                    <div class="stat-card-item-label">抽检批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value danger" id="produceFail">67</span>
+                    <div class="stat-card-item-label">不合格批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value warning" id="produceRate">5.33%</span>
+                    <div class="stat-card-item-label">问题发现率</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card border-blue" data-stage="business" onclick="selectStage('business')">
+            <div class="stat-card-name">
+                <span>经营环节</span>
+                <span class="stat-card-source">本市抽检数据</span>
+            </div>
+            <div class="stat-card-row">
+                <div class="stat-card-item">
+                    <span class="stat-card-value" id="businessTotal">2389</span>
+                    <div class="stat-card-item-label">抽检批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value danger" id="businessFail">98</span>
+                    <div class="stat-card-item-label">不合格批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value warning" id="businessRate">4.10%</span>
+                    <div class="stat-card-item-label">问题发现率</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card border-orange" data-stage="catering" onclick="selectStage('catering')">
+            <div class="stat-card-name">
+                <span>餐饮环节</span>
+                <span class="stat-card-source">本市抽检数据</span>
+            </div>
+            <div class="stat-card-row">
+                <div class="stat-card-item">
+                    <span class="stat-card-value" id="cateringTotal">1876</span>
+                    <div class="stat-card-item-label">抽检批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value danger" id="cateringFail">85</span>
+                    <div class="stat-card-item-label">不合格批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value warning" id="cateringRate">4.53%</span>
+                    <div class="stat-card-item-label">问题发现率</div>
+                </div>
+            </div>
+        </div>
+        <div class="stat-card border-purple" data-stage="special" onclick="selectStage('special')">
+            <div class="stat-card-name">
+                <span>特食环节</span>
+                <span class="stat-card-source">本市抽检数据</span>
+            </div>
+            <div class="stat-card-row">
+                <div class="stat-card-item">
+                    <span class="stat-card-value" id="specialTotal">543</span>
+                    <div class="stat-card-item-label">抽检批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value danger" id="specialFail">23</span>
+                    <div class="stat-card-item-label">不合格批次</div>
+                </div>
+                <div class="stat-card-item">
+                    <span class="stat-card-value warning" id="specialRate">4.24%</span>
+                    <div class="stat-card-item-label">问题发现率</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 重点场所问题发现率柱状图 -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-title">重点场所问题发现率</div>
+            <div class="filter-row">
+                <div class="filter-item">
+                    <span class="filter-label">选择环节：</span>
+                    <select class="filter-select" id="stageFilter" onchange="onStageFilterChange()">
+                        <option value="produce">生产环节</option>
+                        <option value="business">经营环节</option>
+                        <option value="catering">餐饮环节</option>
+                        <option value="special">特食环节</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">场所：</span>
+                    <select class="filter-select" id="placeFilter" onchange="renderChart()"></select>
+                </div>
+            </div>
+        </div>
+        <div class="section-body">
+            <div id="riskStageChart" style="width:100%;height:350px;"></div>
+        </div>
+    </div>
+
+    <!-- 重点企业清单 -->
+    <div class="table-container">
+        <div class="section-header">
+            <div>
+                <div class="section-title">重点企业清单（问题发现率≥3批次）</div>
+                <div class="table-tip">说明：生产企业调取全国抽检数据库；经营/餐饮/特食企业调取本市抽检数据</div>
+            </div>
+            <div class="filter-row">
+                <div class="filter-item">
+                    <span class="filter-label">环节：</span>
+                    <select class="filter-select" id="enterpriseStageFilter" onchange="onEnterpriseStageFilterChange()">
+                        <option value="">全部环节</option>
+                        <option value="produce">生产</option>
+                        <option value="business">经营</option>
+                        <option value="catering">餐饮</option>
+                        <option value="special">特食</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">企业名称：</span>
+                    <input type="text" class="filter-input" id="enterpriseNameFilter" placeholder="请输入企业名称" style="min-width:180px;">
+                </div>
+                <button class="btn btn-blue" onclick="doEnterpriseSearch()">查询</button>
+                <button class="btn btn-secondary" onclick="clearEnterpriseSearch()">重置</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="data-table" id="riskStageEnterpriseTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>企业名称</th>
+                        <th>统一社会信用代码</th>
+                        <th>企业地址</th>
+                        <th>企业所在地区</th>
+                        <th>抽检批次</th>
+                        <th>不合格和问题批次</th>
+                        <th>环节</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="enterpriseTableBody">
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination-container">
+            <div class="pagination-info" id="paginationInfo">第 1-15 条，共 18 条</div>
+            <div class="pagination-controls" id="paginationControls">
+                <select class="page-size-select" id="pageSizeSelect" onchange="onPageSizeChange()">
+                    <option value="15">15条/页</option>
+                    <option value="20">20条/页</option>
+                    <option value="50">50条/页</option>
+                </select>
+                <button class="pagination-btn" id="prevPageBtn" onclick="goToPage(currentPage-1)">‹ 上一页</button>
+                <span id="pageNumbers"></span>
+                <button class="pagination-btn" id="nextPageBtn" onclick="goToPage(currentPage+1)">下一页 ›</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 企业详情弹窗 -->
+    <div id="enterpriseDetailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">企业抽检详情</div>
+                <div class="modal-close" onclick="closeEnterpriseDetailModal()">×</div>
+            </div>
+            <div class="modal-body" id="enterpriseDetailContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="exportEnterpriseDetail()">📥 导出 Excel</button>
+                <button class="btn btn-secondary" onclick="closeEnterpriseDetailModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 问题批次详情弹窗 -->
+    <div id="problemBatchModal" class="modal-overlay">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <div class="modal-title">问题批次详情</div>
+                <div class="modal-close" onclick="closeProblemBatchModal()">×</div>
+            </div>
+            <div class="modal-body" id="problemBatchContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeProblemBatchModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        /* ============== 环节与场所配置 ============== */
+        var stageConfig = {
+            produce: {
+                name: '生产',
+                places: ['大型食品生产企业', '中型食品生产企业', '小型食品生产企业', '食品加工小作坊']
+            },
+            business: {
+                name: '经营',
+                places: ['大型商超', '农贸市场', '便利店', '网购平台', '食品批发市场']
+            },
+            catering: {
+                name: '餐饮',
+                places: ['学校食堂', '养老食堂', '集体用餐配送单位', '社会餐饮店', '机关企事业单位食堂']
+            },
+            special: {
+                name: '特食',
+                places: ['婴幼儿配方食品经营店', '保健食品经营店', '特殊医学用途配方食品经营店']
+            }
+        };
+
+        /* 各环节场所问题发现率数据 (%) */
+        var placeRateData = {
+            produce: [
+                { place: '大型食品生产企业', rate: 2.85, count: 45 },
+                { place: '中型食品生产企业', rate: 4.12, count: 38 },
+                { place: '小型食品生产企业', rate: 6.78, count: 42 },
+                { place: '食品加工小作坊', rate: 9.45, count: 56 }
+            ],
+            business: [
+                { place: '大型商超', rate: 3.12, count: 28 },
+                { place: '农贸市场', rate: 6.54, count: 47 },
+                { place: '便利店', rate: 4.87, count: 22 },
+                { place: '网购平台', rate: 8.23, count: 35 },
+                { place: '食品批发市场', rate: 7.15, count: 31 }
+            ],
+            catering: [
+                { place: '学校食堂', rate: 3.45, count: 18 },
+                { place: '养老食堂', rate: 5.67, count: 15 },
+                { place: '集体用餐配送单位', rate: 6.12, count: 22 },
+                { place: '社会餐饮店', rate: 7.89, count: 41 },
+                { place: '机关企事业单位食堂', rate: 3.98, count: 17 }
+            ],
+            special: [
+                { place: '婴幼儿配方食品经营店', rate: 3.21, count: 8 },
+                { place: '保健食品经营店', rate: 4.56, count: 12 },
+                { place: '特殊医学用途配方食品经营店', rate: 5.34, count: 6 }
+            ]
+        };
+
+        /* ============== 重点企业数据（问题发现率≥3批次） ============== */
+        var enterpriseData = [
+            // 生产环节 - 全国抽检数据
+            { id: 1, name: '北京三元食品股份有限公司', creditCode: '911101021234567X1', stage: 'produce', total: 156, fail: 12, source: '全国抽检数据库', address: '北京市海淀区西三旗东路8号', area: '北京市海淀区' },
+            { id: 2, name: '内蒙古蒙牛乳业（集团）股份有限公司', creditCode: '911501021234567X2', stage: 'produce', total: 234, fail: 8, source: '全国抽检数据库', address: '内蒙古呼和浩特市和林格尔县盛乐经济园区', area: '内蒙古呼和浩特市' },
+            { id: 3, name: '河北君乐宝乳业有限公司', creditCode: '911301021234567X3', stage: 'produce', total: 178, fail: 6, source: '全国抽检数据库', address: '河北省石家庄市鹿泉区铜冶镇', area: '河北省石家庄市' },
+            { id: 4, name: '北京王致和食品有限公司', creditCode: '911101021234567X4', stage: 'produce', total: 89, fail: 4, source: '全国抽检数据库', address: '北京市丰台区菜户营东街甲88号', area: '北京市丰台区' },
+            { id: 5, name: '北京六必居食品有限公司', creditCode: '911101021234567X5', stage: 'produce', total: 67, fail: 3, source: '全国抽检数据库', address: '北京市大兴区黄村镇', area: '北京市大兴区' },
+            // 经营环节 - 本市抽检数据
+            { id: 6, name: '北京华联综合超市股份有限公司', creditCode: '911101021234567X6', stage: 'business', total: 145, fail: 7, source: '本市抽检数据', address: '北京市西城区阜外大街1号', area: '北京市西城区' },
+            { id: 7, name: '北京物美商业集团股份有限公司', creditCode: '911101021234567X7', stage: 'business', total: 198, fail: 9, source: '本市抽检数据', address: '北京市海淀区中关村大街27号', area: '北京市海淀区' },
+            { id: 8, name: '北京京客隆商业集团股份有限公司', creditCode: '911101021234567X8', stage: 'business', total: 112, fail: 5, source: '本市抽检数据', address: '北京市朝阳区左家庄路1号', area: '北京市朝阳区' },
+            { id: 9, name: '北京超市发连锁股份有限公司', creditCode: '911101021234567X9', stage: 'business', total: 87, fail: 4, source: '本市抽检数据', address: '北京市海淀区清河小营东路12号', area: '北京市海淀区' },
+            { id: 10, name: '美团优选（北京）科技有限公司', creditCode: '911101021234567Y0', stage: 'business', total: 76, fail: 3, source: '本市抽检数据', address: '北京市朝阳区望京东路6号', area: '北京市朝阳区' },
+            // 餐饮环节 - 本市抽检数据
+            { id: 11, name: '北京聚宝源餐饮管理有限公司', creditCode: '911101021234567Y1', stage: 'catering', total: 54, fail: 4, source: '本市抽检数据', address: '北京市西城区教子胡同58号', area: '北京市西城区' },
+            { id: 12, name: '北京便宜坊烤鸭集团有限公司', creditCode: '911101021234567Y2', stage: 'catering', total: 67, fail: 3, source: '本市抽检数据', address: '北京市东城区鲜鱼口街65号', area: '北京市东城区' },
+            { id: 13, name: '北京眉州东坡餐饮管理有限公司', creditCode: '911101021234567Y3', stage: 'catering', total: 89, fail: 4, source: '本市抽检数据', address: '北京市朝阳区团结湖路7号', area: '北京市朝阳区' },
+            { id: 14, name: '北京嘉和一品餐饮管理有限公司', creditCode: '911101021234567Y4', stage: 'catering', total: 43, fail: 3, source: '本市抽检数据', address: '北京市昌平区回龙观西大街10号', area: '北京市昌平区' },
+            { id: 15, name: '北京永和大王餐饮管理有限公司', creditCode: '911101021234567Y5', stage: 'catering', total: 58, fail: 3, source: '本市抽检数据', address: '北京市东城区东长安街1号', area: '北京市东城区' },
+            // 特食环节 - 本市抽检数据
+            { id: 16, name: '北京同仁堂健康药业股份有限公司', creditCode: '911101021234567Y6', stage: 'special', total: 123, fail: 5, source: '本市抽检数据', address: '北京市大兴区亦庄经济技术开发区同济北路16号', area: '北京市大兴区' },
+            { id: 17, name: '北京汤臣倍健商贸有限公司', creditCode: '911101021234567Y7', stage: 'special', total: 56, fail: 3, source: '本市抽检数据', address: '北京市朝阳区建国路88号', area: '北京市朝阳区' },
+            { id: 18, name: '北京美赞臣营养品有限公司', creditCode: '911101021234567Y8', stage: 'special', total: 67, fail: 3, source: '本市抽检数据', address: '北京市西城区宣武门外大街18号', area: '北京市西城区' }
+        ];
+
+        /* 企业抽检记录明细 */
+        var inspectionRecordData = {
+            1: [
+                { batch: 'SP202601001', foodName: '全脂灭菌乳', spec: '250ml/盒', productDate: '2026-05-12', inspectDate: '2026-06-15', result: 'fail', item: '蛋白质', value: '2.8g/100g', limit: '≥2.9g/100g', place: '北京物美超市', area: '北京市朝阳区' },
+                { batch: 'SP202601002', foodName: '全脂灭菌乳', spec: '250ml/盒', productDate: '2026-05-12', inspectDate: '2026-06-15', result: 'pass', item: '-', value: '-', limit: '-', place: '北京华联超市', area: '北京市海淀区' },
+                { batch: 'SP202601003', foodName: '脱脂乳粉', spec: '400g/袋', productDate: '2026-04-20', inspectDate: '2026-05-28', result: 'fail', item: '菌落总数', value: '5.2×10⁴CFU/g', limit: '≤5×10⁴CFU/g', place: '北京京客隆', area: '北京市丰台区' },
+                { batch: 'SP202601004', foodName: '酸乳', spec: '200g/杯', productDate: '2026-05-01', inspectDate: '2026-06-02', result: 'pass', item: '-', value: '-', limit: '-', place: '北京超市发', area: '北京市西城区' },
+                { batch: 'SP202601005', foodName: '调制乳', spec: '250ml/盒', productDate: '2026-05-18', inspectDate: '2026-06-20', result: 'fail', item: '大肠菌群', value: '45CFU/g', limit: '≤10CFU/g', place: '北京物美超市', area: '北京市通州区' }
+            ],
+            2: [
+                { batch: 'MN202602001', foodName: '纯牛奶', spec: '250ml/盒', productDate: '2026-04-15', inspectDate: '2026-05-20', result: 'pass', item: '-', value: '-', limit: '-', place: '内蒙古呼和浩特超市', area: '呼和浩特市' },
+                { batch: 'MN202602002', foodName: '酸奶', spec: '200g/杯', productDate: '2026-05-10', inspectDate: '2026-06-12', result: 'fail', item: '酵母', value: '120CFU/g', limit: '≤100CFU/g', place: '北京物美超市', area: '北京市朝阳区' },
+                { batch: 'MN202602003', foodName: '奶粉', spec: '400g/袋', productDate: '2026-03-28', inspectDate: '2026-05-02', result: 'fail', item: '水分', value: '5.2%', limit: '≤5.0%', place: '上海联华超市', area: '上海市浦东新区' },
+                { batch: 'MN202602004', foodName: '纯牛奶', spec: '250ml/盒', productDate: '2026-05-22', inspectDate: '2026-06-25', result: 'pass', item: '-', value: '-', limit: '-', place: '广州华润万家', area: '广州市天河区' }
+            ],
+            3: [
+                { batch: 'JLB202603001', foodName: '婴幼儿配方乳粉', spec: '400g/罐', productDate: '2026-04-08', inspectDate: '2026-05-15', result: 'fail', item: '维生素A', value: '180μgRE/100g', limit: '180-420μgRE/100g', place: '河北石家庄北国超市', area: '石家庄市' },
+                { batch: 'JLB202603002', foodName: '婴幼儿配方乳粉', spec: '400g/罐', productDate: '2026-04-08', inspectDate: '2026-05-15', result: 'pass', item: '-', value: '-', limit: '-', place: '北京华联超市', area: '北京市海淀区' },
+                { batch: 'JLB202603003', foodName: '儿童成长牛奶', spec: '250ml/盒', productDate: '2026-05-20', inspectDate: '2026-06-22', result: 'fail', item: '菌落总数', value: '6.8×10⁴CFU/ml', limit: '≤5×10⁴CFU/ml', place: '北京京客隆', area: '北京市丰台区' }
+            ],
+            4: [
+                { batch: 'WZH202604001', foodName: '腐乳', spec: '300g/瓶', productDate: '2026-03-15', inspectDate: '2026-04-20', result: 'fail', item: '大肠菌群', value: '35CFU/g', limit: '≤10CFU/g', place: '北京超市发', area: '北京市西城区' },
+                { batch: 'WZH202604002', foodName: '腐乳', spec: '300g/瓶', productDate: '2026-04-10', inspectDate: '2026-05-18', result: 'pass', item: '-', value: '-', limit: '-', place: '北京物美超市', area: '北京市朝阳区' },
+                { batch: 'WZH202604003', foodName: '黄豆酱', spec: '250g/袋', productDate: '2026-05-05', inspectDate: '2026-06-10', result: 'fail', item: '氨基酸态氮', value: '0.38g/100g', limit: '≥0.4g/100g', place: '北京华联超市', area: '北京市海淀区' },
+                { batch: 'WZH202604004', foodName: '甜面酱', spec: '250g/袋', productDate: '2026-05-25', inspectDate: '2026-06-28', result: 'fail', item: '防腐剂超标', value: '山梨酸0.12g/kg', limit: '≤0.1g/kg', place: '北京京客隆', area: '北京市丰台区' }
+            ],
+            5: [
+                { batch: 'LBW202605001', foodName: '酱菜', spec: '200g/袋', productDate: '2026-04-22', inspectDate: '2026-05-28', result: 'fail', item: '亚硝酸盐', value: '25mg/kg', limit: '≤20mg/kg', place: '北京超市发', area: '北京市西城区' },
+                { batch: 'LBW202605002', foodName: '酱菜', spec: '200g/袋', productDate: '2026-05-15', inspectDate: '2026-06-18', result: 'pass', item: '-', value: '-', limit: '-', place: '北京物美超市', area: '北京市朝阳区' },
+                { batch: 'LBW202605003', foodName: '八宝菜', spec: '250g/袋', productDate: '2026-05-30', inspectDate: '2026-07-02', result: 'fail', item: '甜蜜素', value: '1.8g/kg', limit: '≤1.0g/kg', place: '北京华联超市', area: '北京市海淀区' }
+            ],
+            6: [
+                { batch: 'HL202606001', foodName: '蔬菜', spec: '散装', productDate: '-', inspectDate: '2026-06-05', result: 'fail', item: '毒死蜱', value: '0.15mg/kg', limit: '≤0.1mg/kg', place: '北京华联超市朝阳店', area: '北京市朝阳区' },
+                { batch: 'HL202606002', foodName: '鲜蛋', spec: '散装', productDate: '-', inspectDate: '2026-06-08', result: 'fail', item: '氟苯尼考', value: '15μg/kg', limit: '不得检出', place: '北京华联超市海淀店', area: '北京市海淀区' },
+                { batch: 'HL202606003', foodName: '水产品', spec: '散装', productDate: '-', inspectDate: '2026-06-12', result: 'pass', item: '-', value: '-', limit: '-', place: '北京华联超市丰台店', area: '北京市丰台区' },
+                { batch: 'HL202606004', foodName: '水果', spec: '散装', productDate: '-', inspectDate: '2026-06-18', result: 'fail', item: '克百威', value: '0.12mg/kg', limit: '≤0.02mg/kg', place: '北京华联超市通州店', area: '北京市通州区' }
+            ],
+            7: [
+                { batch: 'WM202607001', foodName: '粮食加工品', spec: '5kg/袋', productDate: '2026-04-10', inspectDate: '2026-05-15', result: 'fail', item: '黄曲霉毒素B1', value: '12μg/kg', limit: '≤5μg/kg', place: '北京物美超市朝阳店', area: '北京市朝阳区' },
+                { batch: 'WM202607002', foodName: '食用油', spec: '5L/桶', productDate: '2026-03-20', inspectDate: '2026-04-25', result: 'pass', item: '-', value: '-', limit: '-', place: '北京物美超市海淀店', area: '北京市海淀区' },
+                { batch: 'WM202607003', foodName: '肉制品', spec: '500g/袋', productDate: '2026-05-08', inspectDate: '2026-06-10', result: 'fail', item: '亚硝酸盐', value: '35mg/kg', limit: '≤30mg/kg', place: '北京物美超市丰台店', area: '北京市丰台区' },
+                { batch: 'WM202607004', foodName: '水产品', spec: '散装', productDate: '-', inspectDate: '2026-06-20', result: 'fail', item: '孔雀石绿', value: '8μg/kg', limit: '不得检出', place: '北京物美超市通州店', area: '北京市通州区' }
+            ],
+            8: [
+                { batch: 'JKL202608001', foodName: '糕点', spec: '散装', productDate: '2026-05-12', inspectDate: '2026-06-15', result: 'fail', item: '菌落总数', value: '8.5×10⁴CFU/g', limit: '≤5×10⁴CFU/g', place: '北京京客隆朝阳店', area: '北京市朝阳区' },
+                { batch: 'JKL202608002', foodName: '饼干', spec: '200g/盒', productDate: '2026-04-25', inspectDate: '2026-05-28', result: 'pass', item: '-', value: '-', limit: '-', place: '北京京客隆海淀店', area: '北京市海淀区' },
+                { batch: 'JKL202608003', foodName: '炒货食品', spec: '150g/袋', productDate: '2026-05-20', inspectDate: '2026-06-22', result: 'fail', item: '过氧化值', value: '0.52g/100g', limit: '≤0.5g/100g', place: '北京京客隆丰台店', area: '北京市丰台区' },
+                { batch: 'JKL202608004', foodName: '薯类食品', spec: '100g/袋', productDate: '2026-06-01', inspectDate: '2026-07-03', result: 'fail', item: '糖精钠', value: '0.32g/kg', limit: '≤0.3g/kg', place: '北京京客隆通州店', area: '北京市通州区' },
+                { batch: 'JKL202608005', foodName: '饮料', spec: '500ml/瓶', productDate: '2026-06-10', inspectDate: '2026-07-12', result: 'pass', item: '-', value: '-', limit: '-', place: '北京京客隆昌平店', area: '北京市昌平区' }
+            ],
+            9: [
+                { batch: 'CSF202609001', foodName: '乳制品', spec: '250ml/盒', productDate: '2026-05-05', inspectDate: '2026-06-08', result: 'fail', item: '大肠菌群', value: '45CFU/g', limit: '≤10CFU/g', place: '北京超市发西城店', area: '北京市西城区' },
+                { batch: 'CSF202609002', foodName: '糕点', spec: '散装', productDate: '2026-05-22', inspectDate: '2026-06-25', result: 'pass', item: '-', value: '-', limit: '-', place: '北京超市发朝阳店', area: '北京市朝阳区' },
+                { batch: 'CSF202609003', foodName: '调味品', spec: '500ml/瓶', productDate: '2026-04-18', inspectDate: '2026-05-22', result: 'fail', item: '氨基酸态氮', value: '0.35g/100ml', limit: '≥0.4g/100ml', place: '北京超市发海淀店', area: '北京市海淀区' },
+                { batch: 'CSF202609004', foodName: '肉制品', spec: '250g/袋', productDate: '2026-06-02', inspectDate: '2026-07-05', result: 'fail', item: '防腐剂混合使用超标', value: '山梨酸+苯甲酸0.25g/kg', limit: '≤0.2g/kg', place: '北京超市发丰台店', area: '北京市丰台区' }
+            ],
+            10: [
+                { batch: 'MT202610001', foodName: '蔬菜', spec: '散装', productDate: '-', inspectDate: '2026-06-12', result: 'fail', item: '敌敌畏', value: '0.15mg/kg', limit: '≤0.1mg/kg', place: '美团优选朝阳仓', area: '北京市朝阳区' },
+                { batch: 'MT202610002', foodName: '水产品', spec: '散装', productDate: '-', inspectDate: '2026-06-18', result: 'fail', item: '呋喃唑酮代谢物', value: '2.5μg/kg', limit: '不得检出', place: '美团优选海淀仓', area: '北京市海淀区' },
+                { batch: 'MT202610003', foodName: '水果', spec: '散装', productDate: '-', inspectDate: '2026-06-25', result: 'pass', item: '-', value: '-', limit: '-', place: '美团优选丰台仓', area: '北京市丰台区' },
+                { batch: 'MT202610004', foodName: '鲜蛋', spec: '散装', productDate: '-', inspectDate: '2026-07-02', result: 'fail', item: '氟苯尼考', value: '12μg/kg', limit: '不得检出', place: '美团优选通州仓', area: '北京市通州区' }
+            ],
+            11: [
+                { batch: 'JBY202611001', foodName: '熟肉制品', spec: '散装', productDate: '2026-06-10', inspectDate: '2026-06-15', result: 'fail', item: '菌落总数', value: '1.2×10⁵CFU/g', limit: '≤5×10⁴CFU/g', place: '聚宝源西城店', area: '北京市西城区' },
+                { batch: 'JBY202611002', foodName: '熟肉制品', spec: '散装', productDate: '2026-06-18', inspectDate: '2026-06-23', result: 'fail', item: '大肠菌群', value: '95CFU/g', limit: '≤10CFU/g', place: '聚宝源朝阳店', area: '北京市朝阳区' },
+                { batch: 'JBY202611003', foodName: '涮羊肉', spec: '散装', productDate: '2026-06-25', inspectDate: '2026-06-30', result: 'pass', item: '-', value: '-', limit: '-', place: '聚宝源海淀店', area: '北京市海淀区' },
+                { batch: 'JBY202611004', foodName: '熟肉制品', spec: '散装', productDate: '2026-07-02', inspectDate: '2026-07-07', result: 'fail', item: '亚硝酸盐', value: '38mg/kg', limit: '≤30mg/kg', place: '聚宝源丰台店', area: '北京市丰台区' }
+            ],
+            12: [
+                { batch: 'BYF202612001', foodName: '烤鸭', spec: '整只', productDate: '2026-05-20', inspectDate: '2026-05-25', result: 'fail', item: '苯并[a]芘', value: '8.5μg/kg', limit: '≤5μg/kg', place: '便宜坊崇文门店', area: '北京市东城区' },
+                { batch: 'BYF202612002', foodName: '烤鸭', spec: '整只', productDate: '2026-06-05', inspectDate: '2026-06-10', result: 'pass', item: '-', value: '-', limit: '-', place: '便宜坊朝阳店', area: '北京市朝阳区' },
+                { batch: 'BYF202612003', foodName: '熟食', spec: '散装', productDate: '2026-06-22', inspectDate: '2026-06-27', result: 'fail', item: '菌落总数', value: '7.8×10⁴CFU/g', limit: '≤5×10⁴CFU/g', place: '便宜坊海淀店', area: '北京市海淀区' }
+            ],
+            13: [
+                { batch: 'MZD202613001', foodName: '菜肴制品', spec: '散装', productDate: '2026-05-15', inspectDate: '2026-05-20', result: 'fail', item: '大肠菌群', value: '85CFU/g', limit: '≤10CFU/g', place: '眉州东坡朝阳店', area: '北京市朝阳区' },
+                { batch: 'MZD202613002', foodName: '菜肴制品', spec: '散装', productDate: '2026-05-28', inspectDate: '2026-06-02', result: 'pass', item: '-', value: '-', limit: '-', place: '眉州东坡海淀店', area: '北京市海淀区' },
+                { batch: 'MZD202613003', foodName: '主食', spec: '散装', productDate: '2026-06-12', inspectDate: '2026-06-17', result: 'fail', item: '糖精钠', value: '0.18g/kg', limit: '不得检出', place: '眉州东丰台店', area: '北京市丰台区' },
+                { batch: 'MZD202613004', foodName: '菜肴制品', spec: '散装', productDate: '2026-06-25', inspectDate: '2026-06-30', result: 'fail', item: '阴离子合成洗涤剂', value: '0.25mg/100cm²', limit: '≤0.1mg/100cm²', place: '眉州东东西城店', area: '北京市西城区' }
+            ],
+            14: [
+                { batch: 'JHYP202614001', foodName: '粥品', spec: '散装', productDate: '2026-06-08', inspectDate: '2026-06-13', result: 'fail', item: '菌落总数', value: '9.2×10⁴CFU/g', limit: '≤5×10⁴CFU/g', place: '嘉和一品朝阳店', area: '北京市朝阳区' },
+                { batch: 'JHYP202614002', foodName: '面点', spec: '散装', productDate: '2026-06-20', inspectDate: '2026-06-25', result: 'pass', item: '-', value: '-', limit: '-', place: '嘉和一品海淀店', area: '北京市海淀区' },
+                { batch: 'JHYP202614003', foodName: '粥品', spec: '散装', productDate: '2026-07-02', inspectDate: '2026-07-07', result: 'fail', item: '大肠菌群', value: '65CFU/g', limit: '≤10CFU/g', place: '嘉和一品丰台店', area: '北京市丰台区' }
+            ],
+            15: [
+                { batch: 'YHDW202615001', foodName: '豆浆', spec: '散装', productDate: '2026-06-10', inspectDate: '2026-06-15', result: 'fail', item: '菌落总数', value: '8.5×10⁴CFU/ml', limit: '≤5×10⁴CFU/ml', place: '永和大王朝阳店', area: '北京市朝阳区' },
+                { batch: 'YHDW202615002', foodName: '油条', spec: '散装', productDate: '2026-06-22', inspectDate: '2026-06-27', result: 'pass', item: '-', value: '-', limit: '-', place: '永和大王海淀店', area: '北京市海淀区' },
+                { batch: 'YHDW202615003', foodName: '豆浆', spec: '散装', productDate: '2026-07-05', inspectDate: '2026-07-10', result: 'fail', item: '铝的残留量', value: '120mg/kg', limit: '≤100mg/kg', place: '永和大王丰台店', area: '北京市丰台区' }
+            ],
+            16: [
+                { batch: 'TRT202616001', foodName: '保健食品', spec: '0.5g×60粒', productDate: '2026-04-15', inspectDate: '2026-05-20', result: 'fail', item: '非法添加西地那非', value: '检出', limit: '不得检出', place: '同仁堂朝阳店', area: '北京市朝阳区' },
+                { batch: 'TRT202616002', foodName: '保健食品', spec: '0.5g×60粒', productDate: '2026-04-15', inspectDate: '2026-05-20', result: 'pass', item: '-', value: '-', limit: '-', place: '同仁堂海淀店', area: '北京市海淀区' },
+                { batch: 'TRT202616003', foodName: '保健食品', spec: '0.5g×60粒', productDate: '2026-05-10', inspectDate: '2026-06-12', result: 'fail', item: '功效成分不足', value: '总皂苷8mg/100g', limit: '≥10mg/100g', place: '同仁堂丰台店', area: '北京市丰台区' },
+                { batch: 'TRT202616004', foodName: '保健食品', spec: '0.5g×60粒', productDate: '2026-05-25', inspectDate: '2026-06-28', result: 'fail', item: '非法添加他达拉非', value: '检出', limit: '不得检出', place: '同仁堂东城店', area: '北京市东城区' },
+                { batch: 'TRT202616005', foodName: '保健食品', spec: '0.5g×60粒', productDate: '2026-06-08', inspectDate: '2026-07-10', result: 'fail', item: '重金属超标', value: '铅1.2mg/kg', limit: '≤1.0mg/kg', place: '同仁堂西城店', area: '北京市西城区' }
+            ],
+            17: [
+                { batch: 'TCBJ202617001', foodName: '保健食品', spec: '0.5g×90粒', productDate: '2026-05-01', inspectDate: '2026-06-05', result: 'fail', item: '功效成分不足', value: '维生素C 35mg/100g', limit: '≥40mg/100g', place: '汤臣倍健专柜', area: '北京市朝阳区' },
+                { batch: 'TCBJ202617002', foodName: '保健食品', spec: '0.5g×90粒', productDate: '2026-05-15', inspectDate: '2026-06-18', result: 'pass', item: '-', value: '-', limit: '-', place: '汤臣倍健专柜', area: '北京市海淀区' },
+                { batch: 'TCBJ202617003', foodName: '保健食品', spec: '0.5g×90粒', productDate: '2026-06-02', inspectDate: '2026-07-05', result: 'fail', item: '非法添加酚酞', value: '检出', limit: '不得检出', place: '汤臣倍健专柜', area: '北京市丰台区' }
+            ],
+            18: [
+                { batch: 'MZC202618001', foodName: '婴幼儿配方乳粉', spec: '400g/罐', productDate: '2026-04-20', inspectDate: '2026-05-25', result: 'fail', item: '维生素D', value: '8.5μg/100g', limit: '8.5-32μg/100g', place: '美赞臣专柜', area: '北京市朝阳区' },
+                { batch: 'MZC202618002', foodName: '婴幼儿配方乳粉', spec: '400g/罐', productDate: '2026-05-08', inspectDate: '2026-06-10', result: 'pass', item: '-', value: '-', limit: '-', place: '美赞臣专柜', area: '北京市海淀区' },
+                { batch: 'MZC202618003', foodName: '婴幼儿配方乳粉', spec: '400g/罐', productDate: '2026-05-22', inspectDate: '2026-06-25', result: 'fail', item: '铁', value: '0.8mg/100g', limit: '0.8-2.0mg/100g', place: '美赞臣专柜', area: '北京市丰台区' }
+            ]
+        };
+
+        /* ============== 图表 ============== */
+        var riskChart = null;
+        var currentStage = 'produce';
+
+        function initChart() {
+            // 先预置场所下拉选项（避免 initChart 中 renderChart 时下拉为空）
+            var initialStage = document.getElementById('stageFilter').value;
+            var placeFilter = document.getElementById('placeFilter');
+            var initialPlaces = (stageConfig[initialStage] || stageConfig.produce).places;
+            placeFilter.innerHTML = '<option value="all">全部场所</option>' +
+                initialPlaces.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+            placeFilter.value = 'all';
+
+            riskChart = echarts.init(document.getElementById('riskStageChart'));
+            renderChart();
+            window.addEventListener('resize', function() {
+                if (riskChart) riskChart.resize();
+            });
+        }
+
+        function renderChart() {
+            if (!riskChart) return; // 空保护：未初始化时跳过
+            var stage = document.getElementById('stageFilter').value;
+            currentStage = stage;
+            var placeFilter = document.getElementById('placeFilter');
+            var selectedPlace = placeFilter.value || 'all';
+            var data = placeRateData[stage] || [];
+
+            var chartData;
+            if (selectedPlace && selectedPlace !== 'all') {
+                chartData = data.filter(function(d) { return d.place === selectedPlace; });
+            } else {
+                chartData = data;
+            }
+
+            var colorMap = {
+                produce: '#1e9a6c',
+                business: '#1e73be',
+                catering: '#fa8c16',
+                special: '#722ed1'
+            };
+
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        var p = params[0];
+                        var item = chartData[p.dataIndex];
+                        return p.name + '<br/>问题发现率：' + p.value + '%<br/>问题批次数：' + item.count + ' 批次';
+                    }
+                },
+                grid: { left: '3%', right: '4%', bottom: '3%', top: '12%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: chartData.map(function(d) { return d.place; }),
+                    axisLabel: {
+                        rotate: chartData.length > 4 ? 15 : 0,
+                        color: '#666',
+                        fontSize: 12
+                    },
+                    axisLine: { lineStyle: { color: '#e0e0e0' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '问题发现率(%)',
+                    nameTextStyle: { color: '#888', fontSize: 12 },
+                    axisLabel: { color: '#666', formatter: '{value}%' },
+                    splitLine: { lineStyle: { color: '#f0f0f0' } }
+                },
+                series: [{
+                    name: '问题发现率',
+                    type: 'bar',
+                    data: chartData.map(function(d) { return d.rate; }),
+                    barWidth: '45%',
+                    itemStyle: {
+                        color: colorMap[stage],
+                        borderRadius: [4, 4, 0, 0]
+                    },
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}%',
+                        color: '#333',
+                        fontSize: 12
+                    }
+                }]
+            };
+            riskChart.setOption(option, true);
+        }
+
+        function onStageFilterChange() {
+            var stage = document.getElementById('stageFilter').value;
+            var placeFilter = document.getElementById('placeFilter');
+            var places = stageConfig[stage].places;
+            placeFilter.innerHTML = '<option value="all">全部场所</option>' +
+                places.map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+            placeFilter.value = 'all';
+            renderChart();
+            // 同步卡片选中状态
+            selectStage(stage, false);
+        }
+
+        function selectStage(stage, syncFilter) {
+            currentStage = stage;
+            document.querySelectorAll('.stat-card').forEach(function(el) {
+                el.classList.toggle('active', el.dataset.stage === stage);
+            });
+            if (syncFilter === false) return;
+            // 同步图表筛选
+            document.getElementById('stageFilter').value = stage;
+            onStageFilterChange();
+        }
+
+        /* ============== 重点企业表格 ============== */
+        var currentPage = 1;
+        var pageSize = 15;
+        var filteredEnterpriseData = enterpriseData.slice();
+
+        function calcRate(total, fail) {
+            return (fail / total * 100).toFixed(2);
+        }
+
+        function stageTag(stage) {
+            var map = {
+                produce: { name: '生产', cls: 'tag-produce' },
+                business: { name: '经营', cls: 'tag-business' },
+                catering: { name: '餐饮', cls: 'tag-catering' },
+                special: { name: '特食', cls: 'tag-special' }
+            };
+            var c = map[stage];
+            return '<span class="tag ' + c.cls + '">' + c.name + '</span>';
+        }
+
+        function rateClass(rate) {
+            rate = parseFloat(rate);
+            if (rate >= 6) return 'rate-high';
+            if (rate >= 4) return 'rate-mid';
+            return 'rate-low';
+        }
+
+        function renderEnterpriseTable() {
+            var tbody = document.getElementById('enterpriseTableBody');
+            var start = (currentPage - 1) * pageSize;
+            var end = Math.min(start + pageSize, filteredEnterpriseData.length);
+            var pageData = filteredEnterpriseData.slice(start, end);
+
+            tbody.innerHTML = pageData.map(function(item, index) {
+                var rate = calcRate(item.total, item.fail);
+                return '<tr>' +
+                    '<td>' + (start + index + 1) + '</td>' +
+                    '<td><span class="enterprise-name" onclick="openEnterpriseDetailModal(' + item.id + ')">' + item.name + '</span></td>' +
+                    '<td>' + item.creditCode + '</td>' +
+                    '<td style="text-align:left;">' + item.address + '</td>' +
+                    '<td>' + item.area + '</td>' +
+                    '<td>' + item.total + '</td>' +
+                    '<td>' +
+                        '<div><span class="fail-count" onclick="openProblemBatchModal(' + item.id + ')">' + item.fail + '</span> 批次</div>' +
+                        '<div class="' + rateClass(rate) + '" style="font-size:12px;margin-top:3px;">问题发现率 ' + rate + '%</div>' +
+                    '</td>' +
+                    '<td>' + stageTag(item.stage) + '</td>' +
+                    '<td><button class="action-btn" onclick="openEnterpriseDetailModal(' + item.id + ')">查看详情</button></td>' +
+                    '</tr>';
+            }).join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            var total = filteredEnterpriseData.length;
+            var totalPages = Math.max(1, Math.ceil(total / pageSize));
+            var start = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+            var end = Math.min(currentPage * pageSize, total);
+
+            document.getElementById('paginationInfo').textContent = '第 ' + start + '-' + end + ' 条，共 ' + total + ' 条';
+
+            document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+            document.getElementById('nextPageBtn').disabled = currentPage >= totalPages;
+
+            var pageNumbersHtml = '';
+            var maxBtn = 5;
+            var startPage = Math.max(1, currentPage - 2);
+            var endPage = Math.min(totalPages, startPage + maxBtn - 1);
+            startPage = Math.max(1, endPage - maxBtn + 1);
+
+            for (var i = startPage; i <= endPage; i++) {
+                if (i === currentPage) {
+                    pageNumbersHtml += '<button class="pagination-btn active">' + i + '</button>';
+                } else {
+                    pageNumbersHtml += '<button class="pagination-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
+                }
+            }
+            document.getElementById('pageNumbers').innerHTML = pageNumbersHtml;
+        }
+
+        function goToPage(page) {
+            var totalPages = Math.max(1, Math.ceil(filteredEnterpriseData.length / pageSize));
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderEnterpriseTable();
+        }
+
+        function onPageSizeChange() {
+            pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            currentPage = 1;
+            renderEnterpriseTable();
+        }
+
+        function onEnterpriseStageFilterChange() {
+            doEnterpriseSearch();
+        }
+
+        function doEnterpriseSearch() {
+            var stage = document.getElementById('enterpriseStageFilter').value;
+            var name = document.getElementById('enterpriseNameFilter').value.trim().toLowerCase();
+            filteredEnterpriseData = enterpriseData.filter(function(item) {
+                var matchStage = !stage || item.stage === stage;
+                var matchName = !name || item.name.toLowerCase().indexOf(name) >= 0;
+                return matchStage && matchName;
+            });
+            currentPage = 1;
+            renderEnterpriseTable();
+        }
+
+        function clearEnterpriseSearch() {
+            document.getElementById('enterpriseStageFilter').value = '';
+            document.getElementById('enterpriseNameFilter').value = '';
+            filteredEnterpriseData = enterpriseData.slice();
+            currentPage = 1;
+            renderEnterpriseTable();
+        }
+
+        /* ============== 企业详情弹窗 ============== */
+        function openEnterpriseDetailModal(id) {
+            var item = enterpriseData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            var records = inspectionRecordData[id] || [];
+            var failRecords = records.filter(function(r) { return r.result === 'fail'; });
+            var rate = calcRate(item.total, item.fail);
+            var stageName = stageConfig[item.stage].name;
+
+            var html = '';
+
+            // 基本信息
+            html += '<div class="detail-section">' +
+                '<div class="detail-title">企业基本信息</div>' +
+                '<div class="detail-info">' +
+                    '<div class="detail-item"><div class="detail-label">企业名称</div><div class="detail-value">' + item.name + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">统一社会信用代码</div><div class="detail-value">' + item.creditCode + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">所属环节</div><div class="detail-value">' + stageName + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">数据来源</div><div class="detail-value">' + item.source + '</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">抽检批次</div><div class="detail-value">' + item.total + ' 批次</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">不合格批次</div><div class="detail-value" style="color:#ff4d4f;">' + item.fail + ' 批次</div></div>' +
+                    '<div class="detail-item"><div class="detail-label">问题发现率</div><div class="detail-value" style="color:#fa8c16;">' + rate + '%</div></div>' +
+                '</div>' +
+                '</div>';
+
+            // 全部抽检记录
+            html += '<div class="detail-section">' +
+                '<div class="detail-title">全部抽检记录（共 ' + records.length + ' 条）</div>' +
+                '<div class="table-scroll"><table class="detail-table">' +
+                    '<thead><tr><th>序号</th><th>抽样编号</th><th>食品名称</th><th>规格</th><th>生产日期</th><th>抽样日期</th><th>抽样场所</th><th>抽样区域</th><th>检验结果</th></tr></thead>' +
+                    '<tbody>' +
+                        records.map(function(r, idx) {
+                            return '<tr>' +
+                                '<td>' + (idx + 1) + '</td>' +
+                                '<td>' + r.batch + '</td>' +
+                                '<td>' + r.foodName + '</td>' +
+                                '<td>' + r.spec + '</td>' +
+                                '<td>' + r.productDate + '</td>' +
+                                '<td>' + r.inspectDate + '</td>' +
+                                '<td>' + r.place + '</td>' +
+                                '<td>' + r.area + '</td>' +
+                                '<td><span class="status ' + (r.result === 'fail' ? 'fail' : 'pass') + '">' + (r.result === 'fail' ? '不合格' : '合格') + '</span></td>' +
+                                '</tr>';
+                        }).join('') +
+                    '</tbody>' +
+                '</table></div>' +
+                '</div>';
+
+            // 不合格项目
+            if (failRecords.length > 0) {
+                html += '<div class="detail-section">' +
+                    '<div class="detail-title">不合格项目</div>';
+                failRecords.forEach(function(r) {
+                    html += '<div class="problem-item">' +
+                        '<span class="problem-item-name">' + r.item + '</span>' +
+                        '<span class="problem-item-desc">食品：' + r.foodName + '（' + r.batch + '）｜检测值：' + r.value + '｜限值：' + r.limit + '</span>' +
+                        '</div>';
+                });
+                html += '</div>';
+
+                // 问题项目汇总
+                var problemItems = {};
+                failRecords.forEach(function(r) {
+                    if (!problemItems[r.item]) problemItems[r.item] = 0;
+                    problemItems[r.item]++;
+                });
+            }
+
+            document.getElementById('enterpriseDetailContent').innerHTML = html;
+            document.getElementById('enterpriseDetailModal').classList.add('show');
+        }
+
+        function closeEnterpriseDetailModal() {
+            document.getElementById('enterpriseDetailModal').classList.remove('show');
+        }
+
+        function exportEnterpriseDetail() {
+            alert('导出功能：将当前企业抽检记录、不合格项目、问题项目汇总导出为 Excel 文件。');
+        }
+
+        /* ============== 问题批次详情弹窗 ============== */
+        function openProblemBatchModal(id) {
+            var item = enterpriseData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            var records = (inspectionRecordData[id] || []).filter(function(r) { return r.result === 'fail'; });
+
+            var html = '<div class="detail-section">' +
+                '<div class="detail-title">' + item.name + ' - 不合格批次明细（共 ' + records.length + ' 批次）</div>' +
+                '<div class="table-scroll"><table class="detail-table">' +
+                    '<thead><tr><th>序号</th><th>抽样编号</th><th>食品名称</th><th>规格</th><th>生产日期</th><th>抽样日期</th><th>不合格项目</th><th>检测值</th><th>限值</th><th>抽样场所</th><th>抽样区域</th></tr></thead>' +
+                    '<tbody>' +
+                        records.map(function(r, idx) {
+                            return '<tr>' +
+                                '<td>' + (idx + 1) + '</td>' +
+                                '<td>' + r.batch + '</td>' +
+                                '<td>' + r.foodName + '</td>' +
+                                '<td>' + r.spec + '</td>' +
+                                '<td>' + r.productDate + '</td>' +
+                                '<td>' + r.inspectDate + '</td>' +
+                                '<td style="color:#ff4d4f;font-weight:600;">' + r.item + '</td>' +
+                                '<td>' + r.value + '</td>' +
+                                '<td>' + r.limit + '</td>' +
+                                '<td>' + r.place + '</td>' +
+                                '<td>' + r.area + '</td>' +
+                                '</tr>';
+                        }).join('') +
+                    '</tbody>' +
+                '</table></div>' +
+                '</div>';
+
+            document.getElementById('problemBatchContent').innerHTML = html;
+            document.getElementById('problemBatchModal').classList.add('show');
+        }
+
+        function closeProblemBatchModal() {
+            document.getElementById('problemBatchModal').classList.remove('show');
+        }
+
+        /* ============== 卡片点击查看问题数据明细 ============== */
+        document.addEventListener('DOMContentLoaded', function() {
+            // 卡片点击跳转至该环节企业清单
+            var cards = document.querySelectorAll('.stat-card');
+            cards.forEach(function(card) {
+                card.addEventListener('click', function() {
+                    var stage = this.dataset.stage;
+                    // 同步企业筛选
+                    document.getElementById('enterpriseStageFilter').value = stage;
+                    doEnterpriseSearch();
+                });
+            });
+
+            // 先初始化图表实例（必须在 onStageFilterChange 前，否则 renderChart 空报错）
+            initChart();
+            // 再初始化场所下拉（内部会调用 renderChart）
+            onStageFilterChange();
+            // 初始化企业表格
+            renderEnterpriseTable();
+        });
+
+        // 弹窗背景点击关闭
+        document.getElementById('enterpriseDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeEnterpriseDetailModal();
+        });
+        document.getElementById('problemBatchModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProblemBatchModal();
+        });
+    </script>
+</body>
+</html>

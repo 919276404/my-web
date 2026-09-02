@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检验项目类别</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f7fa; padding: 15px; height: calc(100vh - 30px); }
+        
+        .container { display: flex; flex-direction: column; height: 100%; gap: 12px; }
+        
+        .content { flex: 1; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; }
+        
+        .content-header { padding: 14px 16px; border-bottom: 1px solid #e8e8e8; background: #fafafa; display: flex; justify-content: space-between; align-items: center; }
+        .content-title { font-size: 15px; font-weight: 600; color: #333; }
+        .content-actions { display: flex; gap: 8px; }
+        
+        .btn { padding: 8px 20px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-outline { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .btn-outline:hover { background: #f0f5ff; }
+        
+        .content-body { flex: 1; overflow-y: auto; padding: 16px; }
+        
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 16px; padding: 14px 16px; background: #fff; border-radius: 6px; margin-bottom: 16px; align-items: center; border: 1px solid #e8e8e8; }
+        .filter-item { display: flex; align-items: center; gap: 8px; }
+        .filter-item label { font-size: 13px; color: #666; min-width: 80px; }
+        .filter-item input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 200px; }
+        .filter-actions { display: flex; gap: 8px; margin-left: auto; }
+        
+        .table-container { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 10px 12px; text-align: center; border-bottom: 1px solid #e0e0e0; border: 1px solid #e8e8e8; }
+        .data-table th { background: #f5f5f5; font-weight: 600; color: #666; }
+        .data-table tr:hover { background: #fafafa; }
+        
+        .action-links { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+        .action-links a { font-size: 12px; color: #1e73be; text-decoration: none; }
+        .action-links a:hover { text-decoration: underline; }
+        .action-links .delete-link { color: #f5222d; }
+        
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 12px; background: #fafafa; border-radius: 6px; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination { display: flex; align-items: center; gap: 4px; }
+        .pagination-btn { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; cursor: pointer; background: #fff; color: #666; }
+        .pagination-btn:hover { background: #f0f5ff; color: #1e73be; border-color: #1e73be; }
+        .pagination-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .pagination-numbers { display: flex; gap: 2px; }
+        .pagination-number { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; cursor: pointer; background: #fff; color: #666; margin: 0 2px; }
+        .pagination-number:hover { background: #f0f5ff; color: #1e73be; border-color: #1e73be; }
+        .pagination-number.active { background: #1e73be; color: #fff; border-color: #1e73be; }
+        
+        .status-enabled { color: #52c41a; }
+        .status-disabled { color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="content-header">
+                <div class="content-title">检验项目类别</div>
+                <div class="content-actions">
+                    <button class="btn btn-primary">+ 添加类别</button>
+                </div>
+            </div>
+            
+            <div class="content-body">
+                <div class="filter-bar">
+                    <div class="filter-item">
+                        <label>类别名称</label>
+                        <input type="text" placeholder="请输入">
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-outline" onclick="resetFilter()">重置</button>
+                        <button class="btn btn-primary" onclick="doFilter()">查询</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>类别名称</th>
+                                <th>父级类别</th>
+                                <th>项目数量</th>
+                                <th>描述</th>
+                                <th>排序号</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>农药残留检测</td><td>-</td><td>15</td><td>食品中农药残留量检测</td><td>1</td><td><span class="status-enabled">启用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                            <tr><td>2</td><td>兽药残留检测</td><td>-</td><td>8</td><td>食品中兽药残留量检测</td><td>2</td><td><span class="status-enabled">启用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                            <tr><td>3</td><td>食品添加剂检测</td><td>-</td><td>12</td><td>食品添加剂含量检测</td><td>3</td><td><span class="status-enabled">启用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                            <tr><td>4</td><td>微生物检测</td><td>-</td><td>6</td><td>食品微生物指标检测</td><td>4</td><td><span class="status-enabled">启用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                            <tr><td>5</td><td>重金属检测</td><td>-</td><td>5</td><td>食品重金属含量检测</td><td>5</td><td><span class="status-enabled">启用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                            <tr><td>6</td><td>理化指标检测</td><td>-</td><td>20</td><td>食品理化指标检测</td><td>6</td><td><span class="status-enabled">启用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                            <tr><td>7</td><td>真菌毒素检测</td><td>微生物检测</td><td>3</td><td>食品真菌毒素检测</td><td>7</td><td><span class="status-enabled">启用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                            <tr><td>8</td><td>营养成分检测</td><td>-</td><td>10</td><td>食品营养成分检测</td><td>8</td><td><span class="status-disabled">禁用</span></td><td><div class="action-links"><a href="#">修改</a><a href="#" class="delete-link">删除</a></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-container">
+                    <div class="pagination-info">共 8 条记录，第 1/1 页</div>
+                    <div class="pagination">
+                        <button class="pagination-btn" disabled>首页</button>
+                        <button class="pagination-btn" disabled>上一页</button>
+                        <span class="pagination-numbers">
+                            <span class="pagination-number active">1</span>
+                        </span>
+                        <button class="pagination-btn" disabled>下一页</button>
+                        <button class="pagination-btn" disabled>末页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function doFilter() {}
+        function resetFilter() {}
+    </script>
+</body>
+</html>

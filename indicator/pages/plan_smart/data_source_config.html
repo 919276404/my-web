@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据资源库表可视化选择与关联配置</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 200px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .page-size-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-history { background: #e3f2fd; color: #1e73be; }
+        .badge-realtime { background: #e8f5e9; color: #2e7d32; }
+        .badge-active { background: #e8f5e9; color: #2e7d32; }
+        .badge-inactive { background: #f5f5f5; color: #999; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; }
+        .action-btn-view { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-view:hover { background: #f0f5ff; }
+        .action-btn-edit { background: #fff; color: #f57c00; border: 1px solid #f57c00; }
+        .action-btn-edit:hover { background: #fff3e0; }
+        .action-btn-delete { background: #fff; color: #ef5350; border: 1px solid #ef5350; }
+        .action-btn-delete:hover { background: #ffebee; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 800px; max-height: 90vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #e8e8e8; background: #fafafa; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 20px; color: #999; cursor: pointer; padding: 0 5px; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; max-height: calc(90vh - 120px); overflow-y: auto; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .form-item { display: flex; flex-direction: column; gap: 6px; min-width: 200px; }
+        .form-label { font-size: 13px; color: #666; font-weight: 500; }
+        .form-label.required::after { content: '*'; color: #ff4d4f; margin-left: 4px; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .form-input:focus { outline: none; border-color: #1e73be; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: #fff; cursor: pointer; }
+        .form-textarea { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; resize: vertical; min-height: 80px; }
+        .form-textarea:focus { outline: none; border-color: #1e73be; }
+        .form-checkboxes { display: flex; flex-wrap: wrap; gap: 15px; }
+        .checkbox-item { display: flex; align-items: center; gap: 6px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #e8e8e8; background: #fafafa; }
+        .fields-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e0e0e0; }
+        .fields-section-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .field-item { display: flex; gap: 10px; align-items: center; padding: 10px; background: #fafafa; border-radius: 4px; margin-bottom: 8px; }
+        .field-name { flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .field-type { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; min-width: 100px; }
+        .btn-add-field { padding: 4px 12px; font-size: 12px; background: #f5f5f5; color: #1e73be; border: 1px solid #1e73be; border-radius: 4px; cursor: pointer; }
+        .btn-add-field:hover { background: #f0f5ff; }
+        .btn-remove-field { padding: 4px 8px; font-size: 12px; background: #fff; color: #ef5350; border: 1px solid #ef5350; border-radius: 4px; cursor: pointer; }
+        .btn-remove-field:hover { background: #ffebee; }
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; }
+        .preview-table th, .preview-table td { padding: 8px 10px; text-align: left; border: 1px solid #e0e0e0; }
+        .preview-table th { background: #f8fafc; font-weight: 600; color: #666; }
+        .file-upload-area { border: 2px dashed #ddd; border-radius: 6px; padding: 40px 20px; text-align: center; cursor: pointer; transition: border-color 0.3s; }
+        .file-upload-area:hover { border-color: #1e73be; background: #fafafa; }
+        .file-upload-area.dragover { border-color: #1e73be; background: #f0f5ff; }
+        .file-upload-text { color: #999; font-size: 14px; }
+        .file-upload-text strong { color: #1e73be; }
+        .hidden-file-input { display: none; }
+    </style>
+</head>
+<body>
+    <div class="search-bar">
+        <div class="search-row">
+            <div class="search-item">
+                <span class="search-label">数据类型</span>
+                <select class="search-select">
+                    <option>请选择</option>
+                    <option>历史数据类</option>
+                    <option>实时数据类</option>
+                </select>
+            </div>
+            <div class="search-item">
+                <span class="search-label">数据表名称</span>
+                <input type="text" class="search-input" placeholder="请输入">
+            </div>
+            <button class="btn btn-secondary" onclick="clearSearch()">清空</button>
+            <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0;">
+            <div>
+                <button class="btn btn-primary" onclick="openImportModal()">+ 导入数据</button>
+                <button class="btn btn-secondary">⊗ 批量删除</button>
+            </div>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox"></th>
+                    <th>序号</th>
+                    <th>数据表名称</th>
+                    <th>数据类型</th>
+                    <th>字段数</th>
+                    <th>关联数据表</th>
+                    <th>关联字段</th>
+                    <th>更新时间</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>1</td>
+                    <td>历史抽检结果表</td>
+                    <td><span class="badge badge-history">历史数据类</span></td>
+                    <td>25</td>
+                    <td>企业历史超标台账</td>
+                    <td>企业统一社会信用代码</td>
+                    <td>2026-07-01</td>
+                    <td><span class="badge badge-active">正常</span></td>
+                    <td>
+                        <button class="action-btn action-btn-view" onclick="openPreviewModal(1)">预览</button>
+                        <button class="action-btn action-btn-edit" onclick="openEditModal(1)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(1)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>2</td>
+                    <td>企业历史超标台账</td>
+                    <td><span class="badge badge-history">历史数据类</span></td>
+                    <td>18</td>
+                    <td>历史抽检结果表</td>
+                    <td>企业统一社会信用代码</td>
+                    <td>2026-07-01</td>
+                    <td><span class="badge badge-active">正常</span></td>
+                    <td>
+                        <button class="action-btn action-btn-view" onclick="openPreviewModal(2)">预览</button>
+                        <button class="action-btn action-btn-edit" onclick="openEditModal(2)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(2)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>3</td>
+                    <td>历年抽检计划执行表</td>
+                    <td><span class="badge badge-history">历史数据类</span></td>
+                    <td>22</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>2026-06-28</td>
+                    <td><span class="badge badge-active">正常</span></td>
+                    <td>
+                        <button class="action-btn action-btn-view" onclick="openPreviewModal(3)">预览</button>
+                        <button class="action-btn action-btn-edit" onclick="openEditModal(3)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(3)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>4</td>
+                    <td>当前在产企业清单</td>
+                    <td><span class="badge badge-realtime">实时数据类</span></td>
+                    <td>15</td>
+                    <td>历史抽检结果表</td>
+                    <td>企业统一社会信用代码</td>
+                    <td>2026-07-05</td>
+                    <td><span class="badge badge-active">正常</span></td>
+                    <td>
+                        <button class="action-btn action-btn-view" onclick="openPreviewModal(4)">预览</button>
+                        <button class="action-btn action-btn-edit" onclick="openEditModal(4)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(4)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>5</td>
+                    <td>在售食品品类清单</td>
+                    <td><span class="badge badge-realtime">实时数据类</span></td>
+                    <td>12</td>
+                    <td>区域品类风险统计表</td>
+                    <td>品类编码</td>
+                    <td>2026-07-05</td>
+                    <td><span class="badge badge-active">正常</span></td>
+                    <td>
+                        <button class="action-btn action-btn-view" onclick="openPreviewModal(5)">预览</button>
+                        <button class="action-btn action-btn-edit" onclick="openEditModal(5)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(5)">删除</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="checkbox"></td>
+                    <td>6</td>
+                    <td>区域监管重点名单</td>
+                    <td><span class="badge badge-realtime">实时数据类</span></td>
+                    <td>10</td>
+                    <td>历史抽检结果表</td>
+                    <td>企业统一社会信用代码</td>
+                    <td>2026-07-03</td>
+                    <td><span class="badge badge-inactive">待更新</span></td>
+                    <td>
+                        <button class="action-btn action-btn-view" onclick="openPreviewModal(6)">预览</button>
+                        <button class="action-btn action-btn-edit" onclick="openEditModal(6)">编辑</button>
+                        <button class="action-btn action-btn-delete" onclick="confirmDelete(6)">删除</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination-container">
+            <div class="pagination-info">已选择 0 项 本页 6 条 共有 28 条</div>
+            <select class="page-size-select">
+                <option>10条/页</option>
+                <option>20条/页</option>
+                <option>50条/页</option>
+            </select>
+            <div class="pagination-controls">
+                <button class="pagination-btn" disabled>‹</button>
+                <button class="pagination-btn" disabled>‹‹</button>
+                <button class="pagination-current">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+                <button class="pagination-btn">››</button>
+                <button class="pagination-btn">›</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="pagination-info">跳转到</span>
+                <input type="number" class="search-input" style="width: 50px; padding: 4px;" value="1" min="1" max="3">
+                <span class="pagination-info">页</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">导入数据</div>
+                <div class="modal-close" onclick="closeModal('importModal')">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">数据表名称</label>
+                        <input type="text" class="form-input" id="importTableName" placeholder="请输入数据表名称">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">数据类型</label>
+                        <select class="form-select" id="importDataType">
+                            <option value="">请选择</option>
+                            <option value="history">历史数据类</option>
+                            <option value="realtime">实时数据类</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label">关联数据表</label>
+                        <select class="form-select" id="importRelTable">
+                            <option value="">请选择</option>
+                            <option value="1">历史抽检结果表</option>
+                            <option value="2">企业历史超标台账</option>
+                            <option value="3">历年抽检计划执行表</option>
+                            <option value="4">当前在产企业清单</option>
+                            <option value="5">在售食品品类清单</option>
+                            <option value="6">区域监管重点名单</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">关联字段</label>
+                        <input type="text" class="form-input" id="importRelField" placeholder="请输入关联字段">
+                    </div>
+                </div>
+
+                <div class="fields-section">
+                    <div class="fields-section-title">字段列表</div>
+                    <div id="importFields">
+                        <div class="field-item">
+                            <input type="text" class="field-name" placeholder="字段名称">
+                            <select class="field-type">
+                                <option value="string">字符串</option>
+                                <option value="number">数值</option>
+                                <option value="date">日期</option>
+                                <option value="boolean">布尔</option>
+                            </select>
+                            <button class="btn-remove-field" onclick="removeField(this)">-</button>
+                        </div>
+                    </div>
+                    <button class="btn-add-field" onclick="addField('importFields')">+ 添加字段</button>
+                </div>
+
+                <div class="fields-section">
+                    <div class="fields-section-title">文件上传</div>
+                    <div class="file-upload-area" onclick="document.getElementById('importFile').click()" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault(); this.classList.remove('dragover'); handleFileDrop(event);">
+                        <div class="file-upload-text">
+                            <strong>点击或拖拽文件到此处上传</strong><br>
+                            支持 CSV、Excel、JSON 格式
+                        </div>
+                    </div>
+                    <input type="file" id="importFile" class="hidden-file-input" accept=".csv,.xls,.xlsx,.json" onchange="handleFileSelect(this)">
+                    <div id="uploadFileName" style="margin-top: 10px; font-size: 12px; color: #666; display: none;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('importModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveImport()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="previewModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="previewTitle">数据预览</div>
+                <div class="modal-close" onclick="closeModal('previewModal')">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label">数据表名称</label>
+                        <input type="text" class="form-input" id="previewTableName" readonly>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">数据类型</label>
+                        <input type="text" class="form-input" id="previewDataType" readonly>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label">字段数</label>
+                        <input type="text" class="form-input" id="previewFieldCount" readonly>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">关联字段</label>
+                        <input type="text" class="form-input" id="previewRelField" readonly>
+                    </div>
+                </div>
+
+                <div class="fields-section">
+                    <div class="fields-section-title">字段列表</div>
+                    <div id="previewFieldsList"></div>
+                </div>
+
+                <div class="fields-section">
+                    <div class="fields-section-title">示例数据</div>
+                    <table class="preview-table" id="previewDataTable"></table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal('previewModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">编辑数据表</div>
+                <div class="modal-close" onclick="closeModal('editModal')">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editId" value="">
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label required">数据表名称</label>
+                        <input type="text" class="form-input" id="editTableName" placeholder="请输入数据表名称">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">数据类型</label>
+                        <select class="form-select" id="editDataType">
+                            <option value="">请选择</option>
+                            <option value="history">历史数据类</option>
+                            <option value="realtime">实时数据类</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-item">
+                        <label class="form-label">关联数据表</label>
+                        <select class="form-select" id="editRelTable">
+                            <option value="">请选择</option>
+                            <option value="1">历史抽检结果表</option>
+                            <option value="2">企业历史超标台账</option>
+                            <option value="3">历年抽检计划执行表</option>
+                            <option value="4">当前在产企业清单</option>
+                            <option value="5">在售食品品类清单</option>
+                            <option value="6">区域监管重点名单</option>
+                        </select>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">关联字段</label>
+                        <input type="text" class="form-input" id="editRelField" placeholder="请输入关联字段">
+                    </div>
+                </div>
+
+                <div class="fields-section">
+                    <div class="fields-section-title">字段列表</div>
+                    <div id="editFields">
+                        <div class="field-item">
+                            <input type="text" class="field-name" placeholder="字段名称">
+                            <select class="field-type">
+                                <option value="string">字符串</option>
+                                <option value="number">数值</option>
+                                <option value="date">日期</option>
+                                <option value="boolean">布尔</option>
+                            </select>
+                            <button class="btn-remove-field" onclick="removeField(this)">-</button>
+                        </div>
+                    </div>
+                    <button class="btn-add-field" onclick="addField('editFields')">+ 添加字段</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var tableData = [
+            { id: 1, name: '历史抽检结果表', type: 'history', fieldCount: 25, relTable: '企业历史超标台账', relField: '企业统一社会信用代码', updateTime: '2026-07-01', status: 1, fields: [{name: '企业名称', type: 'string'}, {name: '企业统一社会信用代码', type: 'string'}, {name: '抽检时间', type: 'date'}, {name: '食品名称', type: 'string'}, {name: '食品类别', type: 'string'}, {name: '检验项目', type: 'string'}, {name: '检验结果', type: 'string'}, {name: '是否合格', type: 'boolean'}, {name: '超标指标', type: 'string'}, {name: '超标次数', type: 'number'}] },
+            { id: 2, name: '企业历史超标台账', type: 'history', fieldCount: 18, relTable: '历史抽检结果表', relField: '企业统一社会信用代码', updateTime: '2026-07-01', status: 1, fields: [{name: '企业名称', type: 'string'}, {name: '企业统一社会信用代码', type: 'string'}, {name: '超标指标', type: 'string'}, {name: '超标次数', type: 'number'}, {name: '首次超标时间', type: 'date'}, {name: '最近超标时间', type: 'date'}] },
+            { id: 3, name: '历年抽检计划执行表', type: 'history', fieldCount: 22, relTable: '-', relField: '-', updateTime: '2026-06-28', status: 1, fields: [{name: '计划名称', type: 'string'}, {name: '计划年份', type: 'number'}, {name: '抽检批次', type: 'number'}, {name: '完成批次', type: 'number'}, {name: '不合格批次', type: 'number'}, {name: '合格率', type: 'string'}] },
+            { id: 4, name: '当前在产企业清单', type: 'realtime', fieldCount: 15, relTable: '历史抽检结果表', relField: '企业统一社会信用代码', updateTime: '2026-07-05', status: 1, fields: [{name: '企业名称', type: 'string'}, {name: '企业统一社会信用代码', type: 'string'}, {name: '生产地址', type: 'string'}, {name: '生产状态', type: 'string'}, {name: '主营品类', type: 'string'}] },
+            { id: 5, name: '在售食品品类清单', type: 'realtime', fieldCount: 12, relTable: '区域品类风险统计表', relField: '品类编码', updateTime: '2026-07-05', status: 1, fields: [{name: '品类名称', type: 'string'}, {name: '品类编码', type: 'string'}, {name: '所属类别', type: 'string'}, {name: '在售数量', type: 'number'}, {name: '风险等级', type: 'string'}] },
+            { id: 6, name: '区域监管重点名单', type: 'realtime', fieldCount: 10, relTable: '历史抽检结果表', relField: '企业统一社会信用代码', updateTime: '2026-07-03', status: 0, fields: [{name: '企业名称', type: 'string'}, {name: '企业统一社会信用代码', type: 'string'}, {name: '所属区域', type: 'string'}, {name: '监管级别', type: 'string'}, {name: '重点监管原因', type: 'string'}] }
+        ];
+
+        var sampleData = {
+            1: [
+                { '企业名称': '北京食品有限公司', '企业统一社会信用代码': '911100001234567890', '抽检时间': '2026-06-15', '食品名称': '牛奶', '食品类别': '乳制品', '检验项目': '三聚氰胺', '检验结果': '合格', '是否合格': '是', '超标指标': '-', '超标次数': '0' },
+                { '企业名称': '上海食品有限公司', '企业统一社会信用代码': '913100000987654321', '抽检时间': '2026-06-14', '食品名称': '面包', '食品类别': '糕点', '检验项目': '防腐剂', '检验结果': '超标', '是否合格': '否', '超标指标': '防腐剂', '超标次数': '2' },
+                { '企业名称': '广州食品有限公司', '企业统一社会信用代码': '914401005678901234', '抽检时间': '2026-06-13', '食品名称': '食用油', '食品类别': '食用油', '检验项目': '酸价', '检验结果': '合格', '是否合格': '是', '超标指标': '-', '超标次数': '0' }
+            ],
+            2: [
+                { '企业名称': '上海食品有限公司', '企业统一社会信用代码': '913100000987654321', '超标指标': '防腐剂', '超标次数': '2', '首次超标时间': '2026-03-10', '最近超标时间': '2026-06-14' },
+                { '企业名称': '深圳食品有限公司', '企业统一社会信用代码': '914403002345678901', '超标指标': '重金属', '超标次数': '1', '首次超标时间': '2026-05-20', '最近超标时间': '2026-05-20' }
+            ],
+            3: [
+                { '计划名称': '2026年第一季度抽检计划', '计划年份': '2026', '抽检批次': '500', '完成批次': '480', '不合格批次': '25', '合格率': '94.79%' },
+                { '计划名称': '2026年第二季度抽检计划', '计划年份': '2026', '抽检批次': '500', '完成批次': '450', '不合格批次': '20', '合格率': '95.56%' }
+            ],
+            4: [
+                { '企业名称': '北京食品有限公司', '企业统一社会信用代码': '911100001234567890', '生产地址': '北京市朝阳区', '生产状态': '正常生产', '主营品类': '乳制品' },
+                { '企业名称': '天津食品有限公司', '企业统一社会信用代码': '911200003456789012', '生产地址': '天津市滨海新区', '生产状态': '正常生产', '主营品类': '糕点' }
+            ],
+            5: [
+                { '品类名称': '牛奶', '品类编码': 'PD001', '所属类别': '乳制品', '在售数量': '1500', '风险等级': '低' },
+                { '品类名称': '面包', '品类编码': 'GD001', '所属类别': '糕点', '在售数量': '800', '风险等级': '中' }
+            ],
+            6: [
+                { '企业名称': '上海食品有限公司', '企业统一社会信用代码': '913100000987654321', '所属区域': '上海市浦东新区', '监管级别': '重点监管', '重点监管原因': '多次超标' },
+                { '企业名称': '深圳食品有限公司', '企业统一社会信用代码': '914403002345678901', '所属区域': '深圳市南山区', '监管级别': '一般监管', '重点监管原因': '近期不合格' }
+            ]
+        };
+
+        function clearSearch() { console.log('清空搜索'); }
+        function doSearch() { console.log('执行搜索'); }
+
+        function openImportModal() {
+            document.getElementById('importTableName').value = '';
+            document.getElementById('importDataType').value = '';
+            document.getElementById('importRelTable').value = '';
+            document.getElementById('importRelField').value = '';
+            document.getElementById('uploadFileName').style.display = 'none';
+            document.getElementById('importFile').value = '';
+            document.getElementById('importFields').innerHTML = '<div class="field-item"><input type="text" class="field-name" placeholder="字段名称"><select class="field-type"><option value="string">字符串</option><option value="number">数值</option><option value="date">日期</option><option value="boolean">布尔</option></select><button class="btn-remove-field" onclick="removeField(this)">-</button></div>';
+            document.getElementById('importModal').classList.add('show');
+        }
+
+        function openPreviewModal(id) {
+            var data = tableData.find(item => item.id === parseInt(id));
+            if (!data) return;
+
+            document.getElementById('previewTitle').textContent = data.name + ' - 数据预览';
+            document.getElementById('previewTableName').value = data.name;
+            document.getElementById('previewDataType').value = data.type === 'history' ? '历史数据类' : '实时数据类';
+            document.getElementById('previewFieldCount').value = data.fieldCount;
+            document.getElementById('previewRelField').value = data.relField;
+
+            var fieldsList = document.getElementById('previewFieldsList');
+            fieldsList.innerHTML = '';
+            var typeNames = { 'string': '字符串', 'number': '数值', 'date': '日期', 'boolean': '布尔' };
+            data.fields.forEach(function(field) {
+                var div = document.createElement('div');
+                div.className = 'field-item';
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'field-name';
+                input.value = field.name;
+                input.readOnly = true;
+                var select = document.createElement('select');
+                select.className = 'field-type';
+                select.innerHTML = '<option value="string">字符串</option><option value="number">数值</option><option value="date">日期</option><option value="boolean">布尔</option>';
+                select.value = field.type;
+                select.disabled = true;
+                div.appendChild(input);
+                div.appendChild(select);
+                fieldsList.appendChild(div);
+            });
+
+            var table = document.getElementById('previewDataTable');
+            var samples = sampleData[id] || [];
+            if (samples.length > 0) {
+                var headers = Object.keys(samples[0]);
+                var html = '<thead><tr>';
+                headers.forEach(function(header) {
+                    html += '<th>' + header + '</th>';
+                });
+                html += '</tr></thead><tbody>';
+                samples.forEach(function(row) {
+                    html += '<tr>';
+                    headers.forEach(function(header) {
+                        html += '<td>' + (row[header] || '-') + '</td>';
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody>';
+                table.innerHTML = html;
+            } else {
+                table.innerHTML = '<tbody><tr><td colspan="10" style="text-align: center; color: #999;">暂无示例数据</td></tr></tbody>';
+            }
+
+            document.getElementById('previewModal').classList.add('show');
+        }
+
+        function openEditModal(id) {
+            var data = tableData.find(item => item.id === parseInt(id));
+            if (!data) return;
+
+            document.getElementById('editId').value = data.id;
+            document.getElementById('editTableName').value = data.name;
+            document.getElementById('editDataType').value = data.type;
+            document.getElementById('editRelField').value = data.relField;
+
+            var relTableNames = { '-': '', '历史抽检结果表': '1', '企业历史超标台账': '2', '历年抽检计划执行表': '3', '当前在产企业清单': '4', '在售食品品类清单': '5', '区域监管重点名单': '6' };
+            document.getElementById('editRelTable').value = relTableNames[data.relTable] || '';
+
+            var container = document.getElementById('editFields');
+            container.innerHTML = '';
+            data.fields.forEach(function(field) {
+                var div = document.createElement('div');
+                div.className = 'field-item';
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'field-name';
+                input.value = field.name;
+                var select = document.createElement('select');
+                select.className = 'field-type';
+                select.innerHTML = '<option value="string">字符串</option><option value="number">数值</option><option value="date">日期</option><option value="boolean">布尔</option>';
+                select.value = field.type;
+                var btn = document.createElement('button');
+                btn.className = 'btn-remove-field';
+                btn.textContent = '-';
+                btn.onclick = function() { removeField(this); };
+                div.appendChild(input);
+                div.appendChild(select);
+                div.appendChild(btn);
+                container.appendChild(div);
+            });
+
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        function addField(containerId) {
+            var container = document.getElementById(containerId);
+            container.insertAdjacentHTML('beforeend', '<div class="field-item"><input type="text" class="field-name" placeholder="字段名称"><select class="field-type"><option value="string">字符串</option><option value="number">数值</option><option value="date">日期</option><option value="boolean">布尔</option></select><button class="btn-remove-field" onclick="removeField(this)">-</button></div>');
+        }
+
+        function removeField(btn) {
+            var container = btn.parentElement.parentElement;
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert('至少保留一个字段');
+            }
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                document.getElementById('uploadFileName').textContent = '已选择文件：' + input.files[0].name;
+                document.getElementById('uploadFileName').style.display = 'block';
+            }
+        }
+
+        function handleFileDrop(event) {
+            var files = event.dataTransfer.files;
+            if (files && files[0]) {
+                document.getElementById('uploadFileName').textContent = '已选择文件：' + files[0].name;
+                document.getElementById('uploadFileName').style.display = 'block';
+            }
+        }
+
+        function saveImport() {
+            var tableName = document.getElementById('importTableName').value;
+            var dataType = document.getElementById('importDataType').value;
+
+            if (!tableName.trim()) { alert('请输入数据表名称'); return; }
+            if (!dataType) { alert('请选择数据类型'); return; }
+
+            var fields = [];
+            var fieldItems = document.querySelectorAll('#importFields .field-item');
+            fieldItems.forEach(function(item) {
+                var name = item.querySelector('.field-name').value.trim();
+                var fieldType = item.querySelector('.field-type').value;
+                if (name) fields.push({name: name, type: fieldType});
+            });
+            if (fields.length === 0) { alert('请至少添加一个字段'); return; }
+
+            var newId = tableData.length > 0 ? Math.max(...tableData.map(r => r.id)) + 1 : 1;
+            var relTableNames = { '': '-', '1': '历史抽检结果表', '2': '企业历史超标台账', '3': '历年抽检计划执行表', '4': '当前在产企业清单', '5': '在售食品品类清单', '6': '区域监管重点名单' };
+
+            tableData.push({
+                id: newId,
+                name: tableName,
+                type: dataType,
+                fieldCount: fields.length,
+                relTable: relTableNames[document.getElementById('importRelTable').value] || '-',
+                relField: document.getElementById('importRelField').value || '-',
+                updateTime: new Date().toISOString().split('T')[0],
+                status: 1,
+                fields: fields
+            });
+
+            renderTable();
+            alert('数据导入成功');
+            closeModal('importModal');
+        }
+
+        function saveEdit() {
+            var id = parseInt(document.getElementById('editId').value);
+            var tableName = document.getElementById('editTableName').value;
+            var dataType = document.getElementById('editDataType').value;
+
+            if (!tableName.trim()) { alert('请输入数据表名称'); return; }
+            if (!dataType) { alert('请选择数据类型'); return; }
+
+            var fields = [];
+            var fieldItems = document.querySelectorAll('#editFields .field-item');
+            fieldItems.forEach(function(item) {
+                var name = item.querySelector('.field-name').value.trim();
+                var fieldType = item.querySelector('.field-type').value;
+                if (name) fields.push({name: name, type: fieldType});
+            });
+            if (fields.length === 0) { alert('请至少保留一个字段'); return; }
+
+            var index = tableData.findIndex(item => item.id === id);
+            if (index !== -1) {
+                var relTableNames = { '': '-', '1': '历史抽检结果表', '2': '企业历史超标台账', '3': '历年抽检计划执行表', '4': '当前在产企业清单', '5': '在售食品品类清单', '6': '区域监管重点名单' };
+
+                tableData[index] = {
+                    ...tableData[index],
+                    name: tableName,
+                    type: dataType,
+                    fieldCount: fields.length,
+                    relTable: relTableNames[document.getElementById('editRelTable').value] || '-',
+                    relField: document.getElementById('editRelField').value || '-',
+                    fields: fields
+                };
+
+                renderTable();
+                alert('数据表修改成功');
+            }
+
+            closeModal('editModal');
+        }
+
+        function confirmDelete(id) {
+            if (confirm('确定要删除该数据表吗？')) {
+                tableData = tableData.filter(item => item.id !== parseInt(id));
+                renderTable();
+                alert('删除成功');
+            }
+        }
+
+        function renderTable() {
+            var tbody = document.querySelector('.data-table tbody');
+            var html = tableData.map(function(item, index) {
+                return '<tr><td><input type="checkbox"></td><td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td><span class="badge ' + (item.type === 'history' ? 'badge-history' : 'badge-realtime') + '">' + (item.type === 'history' ? '历史数据类' : '实时数据类') + '</span></td>' +
+                    '<td>' + item.fieldCount + '</td>' +
+                    '<td>' + item.relTable + '</td>' +
+                    '<td>' + item.relField + '</td>' +
+                    '<td>' + item.updateTime + '</td>' +
+                    '<td><span class="badge ' + (item.status === 1 ? 'badge-active' : 'badge-inactive') + '">' + (item.status === 1 ? '正常' : '待更新') + '</span></td>' +
+                    '<td><button class="action-btn action-btn-view" onclick="openPreviewModal(' + item.id + ')">预览</button><button class="action-btn action-btn-edit" onclick="openEditModal(' + item.id + ')">编辑</button><button class="action-btn action-btn-delete" onclick="confirmDelete(' + item.id + ')">删除</button></td></tr>';
+            }).join('');
+            tbody.innerHTML = html;
+        }
+
+        document.getElementById('importModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal('importModal');
+        });
+        document.getElementById('previewModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal('previewModal');
+        });
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal('editModal');
+        });
+    </script>
+</body>
+</html>

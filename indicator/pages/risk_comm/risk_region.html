@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>区域风险</title>
+    <link rel="stylesheet" href="risk_comm.css">
+    <style>
+        /* 账号筛选条（模拟登录账号） */
+        .account-bar {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 14px 22px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-left: 4px solid var(--green);
+        }
+
+        .account-bar-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .account-bar-tip {
+            font-size: 12px;
+            color: var(--orange);
+            background: var(--orange-light);
+            padding: 4px 10px;
+            border-radius: 12px;
+            border: 1px solid #ffd591;
+        }
+
+        /* 筛选组 */
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 表格头部 */
+        .table-header {
+            padding: 16px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+            flex-wrap: wrap;
+            gap: 12px;
+            background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-soft) 100%);
+        }
+
+        .table-tip {
+            font-size: 12px;
+            color: var(--orange);
+            margin-top: 4px;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        /* 表格特定单元格样式 */
+        .region-name {
+            color: var(--blue);
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .region-name:hover {
+            color: var(--green);
+            text-decoration: underline;
+        }
+
+        .fail-count {
+            color: var(--red);
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .fail-count:hover {
+            color: #ff7875;
+            text-decoration: underline;
+        }
+
+        .multi-batch {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .rate-high { color: var(--red); font-weight: 600; }
+        .rate-mid { color: var(--orange); font-weight: 600; }
+        .rate-low { color: var(--green); }
+
+        .stage-rate-high { color: var(--red); font-weight: 600; }
+        .stage-rate-mid { color: var(--orange); }
+        .stage-rate-low { color: var(--green); }
+
+        .empty-row {
+            text-align: center;
+            color: var(--text-placeholder);
+            padding: 32px 0;
+            font-size: 13px;
+        }
+
+        /* 分页控件容器 */
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 当前页按钮不可点击 */
+        .pagination-btn.active {
+            cursor: default;
+        }
+
+        .district-banner {
+            display: none;
+            background: linear-gradient(90deg, var(--green-light) 0%, var(--blue-light) 100%);
+            border: 1px solid #b7e6d4;
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: var(--green);
+            font-weight: 500;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .district-banner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <div class="page-title">区域风险</div>
+            <div class="page-subtitle">按行政区统计问题发现率排名、多批次问题企业数量及各环节情况，识别重点风险区域</div>
+        </div>
+    </div>
+
+    <!-- 模拟登录账号（演示区局账号默认仅展示本区数据） -->
+    <div class="account-bar">
+        <div class="filter-group">
+            <span class="account-bar-label">当前登录账号：</span>
+            <select class="filter-select" id="accountSelect" onchange="onAccountChange()" style="min-width:220px;">
+                <option value="">市局账号（全市数据）</option>
+                <option value="东城">东城区局账号</option>
+                <option value="西城">西城区局账号</option>
+                <option value="朝阳">朝阳区局账号</option>
+                <option value="海淀">海淀区局账号</option>
+                <option value="丰台">丰台区局账号</option>
+                <option value="石景山">石景山区局账号</option>
+                <option value="门头沟">门头沟区局账号</option>
+                <option value="房山">房山区局账号</option>
+                <option value="通州">通州区局账号</option>
+                <option value="顺义">顺义区局账号</option>
+                <option value="昌平">昌平区局账号</option>
+                <option value="大兴">大兴区局账号</option>
+                <option value="怀柔">怀柔区局账号</option>
+                <option value="平谷">平谷区局账号</option>
+                <option value="密云">密云区局账号</option>
+                <option value="延庆">延庆区局账号</option>
+            </select>
+        </div>
+        <div class="account-bar-tip">提示：区局账号登录默认仅展示本区数据</div>
+    </div>
+
+    <!-- 本区数据提示横幅 -->
+    <div class="district-banner" id="districtBanner"></div>
+
+    <!-- 各区问题发现率排名图表 -->
+    <div class="chart-container">
+        <div class="chart-title">
+            各区问题发现率排名
+        </div>
+        <div id="riskRegionBarChart" style="width:100%;height:400px;"></div>
+        <div class="table-tip" id="chartTip">说明：条形图按问题发现率由高到低排名。</div>
+    </div>
+
+    <!-- 各区问题发现率趋势折线图 -->
+    <div class="chart-container">
+        <div class="chart-title">
+            各区问题发现率趋势
+        </div>
+        <div id="riskRegionLineChart" style="width:100%;height:400px;"></div>
+        <div class="table-tip" id="lineChartTip">说明：折线图展示各区抽检来源（市抽、区抽、评价性抽检）的问题发现率走势。</div>
+    </div>
+
+    <!-- 各区多批次问题企业数量 -->
+    <div class="table-container">
+        <div class="table-header">
+            <div>
+                <div class="section-title">各区多批次问题企业数量</div>
+                <div class="table-tip">多批次问题企业：同一年度内出现不合格批次≥3批次的企业</div>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">区名：</span>
+                <input type="text" class="filter-input" id="entRegionFilter" placeholder="请输入区名" style="min-width:140px;">
+                <button class="btn btn-blue" onclick="doEntSearch()">查询</button>
+                <button class="btn btn-secondary" onclick="clearEntSearch()">重置</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="data-table" id="riskRegionEnterpriseTable">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>区名</th>
+                        <th>问题企业数</th>
+                        <th>多批次问题企业数(≥3批次)</th>
+                        <th>抽检批次</th>
+                        <th>不合格批次</th>
+                        <th>问题发现率(%)</th>
+                    </tr>
+                </thead>
+                <tbody id="enterpriseTableBody">
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination-container">
+            <div class="page-info" id="entPaginationInfo">第 1-10 条，共 16 条</div>
+            <div class="pagination-controls">
+                <select class="page-size-select" id="entPageSizeSelect" onchange="onEntPageSizeChange()">
+                    <option value="10">10条/页</option>
+                    <option value="15">15条/页</option>
+                    <option value="20">20条/页</option>
+                </select>
+                <button class="pagination-btn" id="entPrevBtn" onclick="goEntPage(entCurrentPage-1)">‹ 上一页</button>
+                <span id="entPageNumbers"></span>
+                <button class="pagination-btn" id="entNextBtn" onclick="goEntPage(entCurrentPage+1)">下一页 ›</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 各区各环节情况 -->
+    <div class="table-container">
+        <div class="table-header">
+            <div>
+                <div class="section-title">各区各环节情况</div>
+                <div class="table-tip">原统计分析报表实现，展示各环节问题发现率，识别重点环节风险区域</div>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">区名：</span>
+                <input type="text" class="filter-input" id="stageRegionFilter" placeholder="请输入区名" style="min-width:140px;">
+                <button class="btn btn-blue" onclick="doStageSearch()">查询</button>
+                <button class="btn btn-secondary" onclick="clearStageSearch()">重置</button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="data-table" id="riskRegionStageTable">
+                <thead>
+                    <tr>
+                        <th>区名</th>
+                        <th>生产环节问题率(%)</th>
+                        <th>经营环节问题率(%)</th>
+                        <th>餐饮环节问题率(%)</th>
+                        <th>特食环节问题率(%)</th>
+                    </tr>
+                </thead>
+                <tbody id="stageTableBody">
+                </tbody>
+            </table>
+        </div>
+        <div class="pagination-container">
+            <div class="page-info" id="stagePaginationInfo">第 1-10 条，共 16 条</div>
+            <div class="pagination-controls">
+                <select class="page-size-select" id="stagePageSizeSelect" onchange="onStagePageSizeChange()">
+                    <option value="10">10条/页</option>
+                    <option value="15">15条/页</option>
+                    <option value="20">20条/页</option>
+                </select>
+                <button class="pagination-btn" id="stagePrevBtn" onclick="goStagePage(stageCurrentPage-1)">‹ 上一页</button>
+                <span id="stagePageNumbers"></span>
+                <button class="pagination-btn" id="stageNextBtn" onclick="goStagePage(stageCurrentPage+1)">下一页 ›</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        /* ============== 各区数据（16个区） ==============
+           cityPct/distPct/evalPct 为市抽/区抽/评价性抽检占问题发现率的份额(和为1)
+           produce/business/catering/special 为各环节问题率(%) */
+        var regionData = [
+            { name: '房山',   total: 1120, fail: 65, problemEnt: 48, multiBatchEnt: 12, cityPct: 0.552, distPct: 0.331, evalPct: 0.117, produce: 6.12, business: 5.62, catering: 6.45, special: 4.35 },
+            { name: '大兴',   total: 1280, fail: 69, problemEnt: 53, multiBatchEnt: 14, cityPct: 0.551, distPct: 0.328, evalPct: 0.121, produce: 5.68, business: 5.31, catering: 5.92, special: 4.12 },
+            { name: '通州',   total: 1450, fail: 75, problemEnt: 58, multiBatchEnt: 15, cityPct: 0.547, distPct: 0.333, evalPct: 0.120, produce: 5.45, business: 5.08, catering: 5.78, special: 4.05 },
+            { name: '顺义',   total: 1180, fail: 58, problemEnt: 45, multiBatchEnt: 11, cityPct: 0.556, distPct: 0.328, evalPct: 0.116, produce: 5.21, business: 4.85, catering: 5.45, special: 3.92 },
+            { name: '门头沟', total: 680,  fail: 32, problemEnt: 26, multiBatchEnt: 6,  cityPct: 0.563, distPct: 0.313, evalPct: 0.124, produce: 4.98, business: 4.62, catering: 5.12, special: 3.78 },
+            { name: '昌平',   total: 1320, fail: 61, problemEnt: 47, multiBatchEnt: 12, cityPct: 0.541, distPct: 0.336, evalPct: 0.123, produce: 4.85, business: 4.51, catering: 4.95, special: 3.65 },
+            { name: '平谷',   total: 720,  fail: 32, problemEnt: 25, multiBatchEnt: 7,  cityPct: 0.563, distPct: 0.313, evalPct: 0.124, produce: 4.72, business: 4.38, catering: 4.82, special: 3.58 },
+            { name: '怀柔',   total: 650,  fail: 28, problemEnt: 22, multiBatchEnt: 5,  cityPct: 0.571, distPct: 0.304, evalPct: 0.125, produce: 4.59, business: 4.25, catering: 4.68, special: 3.45 },
+            { name: '密云',   total: 680,  fail: 29, problemEnt: 23, multiBatchEnt: 6,  cityPct: 0.552, distPct: 0.317, evalPct: 0.131, produce: 4.46, business: 4.12, catering: 4.55, special: 3.38 },
+            { name: '延庆',   total: 620,  fail: 25, problemEnt: 20, multiBatchEnt: 4,  cityPct: 0.560, distPct: 0.312, evalPct: 0.128, produce: 4.33, business: 3.98, catering: 4.42, special: 3.25 },
+            { name: '丰台',   total: 1560, fail: 62, problemEnt: 48, multiBatchEnt: 13, cityPct: 0.548, distPct: 0.331, evalPct: 0.121, produce: 4.19, business: 3.85, catering: 4.28, special: 3.12 },
+            { name: '石景山', total: 820,  fail: 31, problemEnt: 24, multiBatchEnt: 6,  cityPct: 0.548, distPct: 0.323, evalPct: 0.129, produce: 4.06, business: 3.72, catering: 4.15, special: 2.98 },
+            { name: '朝阳',   total: 2150, fail: 79, problemEnt: 62, multiBatchEnt: 16, cityPct: 0.544, distPct: 0.338, evalPct: 0.118, produce: 3.92, business: 3.58, catering: 4.02, special: 2.85 },
+            { name: '东城',   total: 980,  fail: 35, problemEnt: 27, multiBatchEnt: 7,  cityPct: 0.543, distPct: 0.334, evalPct: 0.123, produce: 3.78, business: 3.45, catering: 3.88, special: 2.72 },
+            { name: '西城',   total: 1020, fail: 35, problemEnt: 27, multiBatchEnt: 7,  cityPct: 0.543, distPct: 0.334, evalPct: 0.123, produce: 3.65, business: 3.32, catering: 3.75, special: 2.65 },
+            { name: '海淀',   total: 2280, fail: 72, problemEnt: 56, multiBatchEnt: 15, cityPct: 0.542, distPct: 0.340, evalPct: 0.118, produce: 3.41, business: 3.08, catering: 3.52, special: 2.42 }
+        ];
+
+        /* ============== 全局状态 ============== */
+        var currentAccount = '';          // 当前登录账号对应的区(空=市局全市)
+        var filteredRegionData = regionData.slice();
+        var riskChart = null;
+        var lineChart = null;
+
+        /* 多批次企业表格分页 */
+        var entCurrentPage = 1;
+        var entPageSize = 10;
+        var entFilteredData = regionData.slice();
+
+        /* 各环节表格分页 */
+        var stageCurrentPage = 1;
+        var stagePageSize = 10;
+        var stageFilteredData = regionData.slice();
+
+        /* ============== 工具函数 ============== */
+        function calcRate(total, fail) {
+            return (fail / total * 100).toFixed(2);
+        }
+
+        function rateClass(rate) {
+            rate = parseFloat(rate);
+            if (rate >= 5) return 'rate-high';
+            if (rate >= 4) return 'rate-mid';
+            return 'rate-low';
+        }
+
+        function stageRateClass(rate) {
+            rate = parseFloat(rate);
+            if (rate >= 5) return 'stage-rate-high';
+            if (rate >= 4) return 'stage-rate-mid';
+            return 'stage-rate-low';
+        }
+
+        /* ============== 账号切换（区局默认仅展示本区） ============== */
+        function onAccountChange() {
+            currentAccount = document.getElementById('accountSelect').value;
+            var banner = document.getElementById('districtBanner');
+            if (currentAccount) {
+                banner.textContent = '当前为「' + currentAccount + '区局账号」，仅展示本区数据。';
+                banner.classList.add('show');
+            } else {
+                banner.textContent = '';
+                banner.classList.remove('show');
+            }
+            // 重置筛选条件并按账号过滤
+            document.getElementById('entRegionFilter').value = '';
+            document.getElementById('stageRegionFilter').value = '';
+            applyAccountFilter();
+            refreshAll();
+        }
+
+        function applyAccountFilter() {
+            if (currentAccount) {
+                filteredRegionData = regionData.filter(function(d) { return d.name === currentAccount; });
+            } else {
+                filteredRegionData = regionData.slice();
+            }
+            entFilteredData = filteredRegionData.slice();
+            stageFilteredData = filteredRegionData.slice();
+            entCurrentPage = 1;
+            stageCurrentPage = 1;
+        }
+
+        /* ============== 图表 ============== */
+        function initChart() {
+            riskChart = echarts.init(document.getElementById('riskRegionBarChart'));
+            lineChart = echarts.init(document.getElementById('riskRegionLineChart'));
+            renderChart();
+            renderLineChart();
+            window.addEventListener('resize', function() {
+                if (riskChart) riskChart.resize();
+                if (lineChart) lineChart.resize();
+            });
+        }
+
+        /* 条形图：各区问题发现率排名（横向柱状图） */
+        function renderChart() {
+            // 条形图按问题发现率由高到低排序
+            var data = filteredRegionData.slice().sort(function(a, b) {
+                return (b.fail / b.total) - (a.fail / a.total);
+            });
+            var names = data.map(function(d) { return d.name; });
+            var rates = data.map(function(d) { return parseFloat(calcRate(d.total, d.fail)); });
+
+            var colorList = rates.map(function(r) {
+                if (r >= 5) return '#ff4d4f';
+                if (r >= 4) return '#fa8c16';
+                return '#1e9a6c';
+            });
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        var p = params[0];
+                        var item = data[p.dataIndex];
+                        return p.name + '区<br/>问题发现率：' + p.value + '%<br/>抽检批次：' + item.total + '<br/>不合格批次：' + item.fail;
+                    }
+                },
+                grid: { left: '3%', right: '8%', bottom: '3%', top: '5%', containLabel: true },
+                xAxis: {
+                    type: 'value',
+                    name: '问题发现率(%)',
+                    nameTextStyle: { color: '#888', fontSize: 12 },
+                    axisLabel: { color: '#666', formatter: '{value}%' },
+                    splitLine: { lineStyle: { color: '#f0f0f0' } }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: names,
+                    inverse: true,
+                    axisLabel: { color: '#666', fontSize: 12 },
+                    axisLine: { lineStyle: { color: '#e0e0e0' } }
+                },
+                series: [{
+                    name: '问题发现率',
+                    type: 'bar',
+                    data: rates.map(function(v, i) {
+                        return { value: v, itemStyle: { color: colorList[i], borderRadius: [0, 4, 4, 0] } };
+                    }),
+                    barMaxWidth: 22,
+                    label: {
+                        show: true,
+                        position: 'right',
+                        formatter: '{c}%',
+                        color: '#333',
+                        fontSize: 12
+                    }
+                }]
+            };
+            if (riskChart) riskChart.setOption(option, true);
+        }
+
+        /* 折线图：各区抽检来源（市抽/区抽/评价性抽检）问题发现率趋势 */
+        function renderLineChart() {
+            var data = filteredRegionData.slice().sort(function(a, b) {
+                return (b.fail / b.total) - (a.fail / a.total);
+            });
+            var names = data.map(function(d) { return d.name; });
+            var cityData = data.map(function(d) {
+                return parseFloat((parseFloat(calcRate(d.total, d.fail)) * d.cityPct).toFixed(2));
+            });
+            var distData = data.map(function(d) {
+                return parseFloat((parseFloat(calcRate(d.total, d.fail)) * d.distPct).toFixed(2));
+            });
+            var evalData = data.map(function(d) {
+                return parseFloat((parseFloat(calcRate(d.total, d.fail)) * d.evalPct).toFixed(2));
+            });
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        var sum = 0;
+                        var str = params[0].name + '区<br/>';
+                        params.forEach(function(p) {
+                            sum += p.value;
+                            str += p.marker + p.seriesName + '：' + p.value + '%<br/>';
+                        });
+                        str += '合计：' + sum.toFixed(2) + '%';
+                        return str;
+                    }
+                },
+                legend: {
+                    data: ['市抽', '区抽', '评价性抽检'],
+                    bottom: 0,
+                    textStyle: { fontSize: 12 }
+                },
+                grid: { left: '3%', right: '5%', bottom: '12%', top: '8%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: names,
+                    axisLabel: { color: '#666', fontSize: 12, rotate: names.length > 10 ? 30 : 0 },
+                    axisLine: { lineStyle: { color: '#e0e0e0' } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '问题发现率(%)',
+                    nameTextStyle: { color: '#888', fontSize: 12 },
+                    axisLabel: { color: '#666', formatter: '{value}%' },
+                    splitLine: { lineStyle: { color: '#f0f0f0' } }
+                },
+                series: [
+                    { name: '市抽', type: 'line', data: cityData, itemStyle: { color: '#1e9a6c' }, lineStyle: { color: '#1e9a6c', width: 2 }, symbol: 'circle', symbolSize: 8, smooth: true },
+                    { name: '区抽', type: 'line', data: distData, itemStyle: { color: '#1e73be' }, lineStyle: { color: '#1e73be', width: 2 }, symbol: 'circle', symbolSize: 8, smooth: true },
+                    { name: '评价性抽检', type: 'line', data: evalData, itemStyle: { color: '#fa8c16' }, lineStyle: { color: '#fa8c16', width: 2 }, symbol: 'circle', symbolSize: 8, smooth: true }
+                ]
+            };
+            if (lineChart) lineChart.setOption(option, true);
+        }
+
+        /* ============== 多批次问题企业表格 ============== */
+        function renderEnterpriseTable() {
+            var tbody = document.getElementById('enterpriseTableBody');
+            if (entFilteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">暂无数据</td></tr>';
+                renderEntPagination();
+                return;
+            }
+            var start = (entCurrentPage - 1) * entPageSize;
+            var end = Math.min(start + entPageSize, entFilteredData.length);
+            var pageData = entFilteredData.slice(start, end);
+
+            tbody.innerHTML = pageData.map(function(item, index) {
+                var rate = calcRate(item.total, item.fail);
+                return '<tr>' +
+                    '<td>' + (start + index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td>' + item.problemEnt + '</td>' +
+                    // 可查看工作报表-批次-详情
+                    '<td class="multi-batch" title="点击可查看工作报表-批次-详情">' + item.multiBatchEnt + '</td>' +
+                    '<td>' + item.total + '</td>' +
+                    '<td><span class="fail-count" onclick="drillFail(\'' + item.name + '\')">' + item.fail + '</span></td>' +
+                    '<td class="' + rateClass(rate) + '">' + rate + '</td>' +
+                    '</tr>';
+            }).join('');
+
+            renderEntPagination();
+        }
+
+        function renderEntPagination() {
+            var total = entFilteredData.length;
+            var totalPages = Math.max(1, Math.ceil(total / entPageSize));
+            var start = total === 0 ? 0 : (entCurrentPage - 1) * entPageSize + 1;
+            var end = Math.min(entCurrentPage * entPageSize, total);
+
+            document.getElementById('entPaginationInfo').textContent = '第 ' + start + '-' + end + ' 条，共 ' + total + ' 条';
+            document.getElementById('entPrevBtn').disabled = entCurrentPage <= 1;
+            document.getElementById('entNextBtn').disabled = entCurrentPage >= totalPages;
+
+            var html = '';
+            var maxBtn = 5;
+            var startPage = Math.max(1, entCurrentPage - 2);
+            var endPage = Math.min(totalPages, startPage + maxBtn - 1);
+            startPage = Math.max(1, endPage - maxBtn + 1);
+            for (var i = startPage; i <= endPage; i++) {
+                if (i === entCurrentPage) {
+                    html += '<button class="pagination-btn active">' + i + '</button>';
+                } else {
+                    html += '<button class="pagination-btn" onclick="goEntPage(' + i + ')">' + i + '</button>';
+                }
+            }
+            document.getElementById('entPageNumbers').innerHTML = html;
+        }
+
+        function goEntPage(page) {
+            var totalPages = Math.max(1, Math.ceil(entFilteredData.length / entPageSize));
+            if (page < 1 || page > totalPages) return;
+            entCurrentPage = page;
+            renderEnterpriseTable();
+        }
+
+        function onEntPageSizeChange() {
+            entPageSize = parseInt(document.getElementById('entPageSizeSelect').value);
+            entCurrentPage = 1;
+            renderEnterpriseTable();
+        }
+
+        function doEntSearch() {
+            var name = document.getElementById('entRegionFilter').value.trim();
+            if (currentAccount) {
+                // 区局账号下仅本区，再叠加区名搜索（本场景下搜索非本区返回空）
+                entFilteredData = filteredRegionData.filter(function(d) {
+                    return !name || d.name.indexOf(name) >= 0;
+                });
+            } else {
+                entFilteredData = regionData.filter(function(d) {
+                    return !name || d.name.indexOf(name) >= 0;
+                });
+            }
+            entCurrentPage = 1;
+            renderEnterpriseTable();
+        }
+
+        function clearEntSearch() {
+            document.getElementById('entRegionFilter').value = '';
+            entFilteredData = filteredRegionData.slice();
+            entCurrentPage = 1;
+            renderEnterpriseTable();
+        }
+
+        /* ============== 各区各环节情况表格 ============== */
+        function renderStageTable() {
+            var tbody = document.getElementById('stageTableBody');
+            if (stageFilteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-row">暂无数据</td></tr>';
+                renderStagePagination();
+                return;
+            }
+            var start = (stageCurrentPage - 1) * stagePageSize;
+            var end = Math.min(start + stagePageSize, stageFilteredData.length);
+            var pageData = stageFilteredData.slice(start, end);
+
+            tbody.innerHTML = pageData.map(function(item) {
+                return '<tr>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td class="' + stageRateClass(item.produce) + '">' + item.produce.toFixed(2) + '</td>' +
+                    '<td class="' + stageRateClass(item.business) + '">' + item.business.toFixed(2) + '</td>' +
+                    '<td class="' + stageRateClass(item.catering) + '">' + item.catering.toFixed(2) + '</td>' +
+                    '<td class="' + stageRateClass(item.special) + '">' + item.special.toFixed(2) + '</td>' +
+                    '</tr>';
+            }).join('');
+
+            renderStagePagination();
+        }
+
+        function renderStagePagination() {
+            var total = stageFilteredData.length;
+            var totalPages = Math.max(1, Math.ceil(total / stagePageSize));
+            var start = total === 0 ? 0 : (stageCurrentPage - 1) * stagePageSize + 1;
+            var end = Math.min(stageCurrentPage * stagePageSize, total);
+
+            document.getElementById('stagePaginationInfo').textContent = '第 ' + start + '-' + end + ' 条，共 ' + total + ' 条';
+            document.getElementById('stagePrevBtn').disabled = stageCurrentPage <= 1;
+            document.getElementById('stageNextBtn').disabled = stageCurrentPage >= totalPages;
+
+            var html = '';
+            var maxBtn = 5;
+            var startPage = Math.max(1, stageCurrentPage - 2);
+            var endPage = Math.min(totalPages, startPage + maxBtn - 1);
+            startPage = Math.max(1, endPage - maxBtn + 1);
+            for (var i = startPage; i <= endPage; i++) {
+                if (i === stageCurrentPage) {
+                    html += '<button class="pagination-btn active">' + i + '</button>';
+                } else {
+                    html += '<button class="pagination-btn" onclick="goStagePage(' + i + ')">' + i + '</button>';
+                }
+            }
+            document.getElementById('stagePageNumbers').innerHTML = html;
+        }
+
+        function goStagePage(page) {
+            var totalPages = Math.max(1, Math.ceil(stageFilteredData.length / stagePageSize));
+            if (page < 1 || page > totalPages) return;
+            stageCurrentPage = page;
+            renderStageTable();
+        }
+
+        function onStagePageSizeChange() {
+            stagePageSize = parseInt(document.getElementById('stagePageSizeSelect').value);
+            stageCurrentPage = 1;
+            renderStageTable();
+        }
+
+        function doStageSearch() {
+            var name = document.getElementById('stageRegionFilter').value.trim();
+            if (currentAccount) {
+                stageFilteredData = filteredRegionData.filter(function(d) {
+                    return !name || d.name.indexOf(name) >= 0;
+                });
+            } else {
+                stageFilteredData = regionData.filter(function(d) {
+                    return !name || d.name.indexOf(name) >= 0;
+                });
+            }
+            stageCurrentPage = 1;
+            renderStageTable();
+        }
+
+        function clearStageSearch() {
+            document.getElementById('stageRegionFilter').value = '';
+            stageFilteredData = filteredRegionData.slice();
+            stageCurrentPage = 1;
+            renderStageTable();
+        }
+
+        /* ============== 钻取（演示交互） ============== */
+        function drillRegion(name) {
+            alert('钻取：查看「' + name + '区」问题企业明细列表（按区局维度下钻企业级数据）。');
+        }
+
+        function drillFail(name) {
+            alert('钻取：查看「' + name + '区」不合格批次明细。');
+        }
+
+        /* ============== 全量刷新 ============== */
+        function refreshAll() {
+            renderChart();
+            renderLineChart();
+            renderEnterpriseTable();
+            renderStageTable();
+        }
+
+        /* ============== 初始化 ============== */
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            renderEnterpriseTable();
+            renderStageTable();
+        });
+    </script>
+</body>
+</html>

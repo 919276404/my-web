@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>警示规则执行策略配置</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f7fa; padding: 15px; }
+        .page-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        .tabs-container { border-bottom: 1px solid #e0e0e0; margin-bottom: 15px; }
+        .tab-item { display: inline-block; padding: 10px 20px; font-size: 14px; cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .tab-item.active { color: #1e73be; border-bottom-color: #1e73be; font-weight: 500; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .search-bar { background: #fff; padding: 15px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .search-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .search-item { display: flex; align-items: center; gap: 8px; }
+        .search-label { font-size: 13px; color: #666; }
+        .search-input { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; }
+        .search-select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; min-width: 150px; background: #fff; cursor: pointer; }
+        .btn { padding: 6px 16px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #1e73be; color: #fff; }
+        .btn-primary:hover { background: #1a64a5; }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .btn-danger { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; }
+        .btn-danger:hover { background: #fff2f0; }
+        .table-container { background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+        .data-table th { background: #f8fafc; font-weight: 600; color: #666; font-size: 12px; }
+        .data-table tr:hover { background: #fafafa; }
+        .data-table td.right { text-align: right; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; padding: 15px 20px; gap: 15px; border-top: 1px solid #f0f0f0; }
+        .pagination-info { font-size: 13px; color: #666; }
+        .pagination-controls { display: flex; align-items: center; gap: 8px; }
+        .pagination-btn { width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-size: 13px; }
+        .pagination-btn:hover:not(:disabled) { border-color: #1e73be; color: #1e73be; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pagination-current { width: 32px; height: 32px; border: none; border-radius: 4px; background: #1e73be; color: #fff; font-weight: 600; }
+        .action-btn { padding: 3px 10px; font-size: 12px; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px; }
+        .action-btn-edit { background: #fff; color: #1e73be; border: 1px solid #1e73be; }
+        .action-btn-edit:hover { background: #f0f5ff; }
+        .action-btn-delete { background: #fff; color: #ff4d4f; border: 1px solid #ff4d4f; }
+        .action-btn-delete:hover { background: #fff2f0; }
+        .action-btn-run { background: #fff; color: #2e7d32; border: 1px solid #2e7d32; }
+        .action-btn-run:hover { background: #e8f5e9; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 8px; width: 90%; max-width: 600px; max-height: 85vh; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #333; }
+        .modal-close { font-size: 24px; color: #999; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #666; }
+        .modal-body { padding: 20px; flex: 1 1 auto; overflow-y: auto; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #f0f0f0; background: #fafafa; flex: 0 0 auto; }
+        .form-item { margin-bottom: 15px; }
+        .form-label { font-size: 13px; color: #666; margin-bottom: 5px; display: block; }
+        .form-input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; }
+        .form-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; width: 100%; background: #fff; cursor: pointer; }
+        .form-checkbox { margin-right: 8px; }
+        .status { padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+        .status.active { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .status.inactive { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+    </style>
+</head>
+<body>
+    <div class="page-title">警示规则执行策略配置</div>
+    
+    <div class="tabs-container">
+        <div class="tab-item active" onclick="switchTab('tab1')">实时执行配置</div>
+        <div class="tab-item" onclick="switchTab('tab2')">定时执行配置</div>
+        <div class="tab-item" onclick="switchTab('tab3')">手动触发</div>
+    </div>
+
+    <div id="tab1" class="tab-content active">
+        <div class="table-container">
+            <div class="table-header">
+                <div>实时执行规则列表</div>
+                <button class="btn btn-primary" onclick="openConfigModal('tab1', 'add')">+ 新增配置</button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>触发数据表</th>
+                        <th>执行范围</th>
+                        <th>容错设置</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tab1TableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">执行频率</span>
+                    <select class="search-select" id="tab2Freq">
+                        <option>全部</option>
+                        <option>按日</option>
+                        <option>按周</option>
+                        <option>按月</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="doTab2Search()">查询</button>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <div class="table-header">
+                <div>定时执行规则列表</div>
+                <button class="btn btn-primary" onclick="openConfigModal('tab2', 'add')">+ 新增配置</button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>执行频率</th>
+                        <th>执行时间</th>
+                        <th>执行范围</th>
+                        <th>容错设置</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tab2TableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab3" class="tab-content">
+        <div class="search-bar">
+            <div class="search-row">
+                <div class="search-item">
+                    <span class="search-label">规则名称</span>
+                    <input type="text" class="search-input" id="tab3Search" placeholder="请输入">
+                </div>
+                <button class="btn btn-secondary" onclick="doTab3Search()">查询</button>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <div class="table-header">
+                <div>可用规则列表</div>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>规则名称</th>
+                        <th>规则类型</th>
+                        <th>状态</th>
+                        <th>最近执行时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tab3TableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="configModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">新增配置</div>
+                <div class="modal-close" onclick="closeModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalMode" value="add">
+                <input type="hidden" id="modalTab" value="tab1">
+                <input type="hidden" id="modalId" value="">
+                
+                <div class="form-item">
+                    <label class="form-label">规则名称</label>
+                    <input type="text" class="form-input" id="ruleName" placeholder="请输入规则名称">
+                </div>
+                
+                <div class="form-item" id="triggerTableDiv">
+                    <label class="form-label">触发数据表</label>
+                    <select class="form-select" id="triggerTable">
+                        <option>历史抽检结果表</option>
+                        <option>风险趋势分析表</option>
+                        <option>区域品类风险统计表</option>
+                    </select>
+                </div>
+                
+                <div class="form-item" id="freqDiv" style="display: none;">
+                    <label class="form-label">执行频率</label>
+                    <select class="form-select" id="execFreq" onchange="updateTimeFields()">
+                        <option value="daily">按日</option>
+                        <option value="weekly">按周</option>
+                        <option value="monthly">按月</option>
+                    </select>
+                </div>
+                
+                <div class="form-item" id="timeDiv" style="display: none;">
+                    <label class="form-label">执行时间</label>
+                    <input type="time" class="form-input" id="execTime">
+                </div>
+                
+                <div class="form-item" id="weekDayDiv" style="display: none;">
+                    <label class="form-label">星期几</label>
+                    <select class="form-select" id="weekDay">
+                        <option>周一</option>
+                        <option>周二</option>
+                        <option>周三</option>
+                        <option>周四</option>
+                        <option>周五</option>
+                        <option>周六</option>
+                        <option>周日</option>
+                    </select>
+                </div>
+                
+                <div class="form-item" id="monthDayDiv" style="display: none;">
+                    <label class="form-label">每月几号</label>
+                    <input type="number" class="form-input" id="monthDay" min="1" max="31">
+                </div>
+                
+                <div class="form-item">
+                    <label class="form-label">执行范围</label>
+                    <select class="form-select" id="execScope">
+                        <option value="full">全量数据</option>
+                        <option value="time">特定时间段</option>
+                    </select>
+                </div>
+                
+                <div class="form-item">
+                    <label class="form-label">容错设置</label>
+                    <select class="form-select" id="faultTolerance">
+                        <option value="skip">跳过缺失数据</option>
+                        <option value="default">按默认值判定</option>
+                    </select>
+                </div>
+                
+                <div class="form-item">
+                    <label class="form-label">状态</label>
+                    <label><input type="radio" name="status" value="active" checked class="form-checkbox"> 启用</label>
+                    <label><input type="radio" name="status" value="inactive" class="form-checkbox"> 禁用</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveConfig()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var realtimeData = [
+            { id: 1, name: '农药残留超标实时监测', table: '历史抽检结果表', scope: '全量数据', fault: '跳过缺失数据', status: 'active' },
+            { id: 2, name: '微生物超标实时预警', table: '历史抽检结果表', scope: '全量数据', fault: '按默认值判定', status: 'active' },
+            { id: 3, name: '区域风险实时监控', table: '区域品类风险统计表', scope: '全量数据', fault: '跳过缺失数据', status: 'inactive' }
+        ];
+        
+        var scheduleData = [
+            { id: 1, name: '每日超标统计', freq: '按日', time: '08:00', scope: '全量数据', fault: '跳过缺失数据', status: 'active' },
+            { id: 2, name: '周度风险分析', freq: '按周', day: '周一', time: '09:00', scope: '全量数据', fault: '按默认值判定', status: 'active' },
+            { id: 3, name: '月度风险报告', freq: '按月', day: '1', time: '10:00', scope: '全量数据', fault: '跳过缺失数据', status: 'active' },
+            { id: 4, name: '季度趋势分析', freq: '按月', day: '15', time: '09:30', scope: '特定时间段', fault: '按默认值判定', status: 'inactive' }
+        ];
+        
+        var manualData = [
+            { id: 1, name: '农药残留超标监测', type: '实时规则', status: 'active', lastRun: '2026-07-05 14:30' },
+            { id: 2, name: '微生物超标预警', type: '实时规则', status: 'active', lastRun: '2026-07-05 14:20' },
+            { id: 3, name: '每日超标统计', type: '定时规则', status: 'active', lastRun: '2026-07-05 08:00' },
+            { id: 4, name: '周度风险分析', type: '定时规则', status: 'active', lastRun: '2026-07-01 09:00' },
+            { id: 5, name: '月度风险报告', type: '定时规则', status: 'active', lastRun: '2026-07-01 10:00' }
+        ];
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelector('.tab-item[onclick="switchTab(\'' + tabId + '\')"]').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function renderTab1Table(data) {
+            var tbody = document.getElementById('tab1TableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                return '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td>' + item.table + '</td>' +
+                    '<td>' + item.scope + '</td>' +
+                    '<td>' + item.fault + '</td>' +
+                    '<td><span class="status' + (item.status === 'active' ? ' active' : ' inactive') + '">' + (item.status === 'active' ? '启用' : '禁用') + '</span></td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-edit" onclick="openConfigModal(\'tab1\', \'edit\', ' + item.id + ')">编辑</button>' +
+                        '<button class="action-btn action-btn-delete" onclick="deleteItem(\'tab1\', ' + item.id + ')">删除</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function renderTab2Table(data) {
+            var tbody = document.getElementById('tab2TableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                var timeDisplay = item.time || '--';
+                if (item.day && item.freq === '按周') {
+                    timeDisplay = item.day + ' ' + item.time;
+                } else if (item.day && item.freq === '按月') {
+                    timeDisplay = '每月' + item.day + '日 ' + item.time;
+                }
+                
+                return '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td>' + item.freq + '</td>' +
+                    '<td>' + timeDisplay + '</td>' +
+                    '<td>' + item.scope + '</td>' +
+                    '<td>' + item.fault + '</td>' +
+                    '<td><span class="status' + (item.status === 'active' ? ' active' : ' inactive') + '">' + (item.status === 'active' ? '启用' : '禁用') + '</span></td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-edit" onclick="openConfigModal(\'tab2\', \'edit\', ' + item.id + ')">编辑</button>' +
+                        '<button class="action-btn action-btn-delete" onclick="deleteItem(\'tab2\', ' + item.id + ')">删除</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function renderTab3Table(data) {
+            var tbody = document.getElementById('tab3TableBody');
+            tbody.innerHTML = data.map(function(item, index) {
+                return '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td>' + item.name + '</td>' +
+                    '<td>' + item.type + '</td>' +
+                    '<td><span class="status' + (item.status === 'active' ? ' active' : ' inactive') + '">' + (item.status === 'active' ? '启用' : '禁用') + '</span></td>' +
+                    '<td>' + item.lastRun + '</td>' +
+                    '<td>' +
+                        '<button class="action-btn action-btn-run" onclick="runRule(' + item.id + ')">立即执行</button>' +
+                    '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function openConfigModal(tab, mode, id) {
+            document.getElementById('modalTitle').innerText = mode === 'add' ? '新增配置' : '编辑配置';
+            document.getElementById('modalMode').value = mode;
+            document.getElementById('modalTab').value = tab;
+            document.getElementById('modalId').value = id || '';
+            
+            document.getElementById('triggerTableDiv').style.display = tab === 'tab1' ? 'block' : 'none';
+            document.getElementById('freqDiv').style.display = tab === 'tab2' ? 'block' : 'none';
+            document.getElementById('timeDiv').style.display = tab === 'tab2' ? 'block' : 'none';
+            
+            document.getElementById('ruleName').value = '';
+            document.getElementById('execScope').value = 'full';
+            document.getElementById('faultTolerance').value = 'skip';
+            document.querySelector('input[name="status"][value="active"]').checked = true;
+            
+            if (tab === 'tab2') {
+                document.getElementById('execFreq').value = 'daily';
+                updateTimeFields();
+            }
+            
+            if (mode === 'edit') {
+                if (tab === 'tab1') {
+                    var item = realtimeData.find(function(d) { return d.id === id; });
+                    if (item) {
+                        document.getElementById('ruleName').value = item.name;
+                        document.getElementById('triggerTable').value = item.table;
+                        document.getElementById('execScope').value = item.scope === '全量数据' ? 'full' : 'time';
+                        document.getElementById('faultTolerance').value = item.fault === '跳过缺失数据' ? 'skip' : 'default';
+                        document.querySelector('input[name="status"][value="' + item.status + '"]').checked = true;
+                    }
+                } else if (tab === 'tab2') {
+                    var item = scheduleData.find(function(d) { return d.id === id; });
+                    if (item) {
+                        document.getElementById('ruleName').value = item.name;
+                        var freqMap = { '按日': 'daily', '按周': 'weekly', '按月': 'monthly' };
+                        document.getElementById('execFreq').value = freqMap[item.freq] || 'daily';
+                        updateTimeFields();
+                        document.getElementById('execTime').value = item.time;
+                        if (item.day) {
+                            if (item.freq === '按周') {
+                                document.getElementById('weekDay').value = item.day;
+                            } else if (item.freq === '按月') {
+                                document.getElementById('monthDay').value = item.day;
+                            }
+                        }
+                        document.getElementById('execScope').value = item.scope === '全量数据' ? 'full' : 'time';
+                        document.getElementById('faultTolerance').value = item.fault === '跳过缺失数据' ? 'skip' : 'default';
+                        document.querySelector('input[name="status"][value="' + item.status + '"]').checked = true;
+                    }
+                }
+            }
+            
+            document.getElementById('configModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        function updateTimeFields() {
+            var freq = document.getElementById('execFreq').value;
+            document.getElementById('weekDayDiv').style.display = freq === 'weekly' ? 'block' : 'none';
+            document.getElementById('monthDayDiv').style.display = freq === 'monthly' ? 'block' : 'none';
+        }
+
+        function saveConfig() {
+            var mode = document.getElementById('modalMode').value;
+            var tab = document.getElementById('modalTab').value;
+            var id = parseInt(document.getElementById('modalId').value);
+            var name = document.getElementById('ruleName').value;
+            
+            if (!name) {
+                alert('请输入规则名称');
+                return;
+            }
+            
+            var scope = document.getElementById('execScope').value === 'full' ? '全量数据' : '特定时间段';
+            var fault = document.getElementById('faultTolerance').value === 'skip' ? '跳过缺失数据' : '按默认值判定';
+            var status = document.querySelector('input[name="status"]:checked').value;
+            
+            if (tab === 'tab1') {
+                var table = document.getElementById('triggerTable').value;
+                
+                if (mode === 'add') {
+                    realtimeData.push({
+                        id: Date.now(),
+                        name: name,
+                        table: table,
+                        scope: scope,
+                        fault: fault,
+                        status: status
+                    });
+                } else {
+                    var index = realtimeData.findIndex(function(d) { return d.id === id; });
+                    if (index > -1) {
+                        realtimeData[index] = { ...realtimeData[index], name, table, scope, fault, status };
+                    }
+                }
+                renderTab1Table(realtimeData);
+            } else if (tab === 'tab2') {
+                var freqMap = { 'daily': '按日', 'weekly': '按周', 'monthly': '按月' };
+                var freq = freqMap[document.getElementById('execFreq').value];
+                var time = document.getElementById('execTime').value;
+                var day = '';
+                if (freq === '按周') {
+                    day = document.getElementById('weekDay').value;
+                } else if (freq === '按月') {
+                    day = document.getElementById('monthDay').value;
+                }
+                
+                if (mode === 'add') {
+                    scheduleData.push({
+                        id: Date.now(),
+                        name: name,
+                        freq: freq,
+                        time: time,
+                        day: day,
+                        scope: scope,
+                        fault: fault,
+                        status: status
+                    });
+                } else {
+                    var index = scheduleData.findIndex(function(d) { return d.id === id; });
+                    if (index > -1) {
+                        scheduleData[index] = { ...scheduleData[index], name, freq, time, day, scope, fault, status };
+                    }
+                }
+                renderTab2Table(scheduleData);
+            }
+            
+            closeModal();
+        }
+
+        function deleteItem(tab, id) {
+            if (!confirm('确定要删除这条配置吗？')) return;
+            
+            if (tab === 'tab1') {
+                realtimeData = realtimeData.filter(function(d) { return d.id !== id; });
+                renderTab1Table(realtimeData);
+            } else if (tab === 'tab2') {
+                scheduleData = scheduleData.filter(function(d) { return d.id !== id; });
+                renderTab2Table(scheduleData);
+            }
+        }
+
+        function doTab2Search() {
+            var freq = document.getElementById('tab2Freq').value;
+            var filtered = freq === '全部' ? scheduleData : scheduleData.filter(function(d) { return d.freq === freq; });
+            renderTab2Table(filtered);
+        }
+
+        function doTab3Search() {
+            var search = document.getElementById('tab3Search').value.trim().toLowerCase();
+            var filtered = !search ? manualData : manualData.filter(function(d) { return d.name.toLowerCase().includes(search); });
+            renderTab3Table(filtered);
+        }
+
+        function runRule(id) {
+            var item = manualData.find(function(d) { return d.id === id; });
+            if (!item) return;
+            
+            if (confirm('确定要立即执行规则 "' + item.name + '" 吗？')) {
+                alert('规则 "' + item.name + '" 执行成功！');
+                item.lastRun = new Date().toLocaleString('zh-CN');
+                renderTab3Table(manualData);
+            }
+        }
+
+        renderTab1Table(realtimeData);
+        renderTab2Table(scheduleData);
+        renderTab3Table(manualData);
+    </script>
+</body>
+</html>
